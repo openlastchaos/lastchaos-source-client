@@ -30,6 +30,22 @@ public:
   void ReadEntitySectorLinks_t( CTStream &strm);  // throw char *
   void WriteEntitySectorLinks_t( CTStream &strm); // throw char *
 
+  #ifndef	FINALVERSION			// yjpark |<--
+  // Make the attribute map of brushes
+  void MakeAttributeMap( INDEX iType, UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField = FALSE );
+  // Make the height map of brushes
+  void MakeSvrHeightMap( UWORD *pHeightBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, BOOL bField = FALSE );
+
+  void MakeWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakePeaceAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeProductPublicAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeProductPrivateAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeWarAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeFreePKAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeStairAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  void MakeUnWalkableAttributeMap( UBYTE *pAttrBuffer, INDEX iFloor, PIX pixWidth, PIX pixHeight, CWorld *pWorld, BOOL bField );
+  #endif // FINALVERSION			// yjpark     -->|
+
   /* Calculate bounding boxes in all brushes. */
   void CalculateBoundingBoxes(void);
   /* Create links between portals and sectors on their other side. */

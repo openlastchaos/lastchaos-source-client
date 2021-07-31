@@ -1,7 +1,6 @@
 108
 %{
 #include "StdH.h"
-#include <Engine/Terrain/Terrain.h>
 %}
 
 class CTerrainEntity : CEntity {

@@ -4,6 +4,43 @@
   #pragma once
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
 #include <Engine/Graphics/Vertex.h>
 #include <Engine/Terrain/ArrayHolder.h>
 
@@ -39,13 +76,14 @@ public:
   inline void AddFlag(ULONG ulFlag)    { tt_ulTileFlags |= ulFlag; }
   inline void RemoveFlag(ULONG ulFlag) { tt_ulTileFlags &= ~ulFlag; }
 
-  CStaticStackArray<GFXVertex4>   &GetVertices();
-  CStaticStackArray<GFXTexCoord>  &GetTexCoords();
-  CStaticStackArray<GFXTexCoord>  &GetShadowMapTC();
-  CStaticStackArray<GFXTexCoord>  &GetDetailTC();
-  CStaticStackArray<INDEX>        &GetIndices();
-  CStaticStackArray<TileLayer>    &GetTileLayers();
-  CTextureData                    *GetTopMap();
+  CStaticStackArray<GFXVertex>   &GetVertices();
+  CStaticStackArray<GFXTexCoord> &GetTexCoords();
+  CStaticStackArray<GFXTexCoord> &GetShadowMapTC();
+  CStaticStackArray<GFXTexCoord> &GetDetailTC();
+  CStaticStackArray<UBYTE>       &GetMasks();
+  CStaticStackArray<UWORD>       &GetIndices();  
+  CStaticStackArray<TileLayer>   &GetTileLayers();
+  CTextureData                   *GetTopMap();
 
   INDEX ChangeTileArrays(INDEX iRequestedArrayLod);
   void ReleaseTileArrays();
@@ -59,10 +97,10 @@ public:
   SLONG GetUsedMemory(void);
 
 //temp:
-void AddTriangle(INDEX iind1,INDEX iind2,INDEX iind3);
-void AddVertex(INDEX ic, INDEX ir);
-void LerpVertexPos(GFXVertex4 &vtx, INDEX iVxTarget, INDEX iVxFirst,INDEX iVxLast);
-void PrepareSmothVertices();
+void AddTriangle( INDEX iind1, INDEX iind2, INDEX iind3);
+void AddVertex( INDEX ic, INDEX ir);
+void LerpVertexPos( GFXVertex &vtx, INDEX iVxTarget, INDEX iVxFirst,INDEX iVxLast);
+void PrepareSmoothVertices();
 
 
 private:
@@ -100,5 +138,5 @@ public:
 private:
   
 };
-
+#endif
 #endif

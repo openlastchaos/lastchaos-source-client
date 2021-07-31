@@ -32,8 +32,8 @@ properties:
  11 FLOAT m_fPictureStretch "Picture stretch" 'S' = 1.0f,
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\MessageHolder.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\MessageHolder.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\MessageHolder.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\MessageHolder.tex"
 
 functions:
   const CTString &GetDescription(void) const {
@@ -98,8 +98,7 @@ functions:
     if( fNow>m_tmFadeOutStart+m_tmFadeOutLen) { return 0;}
 
     CDrawPort *pdpCurr=pdp;
-    pdp->Unlock();
-    pdpCurr->Lock();
+    pdpCurr->SetAsCurrent();
     
     FLOAT fRatio=1.0f;
     if( fNow>m_tmFadeOutStart)
@@ -135,8 +134,7 @@ functions:
       PIX2D(fXCenter+picW/2, fYCenter+picH/2) );
     pdpCurr->PutTexture(&_toTexture, boxScr, C_WHITE|ubA);
 
-    pdpCurr->Unlock();
-    pdp->Lock();
+    pdp->SetAsCurrent();
 
     return 1;
   }

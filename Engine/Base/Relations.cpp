@@ -74,9 +74,27 @@ CRelationDst &CRelationLnk::GetDst(void)
   return *rl_prdDst;
 }
 
+
+static BOOL CheckDuplicateLinks(CRelationSrc &rsSrc, CRelationDst &rdDst)
+{
+  return TRUE;
+  {FOREACHINLIST(CRelationLnk, rl_lnSrc, rsSrc, itlnk) {
+    CRelationLnk &lnk = *itlnk;
+    ASSERT(!( lnk.rl_prsSrc == &rsSrc && lnk.rl_prdDst == &rdDst ));
+  }}
+  {FOREACHINLIST(CRelationLnk, rl_lnDst, rdDst, itlnk) {
+    CRelationLnk &lnk = *itlnk;
+    ASSERT(!( lnk.rl_prsSrc == &rsSrc && lnk.rl_prdDst == &rdDst ));
+  }}
+
+  return TRUE;
+}
+
 // Global functions for creating relations.
 void AddRelationPair(CRelationSrc &rsSrc, CRelationDst &rdDst)
 {
+  ASSERT(CheckDuplicateLinks(rsSrc, rdDst));
+
   // create a new link
   CRelationLnk &lnk = *new CRelationLnk;
   lnk.rl_prsSrc = &rsSrc;
@@ -87,6 +105,8 @@ void AddRelationPair(CRelationSrc &rsSrc, CRelationDst &rdDst)
 }
 void AddRelationPairTailTail(CRelationSrc &rsSrc, CRelationDst &rdDst)
 {
+  ASSERT(CheckDuplicateLinks(rsSrc, rdDst));
+
   // create a new link
   CRelationLnk &lnk = *new CRelationLnk;
   lnk.rl_prsSrc = &rsSrc;
@@ -97,6 +117,8 @@ void AddRelationPairTailTail(CRelationSrc &rsSrc, CRelationDst &rdDst)
 }
 void  AddRelationPairHeadHead(CRelationSrc &rsSrc, CRelationDst &rdDst)
 {
+  ASSERT(CheckDuplicateLinks(rsSrc, rdDst));
+
   // create a new link
   CRelationLnk &lnk = *new CRelationLnk;
   lnk.rl_prsSrc = &rsSrc;

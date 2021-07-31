@@ -161,7 +161,7 @@ void CDlgCreateSpecularTexture::CreateTexture( CTFileName fnTexture, FLOAT fExp)
 
   try
   {
-    TD.Create_t( &II, pixSize, 1, FALSE);
+    TD.Create_t( &II, pixSize, 1);
     fsFile.Create_t( fnTexture);
     TD.Write_t( &fsFile);
     fsFile.Close();
@@ -170,7 +170,7 @@ void CDlgCreateSpecularTexture::CreateTexture( CTFileName fnTexture, FLOAT fExp)
   catch (char *strError)
   {
     // report error
-    AfxMessageBox(CString(strError));
+    AfxMessageBox(strError);
   }
   II.Detach();
   FreeMemory(pubImage);
@@ -185,11 +185,11 @@ void CDlgCreateSpecularTexture::DrawPreview( CDrawPort *pdp, FLOAT fExp)
   // obtain components for rendering
   try
   {
-    DECLARE_CTFILENAME( fnBCGTexture, "Models\\Editor\\SpecularPreviewBCG.tex");
+    DECLARE_CTFILENAME( fnBCGTexture, "Data\\Models\\Editor\\SpecularPreviewBCG.tex");
     m_toBackground.SetData_t( fnBCGTexture);
 
-    DECLARE_CTFILENAME( fnTeapotModel, "Models\\Editor\\Teapot.mdl");
-    DECLARE_CTFILENAME( fnTeapotTexture, "Models\\Editor\\Teapot.tex");
+    DECLARE_CTFILENAME( fnTeapotModel, "Data\\Models\\Editor\\Teapot.mdl");
+    DECLARE_CTFILENAME( fnTeapotTexture, "Data\\Models\\Editor\\Teapot.tex");
     m_moModel.SetData_t( fnTeapotModel);
     m_moModel.mo_toTexture.SetData_t( fnTeapotTexture);
     m_moModel.mo_toSpecular.SetData_t( CTString("temp\\SpecularTemp.tex"));
@@ -483,7 +483,7 @@ void CDlgCreateSpecularTexture::OnOK()
                                                 "Textures\\");
   if( fnFinal != "")
   {
-    CopyFileA( fnTemp, _fnmApplicationPath+fnFinal, FALSE);
+    CopyFile( fnTemp, _fnmApplicationPath+fnFinal, FALSE);
   }
 
 	CDialog::OnOK();

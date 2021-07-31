@@ -18,6 +18,8 @@ ENGINE_API void CON_DiscardLastLineTimes(void);
 // Get current console buffer.
 ENGINE_API const char *CON_GetBuffer(void);
 ENGINE_API INDEX CON_GetBufferSize(void);
+// Put text callback function
+ENGINE_API void SetPutTextCallback(void(*pPutTextCallback)(CTString strText));
 
 
 #endif  /* include-once check. */

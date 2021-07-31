@@ -25,10 +25,12 @@ public:
   inline const CTFileName &GetName(void) { return ser_FileName; };
   /* Get the description of this object. */
   virtual CTString GetDescription(void);
+//안태훈 수정 시작	//(Bug FIx)(0.1)
   /* Load from file. */
-  void Load_t( const CTFileName fnFileName); // throw char *
+  void Load_t( const CTFileName &fnFileName); // throw char *
   /* Save to file. */
-  void Save_t( const CTFileName fnFileName); // throw char *
+  void Save_t( const CTFileName &fnFileName); // throw char *
+//안태훈 수정 끝	//(Bug FIx)(0.1)
   /* Reload from file. */
   void Reload(void);
   /* Mark that object is used once more. */

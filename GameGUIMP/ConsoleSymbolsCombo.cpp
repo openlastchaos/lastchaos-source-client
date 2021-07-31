@@ -39,9 +39,8 @@ BOOL CConsoleSymbolsCombo::PreTranslateMessage(MSG* pMsg)
     // if there is a valid player selected
     if( iSelectedSymbol != LB_ERR)
     {
-      CString strSelectedSymbolW;
-      GetLBText( iSelectedSymbol, strSelectedSymbolW);
-      CTString strSelectedSymbol = CStringA(strSelectedSymbolW);
+      CString strSelectedSymbol;
+      GetLBText( iSelectedSymbol, strSelectedSymbol);
 
       INDEX ctLetters = strlen(strSelectedSymbol);
       char achrSelectedSymbol[ 256];
@@ -61,7 +60,7 @@ BOOL CConsoleSymbolsCombo::PreTranslateMessage(MSG* pMsg)
         }
       }
 
-      ((CDlgConsole *)GetParent())->m_ctrlEditConsole.ReplaceSel( CString(strSelectedSymbol), TRUE);
+      ((CDlgConsole *)GetParent())->m_ctrlEditConsole.ReplaceSel( strSelectedSymbol, TRUE);
       ((CDlgConsole *)GetParent())->m_ctrlEditConsole.SetFocus();
       return TRUE;
     }

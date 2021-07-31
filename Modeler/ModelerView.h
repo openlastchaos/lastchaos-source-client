@@ -7,7 +7,7 @@ extern BOOL MyChooseColor( COLORREF &clrNewColor, CWnd &wndOwner);
 class CMainFrame;
 
 #define STATUS_LINE_PANE 0
-// macro used for writing text into status line
+// macro used for writting text into status line
 #define STATUS_LINE_MESSAGE( message) {\
   CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd()); \
   ASSERT( pMainFrame != NULL); \

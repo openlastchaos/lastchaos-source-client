@@ -20,8 +20,8 @@ public:
   virtual BOOL Unpack(const void *pvSrc, SLONG slSrcSize, void *pvDst, SLONG &slDstSize) = 0;
 
   /* Pack/unpack from stream to stream. */
-  void UnpackStream_t(CTMemoryStream &strmSrc, CTStream &strmDst); // throw char *
-  void PackStream_t(CTMemoryStream &strmSrc, CTStream &strmDst); // throw char *
+  void UnpackStream_t(CTStream &strmSrc, CTStream &strmDst); // throw char *
+  void PackStream_t(CTStream &strmSrc, CTStream &strmDst); // throw char *
 };
 
 /*
@@ -74,6 +74,19 @@ public:
   /* Unpack a chunk of data using given compression. */
   BOOL Unpack(const void *pvSrc, SLONG slSrcSize, void *pvDst, SLONG &slDstSize);
 };
+
+
+
+ENGINE_API SWORD PackFloatToWord(FLOAT fUnpacked);
+ENGINE_API FLOAT UnpackFloatFromWord(SWORD swPacked);
+ENGINE_API ULONG PackFloat(UBYTE ubExponent,UBYTE ubMantissa,UBYTE ubBias,FLOAT fUnpacked);
+ENGINE_API FLOAT UnpackFloat(UBYTE ubExponent,UBYTE ubMantissa,UBYTE ubBias,ULONG ulPacked);
+ENGINE_API ULONG PackVectorToULONG(FLOAT3D &vPosition);
+ENGINE_API void  UnpackVectorFromULONG(ULONG ulPacked,FLOAT3D &vPosition);
+ENGINE_API ULONG PackFloatsToULONG(FLOAT f1,FLOAT f2,FLOAT f3);
+ENGINE_API void  UnpackFloatsFromULONG(ULONG ulPacked,FLOAT &f1,FLOAT &f2,FLOAT &f3);
+ENGINE_API ULONG PackAngle(const ANGLE3D &aAngle3D);
+ENGINE_API void  UnpackAngle(ULONG ulPackedAngle,ANGLE3D &aAngle3D);
 
 
 #endif  /* include-once check. */

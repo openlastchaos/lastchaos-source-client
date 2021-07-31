@@ -51,7 +51,7 @@ void CEditConsole::SetTextFromConsole(void)
 
   CDlgConsole *pdlgParent = (CDlgConsole *) GetParent();
   CEdit *pwndOutput = (CEdit *) pdlgParent->GetDlgItem( IDC_CONSOLE_OUTPUT);
-  pwndOutput->SetWindowText( CString(strNew));
+  pwndOutput->SetWindowText( strNew);
   pwndOutput->LineScroll(ctLines-1);
 
   FreeMemory(strNew);
@@ -70,11 +70,11 @@ BOOL CEditConsole::PreTranslateMessage(MSG* pMsg)
     if( !bCtrl && (iCharOffset != -1) )
     {
       // extract string to execute
-      wchar_t achrToExecute[ 1024];
+      char achrToExecute[ 1024];
       INDEX ctLetters = GetLine( iCurrentLine, achrToExecute, 1023);
       // set EOF delimiter
       achrToExecute[ ctLetters] = 0;
-      CTString strToExecute = CStringA(achrToExecute);
+      CTString strToExecute = achrToExecute;
       CPrintF( ">%s\n", strToExecute);
       if( ((const char*)strToExecute)[strlen(strToExecute)-1] != ';')
       {
@@ -86,7 +86,7 @@ BOOL CEditConsole::PreTranslateMessage(MSG* pMsg)
       // remember input text into console input buffer
       CString sHistory;
       GetWindowText(sHistory);
-      _pGame->gam_strConsoleInputBuffer = CStringA(sHistory);
+      _pGame->gam_strConsoleInputBuffer = (const char *)sHistory;
     }
     // if Ctrl is not pressed and current line is not last line, "swallow return"
     if( !bCtrl && (ctLinesEdited-1 != iCurrentLine) )

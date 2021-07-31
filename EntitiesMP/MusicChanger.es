@@ -1,9 +1,12 @@
-225
+246
 %{
 #include "StdH.h"
 %}
 
 uses "EntitiesMP/MusicHolder";
+
+event EMusicChangerTrigger {
+};
 
 %{
 %}
@@ -21,11 +24,22 @@ properties:
   5 enum MusicType m_mtType "Type" 'Y' = MT_EVENT,
   6 BOOL m_bForceStart "Force start" 'F' = TRUE,
 
+  {
+    CAutoPrecacheSound m_aps;
+  }
+
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\MusicChanger.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\MusicChanger.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\MusicChanger.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\MusicChanger.tex"
 
 functions:
+  void Precache(void)
+  {
+    if(m_fnMusic!="") {
+      m_aps.Precache(m_fnMusic);
+    }
+  }
+
 procedures:
   // initialize music
   Main(EVoid) {
@@ -51,6 +65,12 @@ procedures:
     wait() {
       // when triggered
       on (ETrigger) : {
+        if (_pNetwork->IsServer()) {
+          SendEvent(EMusicChangerTrigger(),TRUE);
+        }
+        resume;
+      }
+      on (EMusicChangerTrigger) : {
         // find music holder for this level
         CEntity *penMusicHolder = _pNetwork->GetEntityWithName("MusicHolder", 0);
         // if not existing

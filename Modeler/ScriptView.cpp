@@ -63,7 +63,7 @@ void CScriptView::OnScriptMakeModel()
 {
 	// First we save script file
   CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnScriptName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnScriptName = CTString(pDoc->GetPathName());
 
   CTFileName fnModelName = fnScriptName.FileDir() + fnScriptName.FileName() + ".mdl";
   try
@@ -72,7 +72,7 @@ void CScriptView::OnScriptMakeModel()
   }
   catch( char *err_str)
   {
-    AfxMessageBox( CString(err_str));
+    AfxMessageBox( err_str);
     return;
   }
   pDoc->OnSaveDocument( pDoc->GetPathName());
@@ -82,7 +82,7 @@ void CScriptView::OnScriptMakeModel()
   while (pos!=NULL)
   {
     CModelerDoc *pmdCurrent = (CModelerDoc *)theApp.m_pdtModelDocTemplate->GetNextDoc(pos);
-    if( CTFileName( CTString(CStringA(pmdCurrent->GetPathName()))) == fnModelName)
+    if( CTFileName( CTString(pmdCurrent->GetPathName())) == fnModelName)
     {
       pmdCurrent->OnCloseDocument();
       break;
@@ -111,14 +111,14 @@ void CScriptView::OnScriptMakeModel()
 	}
 	ASSERT_VALID(pFrame);
 
-  pDocument->SetPathName( CString(fnModelName), FALSE);
-  pDocument->SetTitle( CString(fnModelName.FileName() + fnModelName.FileExt()));
+  pDocument->SetPathName( fnModelName, FALSE);
+  pDocument->SetTitle( fnModelName.FileName() + fnModelName.FileExt());
   
   char strError[ 256];
   if( !((CModelerDoc *)pDocument)->CreateModelFromScriptFile( fnScriptName, strError))
   {
     pDocument->OnCloseDocument();
-    AfxMessageBox( CString(strError));
+    AfxMessageBox( strError);
     return;
   }
 	theApp.m_pdtModelDocTemplate->InitialUpdateFrame(pFrame, pDocument, TRUE);
@@ -143,14 +143,14 @@ void CScriptView::OnScriptUpdateAnimations()
 {
 	// find document with same name
   CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnScriptName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnScriptName = CTString(pDoc->GetPathName());
   CTFileName fnModelName = fnScriptName.FileDir() + fnScriptName.FileName() + ".mdl";
 
 	POSITION pos = theApp.m_pdtModelDocTemplate->GetFirstDocPosition();
   while (pos!=NULL)
   {
     CModelerDoc *pmdCurrent = (CModelerDoc *)theApp.m_pdtModelDocTemplate->GetNextDoc(pos);
-    if( CTFileName( CTString(CStringA(pmdCurrent->GetPathName()))) == fnModelName)
+    if( CTFileName( CTString(pmdCurrent->GetPathName())) == fnModelName)
     {
       POSITION pos = pmdCurrent->GetFirstViewPosition();
       CView *pView = pmdCurrent->GetNextView( pos);
@@ -159,7 +159,7 @@ void CScriptView::OnScriptUpdateAnimations()
         CModelerView* pModelerView = (CModelerView *) pView;
         if(pModelerView != NULL)
         {
-          // if updating was successful
+          // if updating was successeful
           if( pModelerView->UpdateAnimations())
           {
             pModelerView->SetActiveWindow();
@@ -178,14 +178,14 @@ void CScriptView::OnScriptUpdateMipmodels()
 {
 	// find document with same name
   CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnScriptName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnScriptName = CTString(pDoc->GetPathName());
   CTFileName fnModelName = fnScriptName.FileDir() + fnScriptName.FileName() + ".mdl";
 
 	POSITION pos = theApp.m_pdtModelDocTemplate->GetFirstDocPosition();
   while (pos!=NULL)
   {
     CModelerDoc *pmdCurrent = (CModelerDoc *)theApp.m_pdtModelDocTemplate->GetNextDoc(pos);
-    if( CTFileName( CTString(CStringA(pmdCurrent->GetPathName()))) == fnModelName)
+    if( CTFileName( CTString(pmdCurrent->GetPathName())) == fnModelName)
     {
       POSITION pos = pmdCurrent->GetFirstViewPosition();
       CView *pView = pmdCurrent->GetNextView( pos);

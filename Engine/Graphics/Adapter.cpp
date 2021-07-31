@@ -7,9 +7,8 @@
 
 
 extern BOOL _bDedicatedServer;
-#ifdef SE1_D3D
 extern const D3DDEVTYPE d3dDevType;
-#endif // SE1_D3D
+
 
 // list of all modes avaliable through CDS
 static CListHead _lhCDSModes;
@@ -20,7 +19,7 @@ public:
   PIX   re_pixSizeJ;
 };
 
-static CResolution _areResolutions[] =
+/*static CResolution _areResolutions[] =
 {
   {  320,  240 },
   {  400,  300 },
@@ -29,10 +28,12 @@ static CResolution _areResolutions[] =
   {  640,  480 },
   {  720,  540 },
   {  720,  576 },
+  {  800,  500 },
   {  800,  600 },
   {  960,  720 },
   { 1024,  768 },
   { 1152,  864 },
+  { 1280,  800 },
   { 1280,  960 },
   { 1280, 1024 },
   { 1600, 1200 },
@@ -41,14 +42,37 @@ static CResolution _areResolutions[] =
   { 1920, 1440 },
   { 2048, 1536 },
 
-  // matrox dualhead modes
+  // dualhead modes
   { 1280,  480 },
   { 1600,  600 },
   { 2048,  768 },
+  { 2304,  864 },
+  { 2560,  960 },
+  { 3200, 1200 },
+
+  // triplehead modes
+  { 1920,  480 },
+  { 2400,  600 },
+  { 3072,  768 },
+  { 3456,  864 },
+  { 3840,  960 },
+  { 4800, 1200 },
 
   // NTSC HDTV widescreen
   {  848,  480 },
   {  856,  480 },
+};*/
+static CResolution _areResolutions[] =
+{  
+  {  640,  480 }, 
+  {  800,  500 },
+  {  800,  600 },  
+  { 1024,  768 },
+  { 1152,  864 },
+  { 1280,  800 },
+  { 1280,  960 },
+  { 1280, 1024 },
+  { 1600, 1200 },   
 };
 // THIS NUMBER MUST NOT BE OVER 25! (otherwise change it in adapter.h)
 static const INDEX MAX_RESOLUTIONS = sizeof(_areResolutions)/sizeof(_areResolutions[0]);
@@ -63,6 +87,7 @@ void CGfxLibrary::InitAPIs(void)
 
   CDisplayAdapter *pda;
   INDEX iResolution;
+
 
   // detect current mode and print to console
   DEVMODE devmode;
@@ -114,7 +139,7 @@ void CGfxLibrary::InitAPIs(void)
   // detect presence of 3Dfx standalone OpenGL driver (for Voodoo1/2)
   char *strDummy;
   char  strBuffer[_MAX_PATH+1];
-  int iRes = SearchPathA( NULL, "3DFXVGL.DLL", NULL, _MAX_PATH, strBuffer, &strDummy);
+  int iRes = SearchPath( NULL, "3DFXVGL.DLL", NULL, _MAX_PATH, strBuffer, &strDummy);
   // if present
   if(iRes) {
     // set adapter and force some enumeration of voodoo1/2 display modes
@@ -131,9 +156,7 @@ void CGfxLibrary::InitAPIs(void)
     adm[2].dm_pixSizeI =  800;  adm[2].dm_pixSizeJ = 600;  adm[2].dm_ddDepth = DD_16BIT;
     adm[3].dm_pixSizeI = 1024;  adm[3].dm_pixSizeJ = 768;  adm[3].dm_ddDepth = DD_16BIT;
   }
-
   // try to init Direct3D 8
-#ifdef SE1_D3D
   BOOL bRes = InitDriver_D3D();
   if( !bRes) return; // didn't made it?
   
@@ -162,6 +185,8 @@ void CGfxLibrary::InitAPIs(void)
     D3DCAPS8 d3dCaps;
     gl_pD3D->GetDeviceCaps( iAdapter, d3dDevType, &d3dCaps);
     if( !(d3dCaps.Caps2 & D3DCAPS2_CANRENDERWINDOWED)) pda->da_ulFlags |= DAF_FULLSCREENONLY;
+
+	_pGfx->gl_pd3dCaps = d3dCaps;		// Date : 2006-05-16(żŔČÄ 4:47:51), By eons
 
     // enumerate modes thru resolution list
     for( iResolution=0; iResolution<MAX_RESOLUTIONS; iResolution++)
@@ -204,8 +229,8 @@ void CGfxLibrary::InitAPIs(void)
   D3DRELEASE( gl_pD3D, TRUE);
   if( gl_hiDriver!=NONE) FreeLibrary(gl_hiDriver);
   gl_hiDriver = NONE;
-#endif // SE1_D3D
 }
+
 
 // get list of all modes avaliable through CDS -- do not modify/free the returned list
 CListHead &CDS_GetModes(void)

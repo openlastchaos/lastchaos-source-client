@@ -142,11 +142,10 @@ void CDlgInfoPgRendering::DoDataExchange(CDataExchange* pDX)
     else
     {
       INDEX iShadingCombo = -1;
-      switch( sstFirstShading)
-      {
-      case SST_FULLBRIGHT:   { iShadingCombo = 0; break;};
-      case SST_MATTE:        { iShadingCombo = 1; break;};
-      case SST_FLAT:         { iShadingCombo = 2; break;};
+      switch( sstFirstShading) {
+      case SST_FULLBRIGHT:  iShadingCombo=0;  break;
+      case SST_MATTE:       iShadingCombo=1;  break;
+      case SST_FLAT:        iShadingCombo=2;  break;
       }
       m_comboShading.SetCurSel( iShadingCombo);
     }
@@ -155,13 +154,12 @@ void CDlgInfoPgRendering::DoDataExchange(CDataExchange* pDX)
     else
     {
       INDEX iTranslucency = -1;
-      switch( sttFirstTranslucency)
-      {
-      case STT_OPAQUE: {            iTranslucency = 0; break;};
-      case STT_TRANSPARENT:{        iTranslucency = 1; break;};
-      case STT_TRANSLUCENT:{        iTranslucency = 2; break;};
-      case STT_ADD:{                iTranslucency = 3; break;};
-      case STT_MULTIPLY:{           iTranslucency = 4; break;};
+      switch( sttFirstTranslucency) {
+      case STT_OPAQUE:       iTranslucency=0;  break;
+      case STT_TRANSPARENT:  iTranslucency=1;  break;
+      case STT_TRANSLUCENT:  iTranslucency=2;  break;
+      case STT_ADD:          iTranslucency=3;  break;
+      case STT_INVMULTIPLY:  iTranslucency=4;  break;
       }
       m_comboTranslucency.SetCurSel( iTranslucency);
     }
@@ -261,20 +259,18 @@ void CDlgInfoPgRendering::DoDataExchange(CDataExchange* pDX)
         theApp.m_chGlobal.MarkChanged();
       }
 
-      switch( iComboShadow)
-      {
-      case 0:{ ms.ms_sstShadingType = SST_FULLBRIGHT; break;};
-      case 1:{ ms.ms_sstShadingType = SST_MATTE; break;};
-      case 2:{ ms.ms_sstShadingType = SST_FLAT; break;};
+      switch( iComboShadow) {
+      case 0:  ms.ms_sstShadingType=SST_FULLBRIGHT;  break;
+      case 1:  ms.ms_sstShadingType=SST_MATTE;       break;
+      case 2:  ms.ms_sstShadingType=SST_FLAT;        break;
       }
 
-      switch( iComboTranslucency)
-      {
-      case 0:{ ms.ms_sttTranslucencyType = STT_OPAQUE; break;};
-      case 1:{ ms.ms_sttTranslucencyType = STT_TRANSPARENT; break;};
-      case 2:{ ms.ms_sttTranslucencyType = STT_TRANSLUCENT; break;};
-      case 3:{ ms.ms_sttTranslucencyType = STT_ADD; break;};
-      case 4:{ ms.ms_sttTranslucencyType = STT_MULTIPLY; break;};
+      switch( iComboTranslucency) {
+      case 0:  ms.ms_sttTranslucencyType=STT_OPAQUE;       break;
+      case 1:  ms.ms_sttTranslucencyType=STT_TRANSPARENT;  break;
+      case 2:  ms.ms_sttTranslucencyType=STT_TRANSLUCENT;  break;
+      case 3:  ms.ms_sttTranslucencyType=STT_ADD;          break;
+      case 4:  ms.ms_sttTranslucencyType=STT_INVMULTIPLY;  break;
       }
 
       ms.ms_colDiffuse = m_colorDiffuse.GetColor();

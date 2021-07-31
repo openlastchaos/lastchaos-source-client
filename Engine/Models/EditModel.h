@@ -192,7 +192,7 @@ public:
   void EditRemoveAllPatches( void);
   INDEX CountPatches(void);
   ULONG GetExistingPatchesMask(void);
-  BOOL GetFirstEmptyPatchIndex( INDEX &iMaskBit);   // Finds first empty space ready to receive new patch
+  BOOL GetFirstEmptyPatchIndex( INDEX &iMaskBit);   // Finds first empty space ready to recieve new patch
   BOOL GetFirstValidPatchIndex( INDEX &iMaskBit);   // Finds first valid patch index
   void GetPreviousValidPatchIndex( INDEX &iMaskBit);// Sets previous valid patch index
   void GetNextValidPatchIndex( INDEX &iMaskBit);    // Sets next valid patch index

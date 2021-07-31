@@ -30,7 +30,7 @@ properties:
  22 FLOAT m_fMinSpeed       "Er Speed min" 'B' = 10.0f,    // min speed
  23 FLOAT m_fTime           "Er Spawn time" 'F' = 1.0f,    // spawn every x seconds
  24 FLOAT m_fRandomWait     "Er Random wait" 'G' = 0.0f,   // wait between two spawns
- 25 enum ProjectileType m_ptType  "Er Type" 'T' = PRT_LAVA_COMET,
+ 25 enum ProjectileType m_ptType  "Er Type" 'T' = PRT_FLAME,
  26 BOOL m_bShootInArc      "Er Shoot In Arc" 'S' = TRUE,
  
  27 FLOAT m_fProjectileStretch "Er projectile stretch" =  1.0f,   // strecth
@@ -156,7 +156,7 @@ functions:
 
     // launch
     ELaunchProjectile eLaunch;
-    eLaunch.penLauncher = this;
+    eLaunch.eidLauncher = this;
     eLaunch.prtType = m_ptType;
     eLaunch.fSpeed = fSpeed;
     eLaunch.fStretch=m_fProjectileStretch;

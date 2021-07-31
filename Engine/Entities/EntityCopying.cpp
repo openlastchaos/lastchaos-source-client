@@ -15,14 +15,21 @@
 #include <Engine/Math/Quaternion.h>
 
 #include <Engine/Brushes/BrushArchive.h>
+#include <Engine/Terrain/Terrain.h>
+#include <Engine/Terrain/TerrainArchive.h>
 #include <Engine/Light/LightSource.h>
 #include <Engine/Entities/ShadingInfo.h>
 #include <Engine/Models/ModelObject.h>
+#include <Engine/Ska/ModelInstance.h>
 #include <Engine/Sound/SoundObject.h>
 
 #include <Engine/Templates/DynamicContainer.cpp>
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Templates/Selection.cpp>
+
+#include <Engine/Network/EMsgBuffer.h>
+#include <Engine/Network/Server.h>
+#include <Engine/Network/CNetwork.h>
 
 class CPointerRemapping {
 public:
@@ -38,7 +45,6 @@ extern BOOL _bReinitEntitiesWhileCopying = TRUE;
 static BOOL _bMirrorAndStretch = FALSE;
 static FLOAT _fStretch = 1.0f;
 static enum WorldMirrorType _wmtMirror = WMT_NONE;
-extern INDEX _ctPredictorEntities;
 
 // mirror a placement of one entity
 static void MirrorAndStretchPlacement(CPlacement3D &pl)
@@ -110,7 +116,6 @@ CEntity *CEntity::FindRemappedEntityPointer(CEntity *penOriginal)
 void CEntity::Copy(CEntity &enOther, ULONG ulFlags)
 {
   BOOL bRemapPointers = ulFlags & COPY_REMAP;
-  BOOL bMakePredictor = ulFlags & COPY_PREDICTOR;
 
   // copy base class data
   en_RenderType     = enOther.en_RenderType;
@@ -119,15 +124,6 @@ void CEntity::Copy(CEntity &enOther, ULONG ulFlags)
   en_ulFlags        = enOther.en_ulFlags &
     ~(ENF_SELECTED|ENF_FOUNDINGRIDSEARCH|ENF_VALIDSHADINGINFO|ENF_INRENDERING);
   en_ulSpawnFlags   = enOther.en_ulSpawnFlags;
-
-  // if prediction
-  if (bMakePredictor) {
-    // set flags
-    en_ulFlags = (en_ulFlags&~(ENF_PREDICTED|ENF_PREDICTABLE))|ENF_PREDICTOR;
-    enOther.en_ulFlags = (enOther.en_ulFlags&~ENF_PREDICTOR)|ENF_PREDICTED;
-  } else {
-    en_ulFlags = (en_ulFlags&~(ENF_PREDICTED|ENF_PREDICTABLE|ENF_PREDICTOR));
-  }
 
   // if this is a brush
   if ( enOther.en_RenderType == RT_BRUSH || en_RenderType == RT_FIELDBRUSH) {
@@ -144,12 +140,28 @@ void CEntity::Copy(CEntity &enOther, ULONG ulFlags)
     }
   // if this is a terrain
   } else if( enOther.en_RenderType == RT_TERRAIN) {
-    #pragma message(">> CEntity::Copy")
-    ASSERT(FALSE);
+    ASSERT(en_ptrTerrain == NULL);
+    // create a new empty terrain in the brush archive of current world
+    en_ptrTerrain = en_pwoWorld->wo_taTerrains.ta_atrTerrains.New();
+    en_ptrTerrain->tr_penEntity = this;
+    // Copy terrain
+    TR_CopyTerrain(en_ptrTerrain,enOther.en_ptrTerrain);
+    // Update terrain shadowmap
+    Matrix12 mTerrain;
+    TR_GetMatrixFromEntity(mTerrain,en_ptrTerrain);
+    TR_UpdateShadowMap(en_ptrTerrain,mTerrain,FLOATaabbox3D());
   // if this is a model
   } if ( enOther.en_RenderType == RT_MODEL || en_RenderType == RT_EDITORMODEL) {
     // if will not initialize
     if (!(ulFlags&COPY_REINIT)) {
+      ASSERT(en_pmoModelObject==NULL);
+      ASSERT(en_psiShadingInfo==NULL);
+      if(en_pmoModelObject!=NULL) {
+        delete en_pmoModelObject;
+      }
+      if(en_psiShadingInfo!=NULL) {
+        delete en_psiShadingInfo;
+      }
       // create a new model object
       en_pmoModelObject = new CModelObject;
       en_psiShadingInfo = new CShadingInfo;
@@ -159,9 +171,17 @@ void CEntity::Copy(CEntity &enOther, ULONG ulFlags)
     }
   // if this is ska model
   } else if ( enOther.en_RenderType == RT_SKAMODEL || en_RenderType == RT_SKAEDITORMODEL) {
+      ASSERT(en_psiShadingInfo==NULL);
+      if(en_psiShadingInfo!=NULL) {
+        delete en_psiShadingInfo;
+      }
       en_psiShadingInfo = new CShadingInfo;
       en_ulFlags &= ~ENF_VALIDSHADINGINFO;
-      en_pmiModelInstance = CreateModelInstance("Temp");
+      ASSERT(en_pmiModelInstance==NULL);
+      if(en_pmiModelInstance!=NULL) {
+        DeleteModelInstance(en_pmiModelInstance);
+      }
+      en_pmiModelInstance = CreateModelInstance("");
       // copy it
       GetModelInstance()->Copy(*enOther.GetModelInstance());
   }
@@ -184,18 +204,6 @@ void CEntity::Copy(CEntity &enOther, ULONG ulFlags)
   // copy the derived class properties
   CopyEntityProperties(enOther, ulFlags);
 
-  // if prediction
-  if (bMakePredictor) {
-    // create cross-links and add to containers
-    SetPredictionPair(&enOther);
-    enOther.SetPredictionPair(this);
-    enOther.en_pwoWorld->wo_cenPredicted.Add(&enOther);
-    enOther.en_pwoWorld->wo_cenPredictor.Add(this);
-    // copy last positions
-    if (enOther.en_plpLastPositions!=NULL) {
-      en_plpLastPositions = new CLastPositions(*enOther.en_plpLastPositions);
-    }
-  }
 }
 
 /*
@@ -314,12 +322,10 @@ void CEntity::CopyOneProperty( CEntityProperty &epPropertySrc, CEntityProperty &
   // if it is SOUNDOBJECT
   case CEntityProperty::EPT_SOUNDOBJECT:
     {
-      if (!(ulFlags & COPY_PREDICTOR)) {
-        // copy CSoundObject
-        CSoundObject &so = ENTITYPROPERTY(this, epPropertyDest.ep_slOffset, CSoundObject);
-        so.Copy(ENTITYPROPERTY(&enOther, epPropertySrc.ep_slOffset, CSoundObject));
-        so.so_penEntity = this;
-      }
+      // copy CSoundObject
+      CSoundObject &so = ENTITYPROPERTY(this, epPropertyDest.ep_slOffset, CSoundObject);
+      so.Copy(ENTITYPROPERTY(&enOther, epPropertySrc.ep_slOffset, CSoundObject));
+      so.so_penEntity = this;
     }
     break;
   // if it is CPlacement3D
@@ -362,7 +368,6 @@ void CWorld::CopyEntities(CWorld &woOther, CDynamicContainer<CEntity> &cenToCopy
     return;
   }
 
-  CSetFPUPrecision FPUPrecision(FPT_24BIT);
 
   ULONG ulCopyFlags = COPY_REMAP;
   if(_bReinitEntitiesWhileCopying) {
@@ -441,6 +446,7 @@ void CWorld::CopyEntities(CWorld &woOther, CDynamicContainer<CEntity> &cenToCopy
     CEntity *penCopy = itpr->pr_penCopy;
     if (_bReinitEntitiesWhileCopying) {
       // init the new copy
+      penCopy->End();
       penCopy->Initialize();
     } else {
       penCopy->UpdateSpatialRange();
@@ -517,7 +523,7 @@ void CWorld::CopyAllEntitiesExceptOne(CWorld &woOther, CEntity &enExcepted,
 
 /* Copy entity in world. */
 CEntity *CWorld::CopyEntityInWorld(CEntity &enOriginal, const CPlacement3D &plOtherEntity,
-  BOOL bWithDescendants /*= TRUE*/)
+  BOOL bWithDescendants /*= TRUE*/, ULONG ulTargetID /* = WLD_AUTO_ENTITY_ID */,BOOL bNetwork /* = TRUE*/)
 {
   // new entity
   CEntity *penNew;
@@ -529,13 +535,37 @@ CEntity *CWorld::CopyEntityInWorld(CEntity &enOriginal, const CPlacement3D &plOt
   // try to
   try {
     // create an entity of same class as the one to copy
-    penNew = CreateEntity_t(plOtherEntity, enOriginal.en_pecClass->GetName());
+    // ulTargetID is set to a value diferent than -1 (auto id) only when a client receives 
+    // an order from the server to copy an entity to a specific ID
+    penNew = CreateEntity_t(plOtherEntity, enOriginal.en_pecClass->GetName(),ulTargetID,FALSE);
   // if not successfull
   } catch (char *strError) {
     (void)strError;
     ASSERT(FALSE);    // this should not happen
     FatalError(TRANS("Cannot CopyEntity():\n%s"), strError);
   }
+
+
+   // insert the entity create mesage into the server buffer
+  if (_pNetwork->IsServer() && bNetwork) {
+    UBYTE ubWithDescentants;
+    
+    if (bWithDescendants) {
+      ubWithDescentants = 1;
+    } else {
+      ubWithDescentants=0;
+    }
+
+    extern INDEX net_bReportServerTraffic;
+    if (net_bReportServerTraffic) {
+      CPrintF("Copied entity: ID: 0x%X, Target: 0x%X Class: %s\n",enOriginal.en_ulID,penNew->en_ulID,enOriginal.en_pecClass->GetName());
+    }
+
+    extern CEntityMessage _emEntityMessage;
+    _emEntityMessage.WriteEntityCopy(enOriginal.en_ulID,penNew->en_ulID,plOtherEntity,ubWithDescentants);
+    _pNetwork->ga_srvServer.SendMessage(_emEntityMessage);
+  }
+
 
   // copy the entity from its original
   penNew->Copy(enOriginal, COPY_REINIT);
@@ -546,7 +576,9 @@ CEntity *CWorld::CopyEntityInWorld(CEntity &enOriginal, const CPlacement3D &plOt
     penNew->en_pbrBrush->CalculateBoundingBoxes();
   }
   // init the new copy
-  penNew->Initialize();
+  penNew->End();
+  penNew->Initialize(EVoid(),FALSE);
+
 
   // if this is a brush
   if ( penNew->en_RenderType == CEntity::RT_BRUSH ||
@@ -562,18 +594,25 @@ CEntity *CWorld::CopyEntityInWorld(CEntity &enOriginal, const CPlacement3D &plOt
     pls->FindShadowLayers(FALSE);
   }}
 
-  // if descendants should be copied too
+  extern BOOL _bWorldEditorApp;
+    // if descendants should be copied too
   if (bWithDescendants) {
     // for each child of this entity
     {FOREACHINLIST(CEntity, en_lnInParent, enOriginal.en_lhChildren, itenChild) {
       // copy it relatively to the new entity
       CPlacement3D plChild = itenChild->en_plRelativeToParent;
       plChild.RelativeToAbsoluteSmooth(penNew->en_plPlacement);
-      CEntity *penNewChild = CopyEntityInWorld(*itenChild, plChild, TRUE);
+      CEntity *penNewChild;
+      if (!bNetwork) {
+        penNewChild = CopyEntityInWorld(*itenChild, plChild, TRUE,WLD_AUTO_ENTITY_ID,FALSE);
+      } else {
+        penNewChild = CopyEntityInWorld(*itenChild, plChild, TRUE);
+      }
       // add new child to its new parent
       penNewChild->SetParent(penNew);
     }}
   }
+
 
   return penNew;
 }
@@ -608,125 +647,4 @@ void CWorld::MirrorAndStretch(CWorld &woOriginal, FLOAT fStretch, enum WorldMirr
   _bMirrorAndStretch = FALSE;
 }
 
-/* Copy entities for prediction. */
-void CWorld::CopyEntitiesToPredictors(CDynamicContainer<CEntity> &cenToCopy)
-{
-  INDEX ctEntities = cenToCopy.Count();
-  if (ctEntities<=0) {
-    return;
-  }
 
-  extern INDEX cli_bReportPredicted;
-  if (cli_bReportPredicted) {
-    CPrintF( TRANS("Predicting %d entities:\n"), ctEntities);
-    {FOREACHINDYNAMICCONTAINER(cenToCopy, CEntity, itenToCopy) {
-      CEntity &enToCopy = *itenToCopy;
-      CPrintF("  %s:%s\n", enToCopy.GetClass()->ec_pdecDLLClass->dec_strName, (const char*)enToCopy.GetName());
-    }}
-  }
-
-  // clear current tick to prevent timer setting from assertions
-  TIME tmCurrentTickOld = _pTimer->CurrentTick();
-  _pTimer->SetCurrentTick(0.0f);
-
-  ULONG ulCopyFlags = COPY_REMAP|COPY_PREDICTOR;
-
-  // create array of pointer remaps
-  _aprRemaps.Clear();
-  _aprRemaps.New(ctEntities);
-
-  // PASS 1: create entities
-
-  // for each entity to copy
-  INDEX iRemap = 0;
-  {FOREACHINDYNAMICCONTAINER(cenToCopy, CEntity, itenToCopy) {
-    CEntity &enToCopy = *itenToCopy;
-
-    CEntity *penNew;
-
-    // create an entity of same class as the one to copy
-    penNew = CreateEntity(enToCopy.en_plPlacement, enToCopy.en_pecClass);
-
-    // remember its remap pointer
-    _aprRemaps[iRemap].pr_penOriginal = &enToCopy;
-    _aprRemaps[iRemap].pr_penCopy = penNew;
-    iRemap++;
-    _ctPredictorEntities++;
-  }}
-  // unfound pointers must be kept unremapped
-  _bRemapPointersToNULLs = FALSE;
-
-  // PASS 2: copy properties
-
-  // for each of the created entities
-  {FOREACHINSTATICARRAY(_aprRemaps, CPointerRemapping, itpr) {
-    CEntity *penOriginal = itpr->pr_penOriginal;
-    CEntity *penCopy = itpr->pr_penCopy;
-
-    // copy the entity from its original
-    penCopy->Copy(*penOriginal, ulCopyFlags);
-    // if this is a brush
-    if ( penOriginal->en_RenderType == CEntity::RT_BRUSH ||
-         penOriginal->en_RenderType == CEntity::RT_FIELDBRUSH) {
-      ASSERT(FALSE);  // should we allow prediction of brushes?
-      // update the bounding boxes of the brush
-      //penCopy->en_pbrBrush->CalculateBoundingBoxes();
-    }
-  }}
-
-  // PASS 3: initialize
-
-  // for each of the created entities
-  {FOREACHINSTATICARRAY(_aprRemaps, CPointerRemapping, itpr) {
-    CEntity *penOriginal = itpr->pr_penOriginal;
-    CEntity *penCopy = itpr->pr_penCopy;
-
-    // copy spatial classification
-    penCopy->en_fSpatialClassificationRadius = penOriginal->en_fSpatialClassificationRadius;
-    penCopy->en_boxSpatialClassification     = penOriginal->en_boxSpatialClassification;
-    // copy collision info
-    penCopy->CopyCollisionInfo(*penOriginal);
-    // for each sector around the original
-    {FOREACHSRCOFDST(penOriginal->en_rdSectors, CBrushSector, bsc_rsEntities, pbsc)
-      // copy the link
-      if (penOriginal->en_RenderType==CEntity::RT_BRUSH
-        ||penOriginal->en_RenderType==CEntity::RT_FIELDBRUSH
-        ||penOriginal->en_RenderType==CEntity::RT_TERRAIN) {  // brushes first
-        AddRelationPairHeadHead(pbsc->bsc_rsEntities, penCopy->en_rdSectors);
-      } else {
-        AddRelationPairTailTail(pbsc->bsc_rsEntities, penCopy->en_rdSectors);
-      }
-    ENDFOR}
-  }}
-
-  // PASS 4: find shadows
-
-  // for each of the created entities
-  {FOREACHINSTATICARRAY(_aprRemaps, CPointerRemapping, itpr) {
-    CEntity *penOriginal = itpr->pr_penOriginal;
-    CEntity *penCopy = itpr->pr_penCopy;
-
-    // if this is a brush
-    if ( penCopy->en_RenderType == CEntity::RT_BRUSH ||
-         penCopy->en_RenderType == CEntity::RT_FIELDBRUSH) {
-      ASSERT(FALSE);  // should we allow prediction of brushes?
-      // find possible shadow layers near affected area
-      //FindShadowLayers(penCopy->en_pbrBrush->GetFirstMip()->bm_boxBoundingBox);
-    }
-
-    // if this is a light source
-    {CLightSource *pls = penCopy->GetLightSource();
-    if (pls!=NULL) {
-      // find all shadow maps that should have layers from this light source
-      pls->FindShadowLayers(FALSE);
-    }}
-  }}
-
-  // make sure someone doesn't reuse the remap array accidentially
-  _aprRemaps.Clear();
-
-  _bRemapPointersToNULLs = TRUE;
-
-  // return current tick
-  _pTimer->SetCurrentTick(tmCurrentTickOld);
-}

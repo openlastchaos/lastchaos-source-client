@@ -120,7 +120,7 @@ void CModelerDoc::Dump(CDumpContext& dc) const
 BOOL CModelerDoc::OnOpenDocument(LPCTSTR lpszPathName) 
 {
 	m_bDocLoadedOk = FALSE;
-  CTFileName fnModelFile = CTString(CStringA(lpszPathName));
+  CTFileName fnModelFile = CTString(lpszPathName);
 
   try
   {
@@ -128,7 +128,7 @@ BOOL CModelerDoc::OnOpenDocument(LPCTSTR lpszPathName)
   }
   catch( char *err_str)
   {
-    AfxMessageBox( CString(err_str));
+    AfxMessageBox( err_str);
     return FALSE;
   }
 
@@ -153,7 +153,7 @@ BOOL CModelerDoc::OnOpenDocument(LPCTSTR lpszPathName)
       m_emEditModel.edm_aamAttachedModels.New();
       m_emEditModel.edm_aamAttachedModels.Lock();
       CAttachedModel &am=m_emEditModel.edm_aamAttachedModels[iPos];
-      DECLARE_CTFILENAME( fnAxis, "Models\\Editor\\Axis.mdl");
+      DECLARE_CTFILENAME( fnAxis, "Data\\Models\\Editor\\Axis.mdl");
       am.am_bVisible=TRUE;
       am.am_strName="Not loaded";
       am.am_iAnimation=0;
@@ -180,17 +180,22 @@ BOOL CModelerDoc::OnSaveDocument(LPCTSTR lpszPathName)
 {
   CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd());
 	//return CDocument::OnSaveDocument(lpszPathName);
-  CTFileName fnModelFile = CTString(CStringA(lpszPathName));
+  CTFileName fnModelFile = CTString(lpszPathName);
   try
   {
     fnModelFile.RemoveApplicationPath_t();
   }
   catch( char *err_str)
   {
-    AfxMessageBox( CString(err_str));
+    AfxMessageBox( err_str);
     return FALSE;
   }
 
+#if BUILD_PUBLISHER
+  WarningMessage(
+    "Saving is disabled in this version!");
+  return FALSE;
+#else
   try
   {
   	m_emEditModel.Save_t( fnModelFile);
@@ -222,9 +227,9 @@ BOOL CModelerDoc::OnSaveDocument(LPCTSTR lpszPathName)
       if( pmdCurrent->IsModified())
       {
         CTString strMessage;
-        CTFileName fnDoc = CTString(CStringA(pmdCurrent->GetPathName()));
+        CTFileName fnDoc = CTString(pmdCurrent->GetPathName());
         strMessage.PrintF("Do you want to save model \"%s\" before reloading its attachments?", fnDoc.FileName() );
-        if( ::MessageBoxA( pMainFrame->m_hWnd, strMessage,
+        if( ::MessageBox( pMainFrame->m_hWnd, strMessage,
                         "Warning !", MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON1 | 
                         MB_TASKMODAL | MB_TOPMOST) != IDYES)
         {
@@ -254,6 +259,7 @@ BOOL CModelerDoc::OnSaveDocument(LPCTSTR lpszPathName)
 
 
   return TRUE;
+#endif
 }
 
 void CModelerDoc::OnIdle(void)
@@ -282,8 +288,8 @@ void CModelerDoc::OnFileAddTexture()
 
   // call file requester for adding textures
   CDynamicArray<CTFileName> afnTextures;
-  CTFileName fnDocName = CTString(CStringA(GetPathName()));
-  theApp.WriteProfileString( L"Scape", L"Add texture directory", CString(fnDocName.FileDir()));
+  CTFileName fnDocName = CTString(GetPathName());
+  theApp.WriteProfileString( "Scape", "Add texture directory", fnDocName.FileDir());
   _EngineGUI.FileRequester( "Choose textures to add", FILTER_TEX FILTER_END,
     "Add texture directory", "Textures\\", fnDocName.FileName()+".tex", &afnTextures);
   MEX mexWidth, mexHeight;
@@ -301,7 +307,7 @@ void CModelerDoc::OnFileAddTexture()
     catch( char *err_str)
     {
       pNewTDI = NULL;
-      AfxMessageBox( CString(err_str));
+      AfxMessageBox( err_str);
     }
     if( pNewTDI != NULL)
     {
@@ -322,13 +328,13 @@ void CModelerDoc::OnUpdateFileAddTexture(CCmdUI* pCmdUI)
 
 CTString CModelerDoc::GetModelDirectory( void)
 {
-  CTFileName fnResult = CTFileName( CTString(CStringA(GetPathName()))).FileDir();
+  CTFileName fnResult = CTFileName( CTString(GetPathName())).FileDir();
   return CTString( fnResult);
 }
 
 CTString CModelerDoc::GetModelName( void)
 {
-  CTFileName fnResult = CTFileName( CTString(CStringA(GetPathName()))).FileName();
+  CTFileName fnResult = CTFileName( CTString(GetPathName())).FileName();
   return CTString( fnResult);
 }
 
@@ -417,8 +423,7 @@ INDEX CModelerDoc::GetOnlySelectedSurface(void)
   if( GetCountOfSelectedSurfaces() != 1) return -1;
 
   ModelMipInfo &mmi = m_emEditModel.edm_md.md_MipInfos[ m_iCurrentMip];
-  INDEX iSurface=0;
-  for( ; iSurface<mmi.mmpi_MappingSurfaces.Count(); iSurface++)
+  for( INDEX iSurface=0; iSurface<mmi.mmpi_MappingSurfaces.Count(); iSurface++)
   {
     MappingSurface &ms = mmi.mmpi_MappingSurfaces[ iSurface];
     if( ms.ms_ulRenderingFlags&SRF_SELECTED) break;

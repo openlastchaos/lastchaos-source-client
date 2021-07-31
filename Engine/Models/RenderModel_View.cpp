@@ -1,17 +1,15 @@
- #include "StdH.h"
+ #include "stdh.h"
 
 #include <Engine/Base/Statistics_internal.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Models/ModelObject.h>
 #include <Engine/Models/ModelData.h>
-#include <Engine/Models/ModelProfile.h>
 #include <Engine/Models/RenderModel.h>
 #include <Engine/Models/Model_internal.h>
 #include <Engine/Models/Normals.h>
 #include <Engine/Graphics/GfxLibrary.h>
 #include <Engine/Graphics/Fog_internal.h>
 #include <Engine/Base/Lists.inl>
-#include <Engine/World/WorldEditingProfile.h>
 
 #include <Engine/Templates/StaticArray.cpp>
 #include <Engine/Templates/StaticStackArray.cpp>
@@ -27,27 +25,26 @@
 
 #define ASMOPT 1
 
-extern INDEX mdl_bRenderBump;
 
 extern BOOL CVA_bModels;
 extern BOOL GFX_bTruform;
 extern BOOL _bMultiPlayer;
 
-extern const UBYTE *pubClipByte;
-extern const FLOAT *pfSinTable;
-extern const FLOAT *pfCosTable;
+extern const FLOAT *_pfSinTable;
+extern const FLOAT *_pfCosTable;
+extern const UBYTE *_pubClipByte;
 
 static GfxAPIType _eAPI;
 
 static BOOL  _bForceTranslucency;    // force translucency of opaque/transparent surfaces (for model fading)
 static ULONG _ulMipLayerFlags;
-static INDEX _icol=0;
+static INDEX _icol = 0;
 
 
 // mip arrays
-static CStaticStackArray<GFXVertex3>  _avtxMipBase;
+static CStaticStackArray<GFXVertex>   _avtxMipBase;
 static CStaticStackArray<GFXTexCoord> _atexMipBase;  // for reflection and specular
-static CStaticStackArray<GFXNormal3>  _anorMipBase;
+static CStaticStackArray<GFXNormal>   _anorMipBase;
 static CStaticStackArray<GFXColor>    _acolMipBase;
 
 static CStaticStackArray<GFXTexCoord> _atexMipFogy;
@@ -56,10 +53,9 @@ static CStaticStackArray<FLOAT>       _atx1MipHaze;
 static CStaticStackArray<UBYTE>       _ashdMipHaze;
 
 // surface arrays
-static CStaticStackArray<GFXVertex4>  _avtxSrfBase;
-static CStaticStackArray<GFXNormal4>  _anorSrfBase;  // normals for Truform!
+static CStaticStackArray<GFXVertex>   _avtxSrfBase;
+static CStaticStackArray<GFXNormal>   _anorSrfBase;  // normals for Truform!
 static CStaticStackArray<GFXTexCoord> _atexSrfBase;
-static CStaticStackArray<GFXTexCoord> _atexSrfBump; // Bump maping
 static CStaticStackArray<GFXColor>    _acolSrfBase;
 
 // shadows arrays
@@ -70,8 +66,8 @@ static CStaticStackArray<GFXTexCoord4> _atx4SrfShad;
 // pointers to arrays for quicker access
 static GFXColor    *pcolSrfBase;
 static GFXColor    *pcolMipBase;
-static GFXVertex3  *pvtxMipBase;
-static GFXNormal3  *pnorMipBase;
+static GFXVertex   *pvtxMipBase;
+static GFXNormal   *pnorMipBase;
 static GFXTexCoord *ptexMipBase;
 static GFXTexCoord *ptexMipFogy;
 static UBYTE       *pshdMipFogy;
@@ -85,7 +81,6 @@ static ULONG _ulColorMask = 0;
 static INDEX _ctAllMipVx  = 0;
 static INDEX _ctAllSrfVx  = 0;
 static BOOL  _bFlatFill   = FALSE;
-static BOOL  _bHasBump    = FALSE;
 static SLONG _slLR=0, _slLG=0, _slLB=0;
 static SLONG _slAR=0, _slAG=0, _slAB=0;
 static const __int64 mmRounder = 0x007F007F007F007F;
@@ -104,11 +99,8 @@ static const FLOAT f05 = 0.5f;
 // convinient routine for timing of texture setting
 static __forceinline void SetCurrentTexture( CTextureData *ptd, INDEX iFrame)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SETTEXTURE);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SETTEXTURE);
   if( ptd==NULL || _bFlatFill) gfxDisableTexture();
   else ptd->SetAsCurrent(iFrame);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SETTEXTURE);
 }
 
 
@@ -123,7 +115,6 @@ static void ResetVertexArrays(void)
   _avtxSrfBase.PopAll();
   _anorSrfBase.PopAll();
   _atexSrfBase.PopAll();
-  _atexSrfBump.PopAll();
   _acolSrfBase.PopAll();
 
   _atexMipFogy.PopAll();
@@ -149,7 +140,6 @@ extern void Models_ClearVertexArrays(void)
   _avtxSrfBase.Clear();
   _anorSrfBase.Clear();
   _atexSrfBase.Clear();
-  _atexSrfBump.Clear();
   _acolSrfBase.Clear();
 
   _aooqMipShad.Clear();
@@ -319,14 +309,14 @@ static void PrepareSurfaceElements( ModelMipInfo &mmi, MappingSurface &ms)
 
   // create elements
   ms.ms_ctSrfEl = ctTriangles*3;
-  INDEX *paiElements = mmi.mmpi_aiElements.Push(ms.ms_ctSrfEl);
+  UWORD *puwElements = mmi.mmpi_auwElements.Push(ms.ms_ctSrfEl);
   // dump all triangles
   //_RPT0(_CRT_WARN, "Result:\n");
   INDEX iel = 0;
   {for( INDEX itri=0; itri<ctTriangles; itri++){
-    paiElements[iel++] = _atriDone[itri].i0;
-    paiElements[iel++] = _atriDone[itri].i1;
-    paiElements[iel++] = _atriDone[itri].i2;
+    puwElements[iel++] = _atriDone[itri].i0;
+    puwElements[iel++] = _atriDone[itri].i1;
+    puwElements[iel++] = _atriDone[itri].i2;
     //_RPT3(_CRT_WARN, "%d %d %d\n", _atriDone[itri].i0, _atriDone[itri].i1, _atriDone[itri].i2);
   }}
   mmi.mmpi_ctTriangles += ctTriangles;
@@ -391,16 +381,16 @@ static int qsort_CompareSurfaceDiffuseTypes( const void *pSrf1, const void *pSrf
   }
   // ... then additive ...
   if( srf1.ms_sttTranslucencyType==STT_ADD) {
-    if( srf2.ms_sttTranslucencyType==STT_MULTIPLY) return -1;
+    if( srf2.ms_sttTranslucencyType==STT_INVMULTIPLY) return -1;
     return +1;
   }
   if( srf2.ms_sttTranslucencyType==STT_ADD) {
-    if( srf1.ms_sttTranslucencyType==STT_MULTIPLY) return +1;
+    if( srf1.ms_sttTranslucencyType==STT_INVMULTIPLY) return +1;
     return -1;
   }
   // ... then multiplicative.
-  if( srf1.ms_sttTranslucencyType==STT_MULTIPLY) return +1;
-  if( srf2.ms_sttTranslucencyType==STT_MULTIPLY) return -1;
+  if( srf1.ms_sttTranslucencyType==STT_INVMULTIPLY) return +1;
+  if( srf2.ms_sttTranslucencyType==STT_INVMULTIPLY) return -1;
   ASSERTALWAYS( "Unrecognized surface type!");
   return 0;
 }
@@ -447,11 +437,6 @@ static void PrepareModelMipForRendering( CModelData &md, INDEX iMip)
   mmi.mmpi_auwSrfToMip.New(mmi.mmpi_ctSrfVx);
   mmi.mmpi_avmexTexCoord.New(mmi.mmpi_ctSrfVx);
 
-  // alloc bump mapping vectors only if needed
-  mmi.mmpi_avBumpU.Clear();
-  mmi.mmpi_avBumpV.Clear();
-  BOOL bBumpAllocated = FALSE;
-
   // count surfaces
   INDEX ctSurfaces = 0;
   {FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms) ctSurfaces++; }
@@ -459,7 +444,7 @@ static void PrepareModelMipForRendering( CModelData &md, INDEX iMip)
   qsort( &mmi.mmpi_MappingSurfaces[0], ctSurfaces, sizeof(MappingSurface), qsort_CompareSurfaceDiffuseTypes);
 
   // initialize array for all surfaces' elements
-  mmi.mmpi_aiElements.Clear();
+  mmi.mmpi_auwElements.Clear();
 
   // for each surface
   INDEX iSrfVx = 0;
@@ -478,12 +463,10 @@ static void PrepareModelMipForRendering( CModelData &md, INDEX iMip)
     }
 
     // determine surface and mip model rendering type (write to z-buffer or not)
-   const BOOL bBump = ms.ms_ulRenderingFlags&SRF_BUMP;
-
     if( !(ms.ms_ulRenderingFlags&SRF_DIFFUSE)
        || ms.ms_sttTranslucencyType==STT_TRANSLUCENT
        || ms.ms_sttTranslucencyType==STT_ADD
-       || ms.ms_sttTranslucencyType==STT_MULTIPLY) {
+       || ms.ms_sttTranslucencyType==STT_INVMULTIPLY) {
       ms.ms_ulRenderingFlags &= ~SRF_OPAQUE;
       mmi.mmpi_ulLayerFlags  &= ~MMI_OPAQUE;
     } else {
@@ -492,13 +475,6 @@ static void PrepareModelMipForRendering( CModelData &md, INDEX iMip)
     }
     // accumulate flags
     mmi.mmpi_ulLayerFlags |= ms.ms_ulRenderingFlags;
-
-    // alloc memory for bump coords if needed
-    if( bBump && !bBumpAllocated) {
-      mmi.mmpi_avBumpU.New(mmi.mmpi_ctSrfVx);
-      mmi.mmpi_avBumpV.New(mmi.mmpi_ctSrfVx);
-      bBumpAllocated = TRUE;
-    }
 
     // assign surface vertex numbers
     ms.ms_iSrfVx0 = iSrfVx;
@@ -514,14 +490,6 @@ static void PrepareModelMipForRendering( CModelData &md, INDEX iMip)
       // assign data to texture array
       mmi.mmpi_avmexTexCoord[iSrfVx](1) = (FLOAT)mtv.mtv_UV(1);
       mmi.mmpi_avmexTexCoord[iSrfVx](2) = (FLOAT)mtv.mtv_UV(2);
-
-      // assign bump mapping normals (only if surface has bump mapping)
-      if( bBump) {
-        mmi.mmpi_avBumpU[iSrfVx] = mtv.mtv_vU;
-        mmi.mmpi_avBumpV[iSrfVx] = mtv.mtv_vV;
-      }
-      //
-
       iSrfVx++;
     } // set vertex indices
     PrepareSurfaceElements( mmi, ms);
@@ -561,16 +529,12 @@ extern void PrepareModelForRendering( CModelData &md)
 {
   // do nothing, if the model has already been initialized for rendering
   if( md.md_bPreparedForRendering) return;
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_PREPAREFORRENDERING);
-  _pfWorldEditingProfile.StartTimer(CWorldEditingProfile::PTI_TRISTRIPMODELS);
   // prepare each mip model
   for( INDEX iMip=0; iMip<md.md_MipCt; iMip++) PrepareModelMipForRendering( md, iMip);
   // mark as prepared
   md.md_bPreparedForRendering = TRUE;
-  // all done
-  _pfWorldEditingProfile.StopTimer(CWorldEditingProfile::PTI_TRISTRIPMODELS);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_PREPAREFORRENDERING);
 }
+
 
 
 
@@ -590,26 +554,24 @@ static void SetCol(void)
   _icol = (_icol+1)%_ctcol;
 }
 
-static void DrawStrips( const INDEX ct, const INDEX *pai)
+static void DrawStrips( const INDEX ct, const UWORD *puw)
 {
   // set strip color
-  pglDisableClientState( GL_COLOR_ARRAY);
+  gfxDisableColorArray();
   gfxDisableTexture();
   SetCol();
 
   // render elements as strips
   pglBegin( GL_TRIANGLE_STRIP);
-  INDEX ctMaxTriPerStrip = 0;
   INDEX i = 0;
   INDEX iInStrip = 0;
   INDEX iL0, iL1;
 
   while( i<ct/3)
   {
-    INDEX i0 = pai[i*3+0];
-    INDEX i1 = pai[i*3+1];
-    INDEX i2 = pai[i*3+2];
-    ctMaxTriPerStrip = Max( ctMaxTriPerStrip, INDEX(iInStrip));
+    INDEX i0 = puw[i*3+0];
+    INDEX i1 = puw[i*3+1];
+    INDEX i2 = puw[i*3+2];
 
     if( iInStrip==0) {
       pglEnd();
@@ -649,6 +611,7 @@ static void DrawStrips( const INDEX ct, const INDEX *pai)
 }
 
 
+
 // returns haze/fog value in vertex 
 static FLOAT3D _vFViewerObj, _vHDirObj;
 static FLOAT   _fFogAddZ, _fFogAddH;
@@ -656,26 +619,26 @@ static FLOAT   _fHazeAdd;
 
 
 // check vertex against fog
-static void GetFogMapInVertex( GFXVertex3 &vtx, GFXTexCoord &tex)
+static void GetFogMapInVertex( GFXVertex &vtx, GFXTexCoord &tex)
 {
 #if ASMOPT == 1
   __asm {
     mov     esi,D [vtx]
     mov     edi,D [tex]
-    fld     D [esi]GFXVertex3.x
+    fld     D [esi]GFXVertex.x
     fmul    D [_vFViewerObj+0]
-    fld     D [esi]GFXVertex3.y
+    fld     D [esi]GFXVertex.y
     fmul    D [_vFViewerObj+4]
-    fld     D [esi]GFXVertex3.z
+    fld     D [esi]GFXVertex.z
     fmul    D [_vFViewerObj+8]
     fxch    st(2)
     faddp   st(1),st(0)
     faddp   st(1),st(0) // fD
-    fld     D [esi]GFXVertex3.x
+    fld     D [esi]GFXVertex.x
     fmul    D [_vHDirObj+0]
-    fld     D [esi]GFXVertex3.y
+    fld     D [esi]GFXVertex.y
     fmul    D [_vHDirObj+4]
-    fld     D [esi]GFXVertex3.z
+    fld     D [esi]GFXVertex.z
     fmul    D [_vHDirObj+8]
     fxch    st(2)
     faddp   st(1),st(0)
@@ -701,17 +664,17 @@ static void GetFogMapInVertex( GFXVertex3 &vtx, GFXTexCoord &tex)
 
 
 // check vertex against haze
-static void GetHazeMapInVertex( GFXVertex3 &vtx, FLOAT &tx1)
+static void GetHazeMapInVertex( GFXVertex &vtx, FLOAT &tx1)
 {
 #if ASMOPT == 1
   __asm {
     mov     esi,D [vtx]
     mov     edi,D [tx1]
-    fld     D [esi]GFXVertex3.x
+    fld     D [esi]GFXVertex.x
     fmul    D [_vViewerObj+0]
-    fld     D [esi]GFXVertex3.y
+    fld     D [esi]GFXVertex.y
     fmul    D [_vViewerObj+4]
-    fld     D [esi]GFXVertex3.z
+    fld     D [esi]GFXVertex.z
     fmul    D [_vViewerObj+8]
     fxch    st(2)
     faddp   st(1),st(0)
@@ -730,8 +693,8 @@ static void GetHazeMapInVertex( GFXVertex3 &vtx, FLOAT &tx1)
 // check model's bounding box against fog
 static BOOL IsModelInFog( FLOAT3D &vMin, FLOAT3D &vMax)
 {
+  GFXVertex vtx;
   GFXTexCoord tex;
-  GFXVertex3  vtx;
   vtx.x=vMin(1); vtx.y=vMin(2); vtx.z=vMin(3); GetFogMapInVertex(vtx,tex); if(InFog(tex.t)) return TRUE;
   vtx.x=vMin(1); vtx.y=vMin(2); vtx.z=vMax(3); GetFogMapInVertex(vtx,tex); if(InFog(tex.t)) return TRUE;
   vtx.x=vMin(1); vtx.y=vMax(2); vtx.z=vMin(3); GetFogMapInVertex(vtx,tex); if(InFog(tex.t)) return TRUE;
@@ -747,7 +710,7 @@ static BOOL IsModelInFog( FLOAT3D &vMin, FLOAT3D &vMax)
 static BOOL IsModelInHaze( FLOAT3D &vMin, FLOAT3D &vMax)
 {
   FLOAT fS;
-  GFXVertex3 vtx;                                
+  GFXVertex vtx;                                
   vtx.x=vMin(1); vtx.y=vMin(2); vtx.z=vMin(3); GetHazeMapInVertex(vtx,fS); if(InHaze(fS)) return TRUE;
   vtx.x=vMin(1); vtx.y=vMin(2); vtx.z=vMax(3); GetHazeMapInVertex(vtx,fS); if(InHaze(fS)) return TRUE;
   vtx.x=vMin(1); vtx.y=vMax(2); vtx.z=vMin(3); GetHazeMapInVertex(vtx,fS); if(InHaze(fS)) return TRUE;
@@ -762,101 +725,60 @@ static BOOL IsModelInHaze( FLOAT3D &vMin, FLOAT3D &vMax)
 
 
 // render all pending elements
-static void FlushElements( INDEX ctElem, INDEX *pai)
+static void FlushElements( INDEX ctIndices, UWORD *puwIndices)
 {
-  ASSERT(ctElem>0);
+  ASSERT(ctIndices>0);
   // choose rendering mode
   extern INDEX mdl_bShowStrips;
   if( _bMultiPlayer) mdl_bShowStrips = 0; // don't allow in multiplayer mode!
   if( !mdl_bShowStrips) {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_DRAWELEMENTS);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_DRAWELEMENTS, ctElem/3);
-    _pGfx->gl_ctModelTriangles += ctElem/3;
-    gfxDrawElements( ctElem, pai);
+    _pGfx->gl_ctModelElements += ctIndices;
+    gfxDrawElements( ctIndices, puwIndices);
     extern INDEX mdl_bShowTriangles;
     if( _bMultiPlayer) mdl_bShowTriangles = 0; // don't allow in multiplayer mode!
     if( mdl_bShowTriangles) {
       gfxSetConstantColor(C_YELLOW|222); // this also disables color array
       gfxPolygonMode(GFX_LINE);
-      gfxDrawElements( ctElem, pai);
+      gfxDrawElements( ctIndices, puwIndices);
       gfxPolygonMode(GFX_FILL);
       gfxEnableColorArray(); // need to re-enable color array
-    } // done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_DRAWELEMENTS);
+    }
   }
-  // show strips
-  else if( _eAPI==GAT_OGL) {
-    DrawStrips( ctElem, pai);
-    OGL_CHECKERROR;
-  }
+  // show strips (only in OpenGL!)
+  else if( _eAPI==GAT_OGL) DrawStrips( ctIndices, puwIndices);
 }
 
 
 // returns if any type of translucent surface was required
-static void SetRenderingParameters( SurfaceTranslucencyType stt, BOOL bHasBump)
+static void SetRenderingParameters( SurfaceTranslucencyType stt)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_ONESIDE_GLSETUP);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_ONESIDE_GLSETUP);
-
+  // forced or regular translucency?
   if( stt==STT_TRANSLUCENT || (_bForceTranslucency && ((stt==STT_OPAQUE) || (stt==STT_TRANSPARENT)))) {
-    gfxEnableBlend();
-    gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
-    gfxDisableAlphaTest();
-    gfxDisableDepthWrite();
-  } else if( stt==STT_OPAQUE) {
-    gfxDisableAlphaTest();
-    /*
-    gfxDisableBlend();
-    gfxEnableDepthWrite();
-    */
-    if( bHasBump) {
-      gfxEnableBlend();
-      gfxBlendFunc( GFX_DST_COLOR, GFX_SRC_COLOR);
-      gfxDisableDepthWrite();
-    } else {
-      gfxDisableBlend();
-      gfxEnableDepthWrite();
-    }
-  } else if( stt==STT_TRANSPARENT) {
-    gfxDisableBlend();
-    gfxEnableAlphaTest();
-    gfxEnableDepthWrite();
-  } else if( stt==STT_ADD) {
-    gfxEnableBlend();
-    gfxBlendFunc( GFX_SRC_ALPHA, GFX_ONE);
-    gfxDisableAlphaTest();
-    gfxDisableDepthWrite();
-  } else if( stt==STT_MULTIPLY) {
-    gfxEnableBlend();
-    gfxBlendFunc( GFX_ZERO, GFX_INV_SRC_COLOR);
-    gfxDisableAlphaTest();
-    gfxDisableDepthWrite();
-  } else {
-    ASSERTALWAYS( "Unsupported model rendering mode.");
+    gfxSetBlendType(PBT_TRANSLUCENT);
+    return;
+  } 
+  // others...
+  switch(stt) {
+  case STT_OPAQUE:       gfxSetBlendType(PBT_OPAQUE);       break;
+  case STT_TRANSPARENT:  gfxSetBlendType(PBT_TRANSPARENT);  break;
+  case STT_ADD:          gfxSetBlendType(PBT_ADDALPHA);     break;
+  case STT_INVMULTIPLY:  gfxSetBlendType(PBT_INVMULTIPLY);  break;
+  default:  ASSERTALWAYS("Unsupported model rendering mode.");  break;
   }
-  // all done
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_ONESIDE_GLSETUP);
 }
 
 
 // render one side of a surface (return TRUE if any type of translucent surface has been rendered)
 static void RenderOneSide( CRenderModel &rm, BOOL bBackSide, ULONG ulLayerFlags)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_ONESIDE);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_ONESIDE);
-  _icol = 0;
-
   // set face culling
   if( bBackSide) {
-    if( !(_ulMipLayerFlags&SRF_DOUBLESIDED)) {
-      _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_ONESIDE);
-      return;
-    } else gfxCullFace(GFX_FRONT);
+    if( !(_ulMipLayerFlags&SRF_DOUBLESIDED))  return;
+    else gfxCullFace(GFX_FRONT);
   } else gfxCullFace(GFX_BACK);
 
   // start with invalid rendering parameters
   SurfaceTranslucencyType sttLast = STT_INVALID;
-  SLONG slBumpLast = -1;
 
   // for each surface in current mip model
   INDEX iStartElem=0;
@@ -873,7 +795,7 @@ static void RenderOneSide( CRenderModel &rm, BOOL bBackSide, ULONG ulLayerFlags)
      ||  (bBackSide && !(ulFlags&SRF_DOUBLESIDED)) // rendering back side and surface is not double sided,
      || !(_ulColorMask&ms.ms_ulOnColor)  // not on or off.
      ||  (_ulColorMask&ms.ms_ulOffColor)) {
-      if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+      if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
       iStartElem+= ctElements+ms.ms_ctSrfEl;
       ctElements = 0;
       continue;
@@ -883,26 +805,20 @@ static void RenderOneSide( CRenderModel &rm, BOOL bBackSide, ULONG ulLayerFlags)
     if( ulLayerFlags&SRF_DIFFUSE) {
       // get rendering parameters
       SurfaceTranslucencyType stt = ms.ms_sttTranslucencyType;
-
-      SLONG slBump = _bHasBump && (ms.ms_ulRenderingFlags&SRF_BUMP) && mdl_bRenderBump;  // && !_bFlatFill 
-
       // if surface uses rendering parameters different than last one
-      if( sttLast!=stt  || slBumpLast!=slBump) {
+      if( sttLast!=stt) {
         // set up new API states
-        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
-        SetRenderingParameters(stt, slBump);
-        sttLast = stt;
-        slBumpLast = slBump;
-        iStartElem += ctElements;
+        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
+        SetRenderingParameters(stt);
+        sttLast=stt;
+        iStartElem+= ctElements;
         ctElements = 0;
       }
     } // batch the surface polygons for rendering
     ctElements += ms.ms_ctSrfEl;
   }}
   // flush leftovers
-  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
-  // all done
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_ONESIDE);
+  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
 }
 
 
@@ -934,7 +850,7 @@ static void RenderColors( CRenderModel &rm)
     // skip if surface is invisible or empty
     if( (ms.ms_ulRenderingFlags&SRF_INVISIBLE) || ms.ms_ctSrfVx==0
     || !(_ulColorMask&ms.ms_ulOnColor) || (_ulColorMask&ms.ms_ulOffColor)) {
-      if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+      if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
       iStartElem+= ctElements+ms.ms_ctSrfEl;
       ctElements = 0;
       continue;
@@ -956,7 +872,7 @@ static void RenderColors( CRenderModel &rm)
     ctElements += ms.ms_ctSrfEl;
   }
   // all done
-  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
 }
 
 
@@ -991,7 +907,7 @@ static void RenderWireframe(CRenderModel &rm)
       const MappingSurface &ms = *itms;
       // skip if surface is invisible or empty
       if( (ms.ms_ulRenderingFlags&SRF_INVISIBLE) || ms.ms_ctSrfVx==0) {
-        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
         iStartElem+= ctElements+ms.ms_ctSrfEl;
         ctElements = 0;
         continue;
@@ -1002,7 +918,7 @@ static void RenderWireframe(CRenderModel &rm)
       ctElements += ms.ms_ctSrfEl;
     }
     // all done
-    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
     gfxCullFace(GFX_BACK);
   }
   // then, render visible lines (if required)
@@ -1016,7 +932,7 @@ static void RenderWireframe(CRenderModel &rm)
       const MappingSurface &ms = *itms;
       // done if surface is invisible or empty
       if( (ms.ms_ulRenderingFlags&SRF_INVISIBLE) || ms.ms_ctSrfVx==0) {
-        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+        if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
         iStartElem+= ctElements+ms.ms_ctSrfEl;
         ctElements = 0;
         continue;
@@ -1027,7 +943,7 @@ static void RenderWireframe(CRenderModel &rm)
       ctElements += ms.ms_ctSrfEl;
     }
     // all done
-    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
   }
   // all done
   gfxPolygonMode(GFX_FILL);
@@ -1039,35 +955,26 @@ static void RenderWireframe(CRenderModel &rm)
 // attenuate alphas in base surface array with attenuation array
 static void AttenuateAlpha( const UBYTE *pshdMip, const INDEX ctVertices)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_ATTENUATE_SURF);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_ATTENUATE_SURF, _ctAllSrfVx);
   for( INDEX iSrfVx=0; iSrfVx<ctVertices; iSrfVx++) {
     const INDEX iMipVx = puwSrfToMip[iSrfVx];
     pcolSrfBase[iSrfVx].AttenuateA( pshdMip[iMipVx]);
   }
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_ATTENUATE_SURF);
 }
 
 
 // attenuate colors in base surface array with attenuation array
 static void AttenuateColor( const UBYTE *pshdMip, const INDEX ctVertices)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_ATTENUATE_SURF);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_ATTENUATE_SURF, _ctAllSrfVx);
   for( INDEX iSrfVx=0; iSrfVx<ctVertices; iSrfVx++) {
     const INDEX iMipVx = puwSrfToMip[iSrfVx];
     pcolSrfBase[iSrfVx].AttenuateRGB( pshdMip[iMipVx]);
   }
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_ATTENUATE_SURF);
 }
 
 
 // unpack vertices (and eventually normals) of one frame
 static void UnpackFrame( CRenderModel &rm, BOOL bKeepNormals)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_UNPACK);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_UNPACK, _ctAllMipVx);
-
   // cache lerp ratio, compression, stretch and light factors
   FLOAT fStretchX = rm.rm_vStretch(1);
   FLOAT fStretchY = rm.rm_vStretch(2);
@@ -1121,14 +1028,14 @@ vtxLoop16:
         fsub    D [fOffsetZ]
         fmul    D [fStretchZ]
         fxch    st(2)
-        fstp    D [edi]GFXVertex3.x
-        fstp    D [edi]GFXVertex3.y
-        fstp    D [edi]GFXVertex3.z
+        fstp    D [edi]GFXVertex.x
+        fstp    D [edi]GFXVertex.y
+        fstp    D [edi]GFXVertex.z
         // determine normal
         movzx   eax,B [esi]ModelFrameVertex16.mfv_ubNormH
         movzx   edx,B [esi]ModelFrameVertex16.mfv_ubNormP
-        mov     esi,D [pfSinTable]
-        fld     D [esi+eax*4 +0]
+        mov     esi,D [_pfSinTable]
+        fld     D [esi+eax*4]
         fmul    D [esi+edx*4 +64*4]
         fld     D [esi+eax*4 +64*4]
         fmul    D [esi+edx*4 +64*4]
@@ -1144,14 +1051,15 @@ vtxLoop16:
         // determine vertex shade
         fld     D [slTmp1]
         fmul    D [fLightObjX]
-        fld     D [esi+edx*4 +0]
+        fld     D [esi+edx*4]
+        fchs
         fmul    D [fLightObjY]
         fld     D [slTmp3]
         fmul    D [fLightObjZ]
         fxch    st(2)
         faddp   st(1),st(0)
         faddp   st(1),st(0)
-        fistp   D [ebx]
+        fistp   D [ebx]         // possible memory trashing!
         // store normal (if needed)
         cmp     D [bKeepNormals],0
         je      vtxNext16
@@ -1159,8 +1067,9 @@ vtxLoop16:
         imul    ecx,3*4
         add     ecx,D [pnorMipBase]
         mov     eax,D [slTmp1]
-        mov     edx,D [esi+edx*4 +0]
+        mov     edx,D [esi+edx*4]
         mov     esi,D [slTmp3]
+        xor     edx,0x80000000     
         mov     D [ecx]GFXNormal.nx, eax
         mov     D [ecx]GFXNormal.ny, edx
         mov     D [ecx]GFXNormal.nz, esi
@@ -1180,17 +1089,17 @@ vtxNext16:
         const INDEX iMdlVx = puwMipToMdl[iMipVx];
         const ModelFrameVertex16 &mfv0 = pFrame0[iMdlVx];
         // store vertex
-        GFXVertex3 &vtx = pvtxMipBase[iMipVx];
+        GFXVertex &vtx = pvtxMipBase[iMipVx];
         vtx.x = (mfv0.mfv_SWPoint(1) -fOffsetX) *fStretchX;
         vtx.y = (mfv0.mfv_SWPoint(2) -fOffsetY) *fStretchY;
         vtx.z = (mfv0.mfv_SWPoint(3) -fOffsetZ) *fStretchZ;
         // determine normal
-        const FLOAT fSinH0 = pfSinTable[mfv0.mfv_ubNormH];
-        const FLOAT fSinP0 = pfSinTable[mfv0.mfv_ubNormP];
-        const FLOAT fCosH0 = pfCosTable[mfv0.mfv_ubNormH];
-        const FLOAT fCosP0 = pfCosTable[mfv0.mfv_ubNormP];
+        const FLOAT fSinH0 = _pfSinTable[mfv0.mfv_ubNormH];
+        const FLOAT fSinP0 = _pfSinTable[mfv0.mfv_ubNormP];
+        const FLOAT fCosH0 = _pfCosTable[mfv0.mfv_ubNormH];
+        const FLOAT fCosP0 = _pfCosTable[mfv0.mfv_ubNormP];
         const FLOAT fNX = -fSinH0*fCosP0;
-        const FLOAT fNY = +fSinP0;
+        const FLOAT fNY = -fSinP0;
         const FLOAT fNZ = -fCosH0*fCosP0;
         // store vertex shade
         pswMipCol[iMipVx] = FloatToInt(fNX*fLightObjX + fNY*fLightObjY + fNZ*fLightObjZ);
@@ -1254,23 +1163,23 @@ vtxLoop16L:
         fsub    D [fOffsetZ]
         fmul    D [fStretchZ]
         fxch    st(2)
-        fstp    D [edi]GFXVertex3.x
-        fstp    D [edi]GFXVertex3.y
-        fstp    D [edi]GFXVertex3.z
+        fstp    D [edi]GFXVertex.x
+        fstp    D [edi]GFXVertex.y
+        fstp    D [edi]GFXVertex.z
         // load normals
         movzx   eax,B [esi+ebx*8]ModelFrameVertex16.mfv_ubNormH
         movzx   edx,B [esi+ebx*8]ModelFrameVertex16.mfv_ubNormP
-        mov     esi,D [pfSinTable]
-        fld     D [esi+eax*4 +0]
+        mov     esi,D [_pfSinTable]
+        fld     D [esi+eax*4]
         fmul    D [esi+edx*4 +64*4]
-        fld     D [esi+edx*4 +0]
+        fld     D [esi+edx*4]
         fld     D [esi+eax*4 +64*4]
         fmul    D [esi+edx*4 +64*4]  // fCosH0*fCosP0, fSinP0, fSinH0*fCosP0  
         movzx   eax,B [ecx+ebx*8]ModelFrameVertex16.mfv_ubNormH
         movzx   edx,B [ecx+ebx*8]ModelFrameVertex16.mfv_ubNormP
-        fld     D [esi+eax*4 +0]
+        fld     D [esi+eax*4]
         fmul    D [esi+edx*4 +64*4]
-        fld     D [esi+edx*4 +0]
+        fld     D [esi+edx*4]
         fld     D [esi+eax*4 +64*4]
         fmul    D [esi+edx*4 +64*4]  // fCosH1*fCosP1, fSinP1, fSinH1*fCosP1,  fCosH0*fCosP0, fSinP0, fSinH0*fCosP0
         // lerp normals
@@ -1297,10 +1206,13 @@ vtxLoop16L:
         fstp    D [slTmp3]
         pop     ebx
         mov     eax,D [slTmp1]
+        mov     edx,D [slTmp2]
         mov     ecx,D [slTmp3]
         xor     eax,0x80000000     
+        xor     edx,0x80000000     
         xor     ecx,0x80000000     
         mov     D [slTmp1],eax
+        mov     D [slTmp2],edx
         mov     D [slTmp3],ecx
         // determine vertex shade
         fld     D [slTmp1]
@@ -1342,17 +1254,17 @@ vtxNext16L:
         const ModelFrameVertex16 &mfv0 = pFrame0[iMdlVx];
         const ModelFrameVertex16 &mfv1 = pFrame1[iMdlVx];
         // store lerped vertex
-        GFXVertex3 &vtx = pvtxMipBase[iMipVx];
+        GFXVertex &vtx = pvtxMipBase[iMipVx];
         vtx.x = (Lerp( (FLOAT)mfv0.mfv_SWPoint(1), (FLOAT)mfv1.mfv_SWPoint(1), fLerpRatio) -fOffsetX) * fStretchX;
         vtx.y = (Lerp( (FLOAT)mfv0.mfv_SWPoint(2), (FLOAT)mfv1.mfv_SWPoint(2), fLerpRatio) -fOffsetY) * fStretchY;
         vtx.z = (Lerp( (FLOAT)mfv0.mfv_SWPoint(3), (FLOAT)mfv1.mfv_SWPoint(3), fLerpRatio) -fOffsetZ) * fStretchZ;
         // determine lerped normal
-        const FLOAT fSinH0 = pfSinTable[mfv0.mfv_ubNormH];  const FLOAT fSinH1 = pfSinTable[mfv1.mfv_ubNormH];
-        const FLOAT fSinP0 = pfSinTable[mfv0.mfv_ubNormP];  const FLOAT fSinP1 = pfSinTable[mfv1.mfv_ubNormP];
-        const FLOAT fCosH0 = pfCosTable[mfv0.mfv_ubNormH];  const FLOAT fCosH1 = pfCosTable[mfv1.mfv_ubNormH];
-        const FLOAT fCosP0 = pfCosTable[mfv0.mfv_ubNormP];  const FLOAT fCosP1 = pfCosTable[mfv1.mfv_ubNormP];
+        const FLOAT fSinH0 = _pfSinTable[mfv0.mfv_ubNormH];  const FLOAT fSinH1 = _pfSinTable[mfv1.mfv_ubNormH];
+        const FLOAT fSinP0 = _pfSinTable[mfv0.mfv_ubNormP];  const FLOAT fSinP1 = _pfSinTable[mfv1.mfv_ubNormP];
+        const FLOAT fCosH0 = _pfCosTable[mfv0.mfv_ubNormH];  const FLOAT fCosH1 = _pfCosTable[mfv1.mfv_ubNormH];
+        const FLOAT fCosP0 = _pfCosTable[mfv0.mfv_ubNormP];  const FLOAT fCosP1 = _pfCosTable[mfv1.mfv_ubNormP];
         const FLOAT fNX = Lerp( -fSinH0*fCosP0, -fSinH1*fCosP1, fLerpRatio);
-        const FLOAT fNY = Lerp( +fSinP0,        +fSinP1,        fLerpRatio);
+        const FLOAT fNY = Lerp( -fSinP0,        -fSinP1,        fLerpRatio);
         const FLOAT fNZ = Lerp( -fCosH0*fCosP0, -fCosH1*fCosP1, fLerpRatio);
         // store vertex shade
         pswMipCol[iMipVx] = FloatToInt(fNX*fLightObjX + fNY*fLightObjY + fNZ*fLightObjZ);
@@ -1406,9 +1318,9 @@ vtxLoop8:
         fsub    D [fOffsetZ]
         fmul    D [fStretchZ]
         fxch    st(2)
-        fstp    D [edi]GFXVertex3.x
-        fstp    D [edi]GFXVertex3.y
-        fstp    D [edi]GFXVertex3.z
+        fstp    D [edi]GFXVertex.x
+        fstp    D [edi]GFXVertex.y
+        fstp    D [edi]GFXVertex.z
         // determine normal
         movzx   eax,B [esi]ModelFrameVertex8.mfv_NormIndex
         lea     esi,[eax*2+eax]
@@ -1451,7 +1363,7 @@ vtxNext8:
         const INDEX iMdlVx = puwMipToMdl[iMipVx];
         const ModelFrameVertex8 &mfv0 = pFrame0[iMdlVx];
         // store vertex
-        GFXVertex3 &vtx = pvtxMipBase[iMipVx];
+        GFXVertex &vtx = pvtxMipBase[iMipVx];
         vtx.x = (mfv0.mfv_SBPoint(1) -fOffsetX) * fStretchX;
         vtx.y = (mfv0.mfv_SBPoint(2) -fOffsetY) * fStretchY;
         vtx.z = (mfv0.mfv_SBPoint(3) -fOffsetZ) * fStretchZ;
@@ -1526,9 +1438,9 @@ vtxLoop8L:
         fsub    D [fOffsetZ]
         fmul    D [fStretchZ]
         fxch    st(2)
-        fstp    D [edi]GFXVertex3.x
-        fstp    D [edi]GFXVertex3.y
-        fstp    D [edi]GFXVertex3.z
+        fstp    D [edi]GFXVertex.x
+        fstp    D [edi]GFXVertex.y
+        fstp    D [edi]GFXVertex.z
         // load normals
         movzx   eax,B [esi+ebx*4]ModelFrameVertex8.mfv_NormIndex
         movzx   edx,B [ecx+ebx*4]ModelFrameVertex8.mfv_NormIndex
@@ -1596,7 +1508,7 @@ vtxNext8L:
         const ModelFrameVertex8 &mfv0 = pFrame0[iMdlVx];
         const ModelFrameVertex8 &mfv1 = pFrame1[iMdlVx];
         // store lerped vertex
-        GFXVertex3 &vtx = pvtxMipBase[iMipVx];
+        GFXVertex &vtx = pvtxMipBase[iMipVx];
         vtx.x = (Lerp( (FLOAT)mfv0.mfv_SBPoint(1), (FLOAT)mfv1.mfv_SBPoint(1), fLerpRatio) -fOffsetX) * fStretchX;
         vtx.y = (Lerp( (FLOAT)mfv0.mfv_SBPoint(2), (FLOAT)mfv1.mfv_SBPoint(2), fLerpRatio) -fOffsetY) * fStretchY;
         vtx.z = (Lerp( (FLOAT)mfv0.mfv_SBPoint(3), (FLOAT)mfv1.mfv_SBPoint(3), fLerpRatio) -fOffsetZ) * fStretchZ;
@@ -1711,16 +1623,16 @@ colEnd:
     for( INDEX iMipVx=0; iMipVx<_ctAllMipVx; iMipVx++) {
       GFXColor &col = pcolMipBase[iMipVx];
       const SLONG slShade = Clamp( (SLONG)pswMipCol[iMipVx], 0L, 255L);
-      col.r = pubClipByte[_slAR + ((_slLR*slShade)>>8)];
-      col.g = pubClipByte[_slAG + ((_slLG*slShade)>>8)];
-      col.b = pubClipByte[_slAB + ((_slLB*slShade)>>8)];
+      col.r = _pubClipByte[_slAR + ((_slLR*slShade)>>8)];
+      col.g = _pubClipByte[_slAG + ((_slLG*slShade)>>8)];
+      col.b = _pubClipByte[_slAB + ((_slLB*slShade)>>8)];
       col.a = slShade;
     }
 #endif
-
-  // all done
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_UNPACK);
 }
+
+
+
 
 // BEGIN MODEL RENDERING *******************************************************************************
 
@@ -1730,11 +1642,7 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
 {
   // cache API
   _eAPI = _pGfx->gl_eCurrentAPI;
-#ifdef SE1_D3D
   ASSERT( _eAPI==GAT_OGL || _eAPI==GAT_D3D || _eAPI==GAT_NONE);
-#else // SE1_D3D
-  ASSERT( _eAPI==GAT_OGL || _eAPI==GAT_NONE);
-#endif // SE1_D3D
   if( _eAPI==GAT_NONE) return;  // must have API
 
   // adjust Truform usage
@@ -1765,7 +1673,6 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   // declare pointers for general usage
   INDEX iSrfVx0, ctSrfVx;
   GFXTexCoord *ptexSrfBase;
-  GFXTexCoord *ptexSrfBump;
   GFXVertex   *pvtxSrfBase;
   FLOAT2D     *pvTexCoord;
         ModelMipInfo &mmi = *rm.rm_pmmiMip;
@@ -1779,14 +1686,8 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   // calculate projection of viewer in object space
   _vViewerObj = _vViewer * !rm.rm_mObjectRotation;
 
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_VERTICES_FIRSTMIP,        mmi0.mmpi_ctMipVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SURFACEVERTICES_FIRSTMIP, mmi0.mmpi_ctSrfVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_TRIANGLES_FIRSTMIP,       mmi0.mmpi_ctTriangles);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_VERTICES_USEDMIP,         mmi.mmpi_ctMipVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SURFACEVERTICES_USEDMIP,  mmi.mmpi_ctSrfVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_TRIANGLES_USEDMIP,        mmi.mmpi_ctTriangles);
-  _sfStats.IncrementCounter( CStatForm::SCI_TRIANGLES_FIRSTMIP, mmi0.mmpi_ctTriangles);
-  _sfStats.IncrementCounter( CStatForm::SCI_TRIANGLES_USEDMIP,  mmi.mmpi_ctTriangles); 
+  _sfStats.IncrementCounter( CStatForm::SCI_MDLTRIANGLES_FIRSTMIP, mmi0.mmpi_ctTriangles);
+  _sfStats.IncrementCounter( CStatForm::SCI_MDLTRIANGLES_USEDMIP,  mmi.mmpi_ctTriangles); 
 
   // allocate vertex arrays
   _ctAllMipVx = mmi.mmpi_ctMipVx;
@@ -1794,7 +1695,7 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   ASSERT( _ctAllMipVx>0 && _ctAllSrfVx>0);
   ASSERT( _avtxMipBase.Count()==0);  _avtxMipBase.Push(_ctAllMipVx);
   ASSERT( _atexMipBase.Count()==0);  _atexMipBase.Push(_ctAllMipVx);
-  ASSERT( _acolMipBase.Count()==0);  _acolMipBase.Push(_ctAllMipVx);
+  ASSERT( _acolMipBase.Count()==0);  _acolMipBase.Push(_ctAllMipVx+1);  _acolMipBase.Pop(); // wall to prevent memory trashing
   ASSERT( _anorMipBase.Count()==0);  _anorMipBase.Push(_ctAllMipVx);
 
   ASSERT( _atexMipFogy.Count()==0);  _atexMipFogy.Push(_ctAllMipVx);
@@ -1816,8 +1717,8 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   const BOOL bOverbright = mdl_bAllowOverbright && _pGfx->gl_ctTextureUnits>1;
   
   // saturate light and ambient color
-  const COLOR colL = AdjustColor( rm.rm_colLight,   _slShdHueShift, _slShdSaturation);
-  const COLOR colA = AdjustColor( rm.rm_colAmbient, _slShdHueShift, _slShdSaturation);
+  const COLOR colL = rm.rm_colLight;
+  const COLOR colA = rm.rm_colAmbient;
   // cache light intensities (-1 in case of overbrighting compensation)
   const INDEX iBright = bOverbright ?  0 : 1;
   _slLR = (colL & CT_RMASK)>>(CT_RSHIFT-iBright);
@@ -1846,7 +1747,7 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   pvtxMipBase = &_avtxMipBase[0];
   pcolMipBase = &_acolMipBase[0];
   pnorMipBase = &_anorMipBase[0];
-  const BOOL bNeedNormals = GFX_bTruform || (_ulMipLayerFlags&(SRF_REFLECTIONS|SRF_SPECULAR|SRF_BUMP));
+  const BOOL bNeedNormals = GFX_bTruform || (_ulMipLayerFlags&(SRF_REFLECTIONS|SRF_SPECULAR));
   UnpackFrame( rm, bNeedNormals);
 
   // cache some more pointers and vars
@@ -1863,8 +1764,6 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
   // if this model has haze
   if( rm.rm_ulFlags & RMF_HAZE)
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_HAZE_MIP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_HAZE_MIP, _ctAllMipVx);
     // get viewer offset
     // _fHazeAdd = (_vViewer%(rm.rm_vObjectPosition-_aprProjection->pr_vViewerPosition)) - _haze_hp.hp_fNear; // might cause a BUG in compiler ????
     _fHazeAdd  = -_haze_hp.hp_fNear;
@@ -1903,15 +1802,12 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
           pshdMipHaze[iMipVx] = GetHazeAlpha(tx1) ^255;
         }
       }
-    } // haze mip setup done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_HAZE_MIP);
+    }
   }
 
   // if this model has fog
   if( rm.rm_ulFlags & RMF_FOG)
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_FOG_MIP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_FOG_MIP, _ctAllMipVx);
     // get viewer -z in object space
     _vFViewerObj = FLOAT3D(0,0,-1) * !rm.rm_mObjectToView;
     // get fog direction in object space
@@ -1955,8 +1851,7 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
           pshdMipFogy[iMipVx] = GetFogAlpha(tex) ^255;
         }
       }
-    } // fog mip setup done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_FOG_MIP);
+    }
   }
 
   // begin model rendering
@@ -1966,11 +1861,8 @@ void CModelObject::RenderModel_View( CRenderModel &rm)
 
 
   // PREPARE SURFACE VERTICES ------------------------------------------------------------------------
+
   
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_VERTICES);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_VERTICES, _ctAllSrfVx);
-
   // for each surface in current mip model
   BOOL bEmpty = TRUE;
   {FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms)
@@ -2000,7 +1892,7 @@ srfVtxLoop:
       mov     D [edi+0],edx
       movq    Q [edi+4],mm1
       add     ebx,2
-      add     edi,4*4
+      add     edi,3*4
       dec     ecx
       jnz     srfVtxLoop
       emms
@@ -2027,11 +1919,14 @@ srfVtxLoop:
     }
   }}
   // prepare (and lock) vertex array
-  gfxEnableDepthTest();
+//안태훈 수정 시작	//(5th Closed beta)(0.2)
+  if(rm.rm_ulFlags & RMF_OVERDRAW) gfxDisableDepthTest();
+  else gfxEnableDepthTest();
+//안태훈 수정 끝	//(5th Closed beta)(0.2)
   gfxSetVertexArray( &_avtxSrfBase[0], _ctAllSrfVx);
   if(GFX_bTruform) gfxSetNormalArray( &_anorSrfBase[0]);
   if(CVA_bModels) gfxLockArrays();
-  // cache light in object space (for reflection, specular and/or bump mapping)
+  // cache light in object space (for reflection and/or specular mapping)
   _vLightObj = rm.rm_vLightObj;
   // texture mapping correction factors (mex -> norm float)
   FLOAT fTexCorrU, fTexCorrV;
@@ -2041,127 +1936,9 @@ srfVtxLoop:
   const BOOL bTexMode = rm.rm_rtRenderType & (RT_TEXTURE|RT_WHITE_TEXTURE);
   const BOOL bAllLayers = bTexMode && !_bFlatFill;  // disallow rendering of every layer except diffuse
 
-  // model surface vertices prepared
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_VERTICES);
-
-
-  // RENDER BUMP LAYER -----------------------------------------------------------------------------
-
-  // if this model has bump mapping
-  _bHasBump = FALSE;
-  CTextureData *ptdBump = (CTextureData*)mo_toBump.GetData();
-  if( (_ulMipLayerFlags&SRF_BUMP) && mdl_bRenderBump && ptdBump!=NULL && bAllLayers && _eAPI == GAT_OGL)
-  {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_BUMP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_BUMP, _ctAllSrfVx);
-    // prepare array and pointers
-     FLOAT3D *pvBmpCoordU, *pvBmpCoordV;
-    ASSERT( _atexSrfBump.Count()==0);
-    _atexSrfBump.Push(_ctAllSrfVx);     
-
-
-    // get model bump color
-    GFXColor colMdlBump;
-    COLOR colB = AdjustColor( rm.rm_pmdModelData->md_colBump, _slTexHueShift, _slTexSaturation);
-    colMdlBump.abgr = (ByteSwap(colB)>>1) & 0x7F7F7F7F; // divide by 2 for bump equation (1-A+B)/2
-    // alpha controls bump strength - premultiplied for per surface calculation *(1/128)*(1/16)*(1/128)
-    const FLOAT fMdlBump = ((colB&0xFF)-128.0f) * 3.8144E-6; 
-    // get bump texture corrections
-    fTexCorrU = 1.0f / ptdBump->GetWidth(); 
-    fTexCorrV = 1.0f / ptdBump->GetHeight();
-
-    // for each bump surface in current mip model
-    FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms)
-    {
-      const MappingSurface &ms = *itms;
-      iSrfVx0 = ms.ms_iSrfVx0;
-      ctSrfVx = ms.ms_ctSrfVx;
-      if(  (ms.ms_ulRenderingFlags&SRF_INVISIBLE) || ctSrfVx==0) break;  // done if found invisible or empty surface
-      if( !(ms.ms_ulRenderingFlags&SRF_BUMP)) continue;  // skip non-bump or empty surface
-      // cache surface pointers
-      pvTexCoord  = &mmi.mmpi_avmexTexCoord[iSrfVx0];
-      pvBmpCoordU = &mmi.mmpi_avBumpU[iSrfVx0];
-      pvBmpCoordV = &mmi.mmpi_avBumpV[iSrfVx0];
-      puwSrfToMip = &mmi.mmpi_auwSrfToMip[iSrfVx0];
-      ptexSrfBump = &_atexSrfBump[iSrfVx0];
-      ptexSrfBase = &_atexSrfBase[iSrfVx0];
-      pcolSrfBase = &_acolSrfBase[iSrfVx0];
-
-      // get surface bump color and combine with model color
-      GFXColor colSrfBump;
-      colB = AdjustColor( ms.ms_colBump, _slTexHueShift, _slTexSaturation);
-      colSrfBump.MultiplyRGB( colB, colMdlBump);
-      const FLOAT fSrfBump = ((colB&0xFF)-128.0f)*fMdlBump; // alpha controls bump strength
-
-      // for each vertex in the surface
-      for( INDEX iSrfVx=0; iSrfVx<ctSrfVx; iSrfVx++) {
-        const INDEX iMipVx = puwSrfToMip[iSrfVx];
-        GFXNormal3 &nor = pnorMipBase[iMipVx];
-        // reflect viewer vector around vertex normal in object space
-        // and find delta between reflected viewer and light
-        FLOAT3D vOffset;
-        const FLOAT fNV = nor.nx*_vViewerObj(1) + nor.ny*_vViewerObj(2) + nor.nz*_vViewerObj(3);
-        vOffset(1) = (_vViewerObj(1) - 2*nor.nx*fNV) +_vLightObj(1);
-        vOffset(2) = (_vViewerObj(2) - 2*nor.ny*fNV) +_vLightObj(2);
-        vOffset(3) = (_vViewerObj(3) - 2*nor.nz*fNV) +_vLightObj(3);
-        // get light strenght along texture axes and adjust texture coordinates
-        const FLOAT fDU   = fSrfBump* (pvBmpCoordU[iSrfVx] %vOffset);
-        const FLOAT fDV   = fSrfBump* (pvBmpCoordV[iSrfVx] %vOffset);
-        const FLOAT fTexU = pvTexCoord[iSrfVx](1) *fTexCorrU;
-        const FLOAT fTexV = pvTexCoord[iSrfVx](2) *fTexCorrV;
-        ptexSrfBump[iSrfVx].s = fTexU + fDU;
-        ptexSrfBump[iSrfVx].t = fTexV - fDV;
-        ptexSrfBase[iSrfVx].s = fTexU - fDU;
-        ptexSrfBase[iSrfVx].t = fTexV + fDV;
-        // set bump color
-        pcolSrfBase[iSrfVx] = colSrfBump;
-      }
-    } 
-    // bump prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_BUMP_SURF);
-
-    // NOTE: bump is emulated by doing (1-A+B)/2
-    // A and B is bump texture that was offset towards and away from light
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_BUMP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_BUMP);
-
-    // setup texture/color arrays and rendering mode for 1st pass
-    SetCurrentTexture( ptdBump, mo_toBump.GetFrame());
-    gfxSetTexCoordArray(&_atexSrfBump[0], FALSE);  // pglTexCoordPointer( 2, GL_FLOAT,      0, &_atexSrfBump[0]);
-    gfxSetColorArray( &_acolSrfBase[0]);           // pglColorPointer( 4, GL_UNSIGNED_BYTE, 0, &_acolSrfBase[0]);
-    gfxDisableAlphaTest();
-    gfxDisableBlend();
-    gfxEnableDepthWrite();  //pglDepthMask( GL_TRUE);
-
-    // render 1st pass
-    RenderOneSide( rm, TRUE,  SRF_BUMP);
-    RenderOneSide( rm, FALSE, SRF_BUMP);
-
-    // setup texture array and rendering mode for 2nd pass
-    gfxSetTexCoordArray(&_atexSrfBase[0], FALSE); // pglTexCoordPointer( 2, GL_FLOAT, 0, &_atexSrfBase[0]);
-    pglTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-    gfxEnableBlend();
-    gfxBlendFunc(GFX_ONE, GFX_ONE); //pglBlendFunc( GL_ONE, GL_ONE);
-    gfxDisableDepthWrite();  //pglDepthMask( GL_FALSE);
-
-    // render 2nd pass
-    RenderOneSide( rm, TRUE,  SRF_BUMP);
-    RenderOneSide( rm, FALSE, SRF_BUMP);
-
-    // restore texture modulation
-    pglTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-    // bump rendering done
-    _bHasBump = TRUE;
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_BUMP);
-  }
-
 
   // RENDER DIFFUSE LAYER -------------------------------------------------------------------
 
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_DIFF_SURF);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_DIFF_SURF, _ctAllSrfVx);
 
   // get diffuse texture corrections
   CTextureData *ptdDiff = (CTextureData*)mo_toTexture.GetData();
@@ -2175,8 +1952,8 @@ srfVtxLoop:
 
   // get model diffuse color
   GFXColor colMdlDiff;
-  const COLOR colD = AdjustColor( rm.rm_pmdModelData->md_colDiffuse, _slTexHueShift, _slTexSaturation);
-  const COLOR colB = AdjustColor( rm.rm_colBlend,                    _slTexHueShift, _slTexSaturation);
+  const COLOR colD = rm.rm_pmdModelData->md_colDiffuse;
+  const COLOR colB = rm.rm_colBlend;
   colMdlDiff.MultiplyRGBA( colD, colB);
 
   // for each surface in current mip model
@@ -2194,7 +1971,7 @@ srfVtxLoop:
 
     // get surface diffuse color and combine with model color
     GFXColor colSrfDiff;
-    const COLOR colD = AdjustColor( ms.ms_colDiffuse, _slTexHueShift, _slTexSaturation);
+    const COLOR colD = ms.ms_colDiffuse;
     colSrfDiff.MultiplyRGBA( colD, colMdlDiff);
 
 #if ASMOPT == 1
@@ -2298,16 +2075,14 @@ diffColLoop:
     if( (ms.ms_ulRenderingFlags&SRF_OPAQUE) && !_bForceTranslucency) continue;
     // eventually do some haze and/or fog attenuation of alpha channel in surface
     if( rm.rm_ulFlags & RMF_HAZE) {
-      if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
+      if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
       else AttenuateAlpha( pshdMipHaze, ctSrfVx);
     }
     if( rm.rm_ulFlags & RMF_FOG) {
-      if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
+      if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
       else AttenuateAlpha( pshdMipFogy, ctSrfVx);
     }
   }}
-  // done with diffuse surfaces setup
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_DIFF_SURF);
 
   // if no texture mode is active
   if( !bTexMode && _eAPI==GAT_OGL) { 
@@ -2324,13 +2099,8 @@ diffColLoop:
     // done
     _sfStats.StopTimer(CStatForm::STI_MODELRENDERING);
     if( bModelSetupTimer) _sfStats.StartTimer(CStatForm::STI_MODELSETUP);
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERMODEL);
     return;
   }
-
-  // proceed with rendering
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_DIFFUSE);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_DIFFUSE);
 
   // must render diffuse if there is no texture (white mode)
   if( (_ulMipLayerFlags&SRF_DIFFUSE) || ptdDiff==NULL)
@@ -2341,7 +2111,7 @@ diffColLoop:
     INDEX iFrame=0;
     if( ptdDiff!=NULL) iFrame = mo_toTexture.GetFrame();;
     SetCurrentTexture( ptdDiff, iFrame);
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_DIFFUSE);
@@ -2356,9 +2126,6 @@ diffColLoop:
   gfxDisableDepthWrite();
   gfxDisableAlphaTest(); // disable alpha testing if enabled after some surface
   gfxEnableBlend();
-
-  // done with diffuse
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_DIFFUSE);
 
 
   // RENDER PATCHES -------------------------------------------------------------------
@@ -2375,15 +2142,13 @@ diffColLoop:
 
   // if this model has detail mapping
   extern INDEX mdl_bRenderDetail;
+  CTextureData *ptdBump = (CTextureData*)mo_toBump.GetData();
   const ULONG ulTransAlpha = (rm.rm_colBlend&CT_AMASK)>>CT_ASHIFT;
-  if( (_ulMipLayerFlags&(SRF_DETAIL)) && mdl_bRenderDetail && ptdBump!=NULL && ulTransAlpha>192 && bAllLayers && !_bHasBump)
+  if( (_ulMipLayerFlags&(SRF_DETAIL|SRF_BUMP)) && mdl_bRenderDetail && ptdBump!=NULL && ulTransAlpha>192 && bAllLayers)
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_BUMP_SURF);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_BUMP_SURF, _ctAllSrfVx);
-
     // get model detail color
     GFXColor colMdlBump;
-    const COLOR colB = AdjustColor( rm.rm_pmdModelData->md_colBump, _slTexHueShift, _slTexSaturation);
+    const COLOR colB = rm.rm_pmdModelData->md_colBump;
     colMdlBump.abgr  = ByteSwap(colB);
     // get detail texture corrections
     fTexCorrU = 1.0f / ptdBump->GetWidth(); 
@@ -2410,7 +2175,7 @@ diffColLoop:
       pcolSrfBase = &_acolSrfBase[iSrfVx0];
       // get surface detail color and combine with model color
       GFXColor colSrfBump;
-      const COLOR colB = AdjustColor( ms.ms_colBump, _slTexHueShift, _slTexSaturation);
+      const COLOR colB = ms.ms_colBump;
       colSrfBump.MultiplyRGB( colB, colMdlBump);
 
       // for each vertex in the surface
@@ -2422,25 +2187,16 @@ diffColLoop:
         pcolSrfBase[iSrfVx]   = colSrfBump;
       }
     }
-    // detail prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_BUMP_SURF);
-
-    // begin rendering
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_BUMP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_BUMP);
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdBump, mo_toBump.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxDisableAlphaTest();
     gfxBlendFunc( GFX_DST_COLOR, GFX_SRC_COLOR);
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_DETAIL);
     RenderOneSide( rm, FALSE, SRF_DETAIL);
-
-    // detail rendering done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_BUMP);
   }
 
 
@@ -2452,8 +2208,6 @@ diffColLoop:
   CTextureData *ptdReflection = (CTextureData*)mo_toReflection.GetData();
   if( (_ulMipLayerFlags&SRF_REFLECTIONS) && mdl_bRenderReflection && ptdReflection!=NULL && bAllLayers)
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_REFL_MIP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_REFL_MIP, _ctAllMipVx);
     // cache rotation
     const FLOATmatrix3D &m = rm.rm_mObjectRotation;
 
@@ -2560,15 +2314,10 @@ reflMipLoop:
       ptexMipBase[iMipVx].t = fRVz*f1oFM +0.5f;
     }
 #endif
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_REFL_MIP);
 
     // setup surface vertices
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_REFL_SURF);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_REFL_SURF, _ctAllSrfVx);
-
-    // get model reflection color
-    GFXColor colMdlRefl;
-    const COLOR colR = AdjustColor( rm.rm_pmdModelData->md_colReflections, _slTexHueShift, _slTexSaturation);
+    GFXColor colMdlRefl;  // get model reflection color
+    const COLOR colR = rm.rm_pmdModelData->md_colReflections;
     colMdlRefl.abgr = ByteSwap(colR);
     colMdlRefl.AttenuateA( (rm.rm_colBlend&CT_AMASK)>>CT_ASHIFT);
 
@@ -2586,7 +2335,7 @@ reflMipLoop:
       pcolSrfBase = &_acolSrfBase[iSrfVx0];
       // get surface reflection color and combine with model color
       GFXColor colSrfRefl;
-      const COLOR colR = AdjustColor( ms.ms_colReflections, _slTexHueShift, _slTexSaturation);
+      const COLOR colR = ms.ms_colReflections;
       colSrfRefl.MultiplyRGBA( colR, colMdlRefl);
 
       // set reflection texture coords
@@ -2610,32 +2359,23 @@ reflMipLoop:
       if( (ms.ms_ulRenderingFlags&SRF_OPAQUE) && !_bForceTranslucency) continue;
       // eventually do some haze and/or fog attenuation of alpha channel in surface
       if( rm.rm_ulFlags & RMF_HAZE) {
-        if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
+        if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
         else AttenuateAlpha( pshdMipHaze, ctSrfVx);
       }
       if( rm.rm_ulFlags & RMF_FOG) {
-        if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
+        if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
         else AttenuateAlpha( pshdMipFogy, ctSrfVx);
       }
     }
-    // reflection prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_REFL_SURF);
-
-    // begin rendering
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_REFLECTIONS);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_REFLECTIONS);
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdReflection, mo_toReflection.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_REFLECTIONS);
     RenderOneSide( rm, FALSE, SRF_REFLECTIONS);
-
-    // reflection rendering done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_REFLECTIONS);
   }
 
 
@@ -2647,8 +2387,6 @@ reflMipLoop:
   CTextureData *ptdSpecular = (CTextureData*)mo_toSpecular.GetData();
   if( (_ulMipLayerFlags&SRF_SPECULAR) && mdl_bRenderSpecular && ptdSpecular!=NULL && bAllLayers)
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_SPEC_MIP);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_SPEC_MIP, _ctAllMipVx);
     // cache object view rotation
     const FLOATmatrix3D &m = rm.rm_mObjectToView;
 
@@ -2759,15 +2497,10 @@ specMipLoop:
       ptexMipBase[iMipVx].t = fRVy*f1oFM +0.5f;
     }
 #endif
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_SPEC_MIP);
 
     // setup surface vertices
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_SPEC_SURF);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_SPEC_SURF, _ctAllSrfVx);
-
-    // get model specular color and multiply with light color
-    GFXColor colMdlSpec;
-    const COLOR colS = AdjustColor( rm.rm_pmdModelData->md_colSpecular, _slTexHueShift, _slTexSaturation);
+    GFXColor colMdlSpec; // get model specular color and multiply with light color
+    const COLOR colS = rm.rm_pmdModelData->md_colSpecular;
     colMdlSpec.abgr  = ByteSwap(colS);
     colMdlSpec.AttenuateRGB( (rm.rm_colBlend&CT_AMASK)>>CT_ASHIFT);
     colMdlSpec.r = ClampUp( (colMdlSpec.r *_slLR)>>8, 255L);
@@ -2788,7 +2521,7 @@ specMipLoop:
       pcolSrfBase = &_acolSrfBase[iSrfVx0];
       // get surface specular color and combine with model color
       GFXColor colSrfSpec;
-      const COLOR colS = AdjustColor( ms.ms_colSpecular, _slTexHueShift, _slTexSaturation);
+      const COLOR colS = ms.ms_colSpecular;
       colSrfSpec.MultiplyRGB( colS, colMdlSpec);
 
       // for each vertex in the surface
@@ -2805,32 +2538,23 @@ specMipLoop:
       if( (ms.ms_ulRenderingFlags&SRF_OPAQUE) && !_bForceTranslucency) continue;
       // eventually do some haze and/or fog attenuation of alpha channel in surface
       if( rm.rm_ulFlags & RMF_HAZE) {
-        if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
+        if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipHaze, ctSrfVx);
         else AttenuateAlpha( pshdMipHaze, ctSrfVx);
       }
       if( rm.rm_ulFlags & RMF_FOG) {
-        if( ms.ms_sttTranslucencyType==STT_MULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
+        if( ms.ms_sttTranslucencyType==STT_INVMULTIPLY) AttenuateColor( pshdMipFogy, ctSrfVx);
         else AttenuateAlpha( pshdMipFogy, ctSrfVx);
       }
     }
-    // specular prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_SPEC_SURF);
-
-    // begin rendering
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_SPECULAR);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_SPECULAR);
 
     // setup texture/color arrays and rendering mode
     SetCurrentTexture( ptdSpecular, mo_toSpecular.GetFrame());
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_INV_SRC_ALPHA, GFX_ONE);
     // do rendering
     RenderOneSide( rm, TRUE , SRF_SPECULAR);
     RenderOneSide( rm, FALSE, SRF_SPECULAR);
-
-    // specular rendering done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_SPECULAR);
   }
 
 
@@ -2841,11 +2565,8 @@ specMipLoop:
   // if this model has haze and some opaque surfaces
   if( (rm.rm_ulFlags&RMF_HAZE) && !(_ulMipLayerFlags&MMI_TRANSLUCENT))
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_HAZE_SURF);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_HAZE_SURF, _ctAllSrfVx);
     // unpack haze color
-    const COLOR colH = AdjustColor( _haze_hp.hp_colColor, _slTexHueShift, _slTexSaturation);
-    GFXColor colHaze(colH);
+    GFXColor colHaze(_haze_hp.hp_colColor);
 
     // for each surface in current mip model
     FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms)
@@ -2870,25 +2591,16 @@ specMipLoop:
       // mark that this surface has haze
       ms.ms_ulRenderingFlags |= SRF_HAZE;
     }
-    // haze prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_HAZE_SURF);
-
-    // begin rendering
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_HAZE);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_HAZE);
 
     // setup texture/color arrays and rendering mode
     gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
     gfxSetTexture( _haze_ulTexture, _haze_tpLocal);
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_HAZE);
     RenderOneSide( rm, FALSE, SRF_HAZE);
-
-    // haze rendering done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_HAZE);
   }
 
 
@@ -2899,11 +2611,8 @@ specMipLoop:
   // if this model has fog and some opaque surfaces
   if( (rm.rm_ulFlags&RMF_FOG) && !(_ulMipLayerFlags&MMI_TRANSLUCENT))
   {
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_INIT_FOG_SURF);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_INIT_FOG_SURF, _ctAllSrfVx);
     // unpack fog color
-    const COLOR colF = AdjustColor( _fog_fp.fp_colColor, _slTexHueShift, _slTexSaturation);
-    GFXColor colFog(colF);
+    GFXColor colFog(_fog_fp.fp_colColor);
 
     // for each surface in current mip model
     FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms)
@@ -2927,26 +2636,17 @@ specMipLoop:
       // mark that this surface has fog
       ms.ms_ulRenderingFlags |= SRF_FOG;
     }
-    // fog prep done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_INIT_FOG_SURF);
-
-    // begin rendering
-    _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDER_FOG);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDER_FOG);
 
     // setup texture/color arrays and rendering mode
     gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
     gfxSetTexture( _fog_ulTexture, _fog_tpLocal);
-    gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+    gfxSetTexCoordArray( &_atexSrfBase[0]);
     gfxSetColorArray(    &_acolSrfBase[0]);
     gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
     gfxDisableAlphaTest();
     // do rendering
     RenderOneSide( rm, TRUE,  SRF_FOG);
     RenderOneSide( rm, FALSE, SRF_FOG);
-
-    // fog rendering done
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDER_FOG);
   }
 
   // almost done
@@ -2963,7 +2663,6 @@ specMipLoop:
   gfxCullFace(GFX_BACK);
   _sfStats.StopTimer(CStatForm::STI_MODELRENDERING);
   if( bModelSetupTimer) _sfStats.StartTimer(CStatForm::STI_MODELSETUP);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERMODEL);
 }
 #pragma warning(default: 4731)
 
@@ -2976,9 +2675,6 @@ specMipLoop:
 // render patches on model
 void CModelObject::RenderPatches_View( CRenderModel &rm)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDERPATCHES);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDERPATCHES);
-
   // setup API rendering functions
   gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
   gfxDepthFunc( GFX_LESS_EQUAL);
@@ -3021,7 +2717,7 @@ void CModelObject::RenderPatches_View( CRenderModel &rm)
       pglLoadIdentity();
       pglScalef( fmexMainSizeU/fmexSizeU*fSizeDivider, fmexMainSizeV/fmexSizeV*fSizeDivider, 0);
       pglTranslatef( -mexPatchOffset(1)*f1oMainSizeU, -mexPatchOffset(2)*f1oMainSizeV, 0);
-      gfxSetTexCoordArray( &_atexSrfBase[0], FALSE);
+      gfxSetTexCoordArray( &_atexSrfBase[0]);
       //AddElements( &ppp.ppp_auwElements[0], ppp.ppp_auwElements.Count());
       //FlushElements();
     }
@@ -3031,9 +2727,6 @@ void CModelObject::RenderPatches_View( CRenderModel &rm)
   pglLoadIdentity();
   pglMatrixMode( GL_MODELVIEW);
   OGL_CHECKERROR;
-
-  // patches rendered
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERPATCHES);
 }
 
 
@@ -3047,19 +2740,15 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
                                         const FLOAT fFallOff, const FLOAT fHotSpot, const FLOAT fIntensity,
                                         const FLOATplane3D &plShadowPlane)
 {
+  return;
+  /*
   // no shadow, if projection is not perspective or no textures
   if( !_aprProjection.IsPerspective() || !(rm.rm_rtRenderType & RT_TEXTURE)) return;
 
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDERSHADOW);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDERSHADOW);
-
   // get viewer in absolute space
   FLOAT3D vViewerAbs = _aprProjection->ViewerPlacementR().pl_PositionVector;
-  if( plShadowPlane.PointDistance(vViewerAbs)<0.01f) {
-    // shadow destination plane is not visible - don't cast shadows
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERSHADOW);
-    return;
-  }
+  // shadow destination plane is not visible - don't cast shadows
+  if( plShadowPlane.PointDistance(vViewerAbs)<0.01f) return;
 
   // get light position in object space
   FLOATmatrix3D mAbsToObj = !rm.rm_mObjectRotation;
@@ -3074,30 +2763,17 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
 
   // get distance from shadow plane to light
   const FLOAT fDl = plShadowPlaneObj.PointDistance(_vLightObj);
-  if( fDl<0.1f) {
-    // too small - do nothing
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERSHADOW);
-    return;
-  }
-
-  ModelMipInfo &mmi = *rm.rm_pmmiMip;
-  ModelMipInfo &mmi0 = rm.rm_pmdModelData->md_MipInfos[0];
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWVERTICES_FIRSTMIP, mmi0.mmpi_ctMipVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWVERTICES_USEDMIP,  mmi.mmpi_ctMipVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWSURFACEVERTICES_FIRSTMIP, mmi0.mmpi_ctSrfVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWSURFACEVERTICES_USEDMIP,  mmi.mmpi_ctSrfVx);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWTRIANGLES_FIRSTMIP, mmi0.mmpi_ctTriangles);
-  _pfModelProfile.IncrementCounter( CModelProfile::PCI_SHADOWTRIANGLES_USEDMIP,  mmi.mmpi_ctTriangles);
-
-  _sfStats.IncrementCounter( CStatForm::SCI_SHADOWTRIANGLES_FIRSTMIP, mmi0.mmpi_ctTriangles);
-  _sfStats.IncrementCounter( CStatForm::SCI_SHADOWTRIANGLES_USEDMIP,  mmi.mmpi_ctTriangles); 
+  // too small - do nothing
+  if( fDl<0.1f) return;
 
   // allocate vertex arrays
+  ModelMipInfo &mmi = *rm.rm_pmmiMip;
+  ModelMipInfo &mmi0 = rm.rm_pmdModelData->md_MipInfos[0];
   _ctAllMipVx = mmi.mmpi_ctMipVx;
   _ctAllSrfVx = mmi.mmpi_ctSrfVx;
   ASSERT( _ctAllMipVx>0 && _ctAllSrfVx>0);
   ASSERT( _avtxMipBase.Count()==0);  _avtxMipBase.Push(_ctAllMipVx);
-  ASSERT( _acolMipBase.Count()==0);  _acolMipBase.Push(_ctAllMipVx);
+  ASSERT( _acolMipBase.Count()==0);  _acolMipBase.Push(_ctAllMipVx+1);  _acolMipBase.Pop(); // wall to prevent memory trashing
   ASSERT( _aooqMipShad.Count()==0);  _aooqMipShad.Push(_ctAllMipVx);
   ASSERT( _avtxSrfBase.Count()==0);  _avtxSrfBase.Push(_ctAllSrfVx);   
   ASSERT( _acolSrfBase.Count()==0);  _acolSrfBase.Push(_ctAllSrfVx);  
@@ -3110,9 +2786,6 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
   UnpackFrame( rm, FALSE);
   UBYTE *pubsMipBase = (UBYTE*)pcolMipBase;
 
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SHAD_INIT_MIP);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SHAD_INIT_MIP, _ctAllMipVx);
-
   // calculate light interpolants attenuated by ambient factor
   const INDEX iLightMax  = NormFloatToByte(fIntensity);  
   const FLOAT fLightStep = 255.0f* fIntensity/(fFallOff-fHotSpot);
@@ -3121,7 +2794,7 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
   {for( INDEX iMipVx=0; iMipVx<_ctAllMipVx; iMipVx++)
   {
     // get object coordinates
-    GFXVertex3 &vtx = pvtxMipBase[iMipVx];
+    GFXVertex &vtx = pvtxMipBase[iMipVx];
     // get distance of the vertex from shadow plane
     FLOAT fDt = plShadowPlaneObj(1) *vtx.x
               + plShadowPlaneObj(2) *vtx.y
@@ -3178,7 +2851,6 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
       else                    pubsMipBase[iMipVx] = FloatToInt( (fFallOff-fDls)*fLightStep);
     }
   }}
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SHAD_INIT_MIP);
 
   // get diffuse texture corrections
   FLOAT fTexCorrU, fTexCorrV;
@@ -3191,8 +2863,6 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
     fTexCorrV = 1.0f;
   }
 
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SHAD_INIT_SURF);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SHAD_INIT_SURF, _ctAllSrfVx);
   // for each surface in current mip model
   FOREACHINSTATICARRAY( mmi.mmpi_MappingSurfaces, MappingSurface, itms)
   {
@@ -3221,9 +2891,6 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
       ptx4SrfShad[iSrfVx].q = fooq;
     }
   }
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SHAD_INIT_SURF);
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SHAD_GLSETUP);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SHAD_GLSETUP, 1);
 
   // begin rendering
   const BOOL bModelSetupTimer = _sfStats.CheckTimer(CStatForm::STI_MODELSETUP);
@@ -3253,9 +2920,6 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
   gfxEnableClipping();
   gfxCullFace(GFX_BACK);
 
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SHAD_GLSETUP);
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SHAD_RENDER);
   // for each surface in current mip model
   INDEX iStartElem=0;
   INDEX ctElements=0;
@@ -3270,13 +2934,12 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
       continue;
     }
     // flush batched elements
-    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
-    _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SHAD_RENDER, ctElements/3);
+    if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
     iStartElem+= ctElements+ms.ms_ctSrfEl;
     ctElements = 0;
   }}
   // flush leftovers
-  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_aiElements[iStartElem]);
+  if( ctElements>0) FlushElements( ctElements, &mmi.mmpi_auwElements[iStartElem]);
 
   // done
   gfxUnlockArrays();
@@ -3292,8 +2955,7 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
   // shadow rendered
   _sfStats.StopTimer(CStatForm::STI_MODELRENDERING);
   if( bModelSetupTimer) _sfStats.StartTimer(CStatForm::STI_MODELSETUP);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SHAD_RENDER);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERSHADOW);
+  */
 }
 
 
@@ -3304,19 +2966,10 @@ void CModelObject::RenderShadow_View( CRenderModel &rm, const CPlacement3D &plLi
 void CModelObject::AddSimpleShadow_View( CRenderModel &rm, const FLOAT fIntensity,
                                            const FLOATplane3D &plShadowPlane)
 {
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_RENDERSIMPLESHADOW);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_RENDERSIMPLESHADOW);
-
   // get viewer in absolute space
   FLOAT3D vViewerAbs = _aprProjection->ViewerPlacementR().pl_PositionVector;
   // if shadow destination plane is not visible, don't cast shadows
-  if( plShadowPlane.PointDistance(vViewerAbs)<0.01f) {
-    _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERSIMPLESHADOW);
-    return;
-  }
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SIMP_CALC);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SIMP_CALC);
+  if( plShadowPlane.PointDistance(vViewerAbs)<0.01f) return;
 
   // get shadow plane in object space
   const FLOATmatrix3D mAbsToObj = !rm.rm_mObjectRotation;
@@ -3335,11 +2988,6 @@ void CModelObject::AddSimpleShadow_View( CRenderModel &rm, const FLOAT fIntensit
   const FLOAT3D v01 = plShadowPlaneObj.ProjectPoint(FLOAT3D(vMin(1),vMin(2),vMax(3))) *rm.rm_mObjectToView +rm.rm_vObjectToView;
   const FLOAT3D v10 = plShadowPlaneObj.ProjectPoint(FLOAT3D(vMax(1),vMin(2),vMin(3))) *rm.rm_mObjectToView +rm.rm_vObjectToView;
   const FLOAT3D v11 = plShadowPlaneObj.ProjectPoint(FLOAT3D(vMax(1),vMin(2),vMax(3))) *rm.rm_mObjectToView +rm.rm_vObjectToView;
-  // calc done
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SIMP_CALC);
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SIMP_COPY);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SIMP_COPY);
 
   // prepare color
   ASSERT( fIntensity>=0 && fIntensity<=1);
@@ -3348,8 +2996,8 @@ void CModelObject::AddSimpleShadow_View( CRenderModel &rm, const FLOAT fIntensit
 
   // add to vertex arrays
   GFXVertex   *pvtx = _avtxCommon.Push(4);
-  GFXTexCoord *ptex = _atexCommon.Push(4);
   GFXColor    *pcol = _acolCommon.Push(4);
+  GFXTexCoord *ptex = _atexCommon[0].Push(4);
   // vertices
   pvtx[0].x = v00(1);  pvtx[0].y = v00(2);  pvtx[0].z = v00(3);
   pvtx[2].x = v11(1);  pvtx[2].y = v11(2);  pvtx[2].z = v11(3);
@@ -3393,10 +3041,6 @@ void CModelObject::AddSimpleShadow_View( CRenderModel &rm, const FLOAT fIntensit
       pcol[i].AttenuateRGB(GetHazeAlpha(fS)^255);
     }
   }
-
-  // one simple shadow added to rendering queue
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SIMP_COPY);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_RENDERSIMPLESHADOW);
 }
 
 
@@ -3407,10 +3051,8 @@ void RenderBatchedSimpleShadows_View(void)
   const INDEX ctVertices = _avtxCommon.Count();
   if( ctVertices<=0) return;
   // safety checks
-  ASSERT( _atexCommon.Count()==ctVertices);
+  ASSERT( _atexCommon[0].Count()==ctVertices);
   ASSERT( _acolCommon.Count()==ctVertices);
-  _pfModelProfile.StartTimer( CModelProfile::PTI_VIEW_SIMP_BATCHED);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_VIEW_SIMP_BATCHED);
 
   // begin rendering
   const BOOL bModelSetupTimer = _sfStats.CheckTimer(CStatForm::STI_MODELSETUP);
@@ -3419,7 +3061,7 @@ void RenderBatchedSimpleShadows_View(void)
 
   // setup texture and projection
   _bFlatFill = FALSE;
-  gfxSetViewMatrix(NULL);
+  gfxSetViewMatrix();
   gfxCullFace(GFX_BACK);
   gfxSetTextureWrapping( GFX_REPEAT, GFX_REPEAT);
   CTextureData *ptd = (CTextureData*)_toSimpleModelShadow.GetData();
@@ -3436,14 +3078,13 @@ void RenderBatchedSimpleShadows_View(void)
   gfxDisableTruform();
 
   // draw!
-  _pGfx->gl_ctModelTriangles += ctVertices/2; 
+  _pGfx->gl_ctModelElements += ctVertices*6/4; 
   gfxFlushQuads();
 
   // all simple shadows rendered
   gfxResetArrays();
   _sfStats.StopTimer(CStatForm::STI_MODELRENDERING);
   if( bModelSetupTimer) _sfStats.StartTimer(CStatForm::STI_MODELSETUP);
-  _pfModelProfile.StopTimer( CModelProfile::PTI_VIEW_SIMP_BATCHED);
 }
 
 

@@ -128,7 +128,8 @@ void DecomposeRotationMatrixNoSnap(ANGLE3D &a3dAngles, const FLOATmatrix3D &t3dR
     // we choose to have banking of 0
     b = 0;
     // and calculate heading for that
-    ASSERT(Abs(t3dRotation(2,3))>0.5); // must be around 1, what is far from 0
+//0507 kwon »čÁ¦.
+//    ASSERT(Abs(t3dRotation(2,3))>0.5); // must be around 1, what is far from 0
     h = ATan2(t3dRotation(1,2)/(-t3dRotation(2,3)), t3dRotation(1,1));  // no division by 0
   // otherwise
   } else {
@@ -158,11 +159,14 @@ void DecomposeRotationMatrix(ANGLE3D &a3dAngles, const FLOATmatrix3D &t3dRotatio
  */
 void AnglesToDirectionVector(const ANGLE3D &a3dAngles, FLOAT3D &vDirection)
 {
-  // find the rotation matrix from the angles
-  FLOATmatrix3D mDirection;
-  MakeRotationMatrix(mDirection, a3dAngles);
-  // rotate a front oriented vector by the matrix
-  vDirection = FLOAT3D(0.0f, 0.0f, -1.0f)*mDirection;
+  FLOAT fSinH = SinFast(a3dAngles(1));  // heading
+  FLOAT fCosH = CosFast(a3dAngles(1));
+  FLOAT fSinP = SinFast(a3dAngles(2));  // pitch
+  FLOAT fCosP = CosFast(a3dAngles(2));
+
+  vDirection(1) = -fCosP*fSinH;
+  vDirection(2) = +fSinP;
+  vDirection(3) = -fCosP*fCosH;
 }
 
 /*
@@ -185,7 +189,7 @@ void DirectionVectorToAnglesNoSnap(const FLOAT3D &vDirection, ANGLE3D &a3dAngles
   p = ASin(y);
 
   // if y is near +1 or -1
-  if (y>0.99 || y<-0.99) {
+  if (y>0.9999 || y<-0.9999) {		// yjpark - from 0.99 to 0.9999 for high precision ( ray casting bug is fixed )
     // heading is irrelevant
     h = 0;
   // otherwise

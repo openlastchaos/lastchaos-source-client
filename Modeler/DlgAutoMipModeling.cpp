@@ -22,8 +22,8 @@ CDlgAutoMipModeling::CDlgAutoMipModeling(CWnd* pParent /*=NULL*/)
 	m_iSurfacePreservingFactor = 0;
 	//}}AFX_DATA_INIT
 
-  m_iVerticesToRemove = theApp.GetProfileInt( L"Modeler prefs", L"Auto mip modeling vertex removal rate", 10);
-  m_iSurfacePreservingFactor = theApp.GetProfileInt( L"Modeler prefs", L"Surface preserving factor", 30);
+  m_iVerticesToRemove = theApp.GetProfileInt( "Modeler prefs", "Auto mip modeling verex removal rate", 10);
+  m_iSurfacePreservingFactor = theApp.GetProfileInt( "Modeler prefs", "Surface preserving factor", 30);
 }
 
 
@@ -40,8 +40,8 @@ void CDlgAutoMipModeling::DoDataExchange(CDataExchange* pDX)
   // if dialog gives data
   if( pDX->m_bSaveAndValidate)
   {
-    theApp.WriteProfileInt( L"Modeler prefs", L"Auto mip modeling vertex removal rate", m_iVerticesToRemove);
-    theApp.WriteProfileInt( L"Modeler prefs", L"Surface preserving factor", m_iSurfacePreservingFactor);
+    theApp.WriteProfileInt( "Modeler prefs", "Auto mip modeling verex removal rate", m_iVerticesToRemove);
+    theApp.WriteProfileInt( "Modeler prefs", "Surface preserving factor", m_iSurfacePreservingFactor);
   }
 }
 

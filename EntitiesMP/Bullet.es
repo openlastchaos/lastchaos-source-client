@@ -1,15 +1,19 @@
 502
 %{
 #include "StdH.h"
+#include "EntitiesMP/Player.h"
+//#include "EntitiesMP/Gizmo.h"
+//#include "EntitiesMP/Beast.h"
 %}
 
 uses "EntitiesMP/BasicEffects";
+uses "EntitiesMP/EnemyBase";
 uses "Engine/Classes/MovableEntity";
 
 
 // input parameters for bullet
 event EBulletInit {
-  CEntityPointer penOwner,        // who launched it
+  CEntityID eidOwner,        // who launched it
   FLOAT fDamage,                  // damage
 };
 
@@ -66,11 +70,21 @@ functions:
     m_vTargetCopy = m_vTarget;
   };
 
-  void CalcTarget(CEntity *pen, FLOAT fRange) {
-    FLOAT3D vTarget;
+  void CalcTarget(CEntity *pen, FLOAT fRange)
+  {
+    // if no target, call previous function
+    if( !pen) {
+      CalcTarget(fRange);
+      return;
+    }
 
     // target body
     EntityInfo *peiTarget = (EntityInfo*) (pen->GetEntityInfo());
+    if( IsDerivedFromClass( pen, &CEnemyBase_DLLClass)) {
+      CEnemyBase *penEnemy = (CEnemyBase *)pen;
+      ScaleEntityInfo(peiTarget, penEnemy->m_fStretchMultiplier);      
+    }
+    FLOAT3D vTarget;
     GetEntityInfoPosition(pen, peiTarget->vTargetCenter, vTarget);
 
     // calculate
@@ -157,7 +171,7 @@ functions:
 
       m_vHitPoint = crRay.cr_vHit;
 
-      // if brush hitted
+      // if brush hit
       if (crRay.cr_penHit->GetRenderType()==RT_BRUSH && crRay.cr_pbpoBrushPolygon!=NULL)
       {
         CBrushPolygon *pbpo = crRay.cr_pbpoBrushPolygon;
@@ -187,7 +201,10 @@ functions:
           }
         }
         // spawn hit effect
-        BOOL bPassable = pbpo->bpo_ulFlags & (BPOF_PASSABLE|BPOF_SHOOTTHRU);
+//강동민 수정 시작 물 퍼포먼스 작업
+        //BOOL bPassable = pbpo->bpo_ulFlags & (BPOF_PASSABLE|BPOF_SHOOTTHRU);
+		BOOL bPassable = pbpo->bpo_ulFlags & (BPOF_PASSABLE);
+//강동민 수정 끝 물 퍼포먼스 작업
         if (!bPassable || iSurfaceType==SURFACE_WATER) {
           SpawnHitTypeEffect(this, bhtType, bSound, vHitNormal, crRay.cr_vHit, vHitDirection, FLOAT3D(0.0f, 0.0f, 0.0f));
         }
@@ -197,10 +214,11 @@ functions:
       // if not brush
       } else {
 
-        // if flesh entity
-        if (crRay.cr_penHit->GetEntityInfo()!=NULL) {
-          if( ((EntityInfo*)crRay.cr_penHit->GetEntityInfo())->Eeibt == EIBT_FLESH)
-          {
+        // if flesh entity (and not in coop mode!)
+        const BOOL bCoop = !GetSP()->sp_bSinglePlayer && GetSP()->sp_bCooperative;
+        if( !bCoop && crRay.cr_penHit->GetEntityInfo()!=NULL &&
+            ((EntityInfo*)crRay.cr_penHit->GetEntityInfo())->Eeibt==EIBT_FLESH)
+          { // look behind the entity (for back-stains)
             CEntity *penOfFlesh = crRay.cr_penHit;
             FLOAT3D vHitNormal = (GetPlacement().pl_PositionVector-m_vTarget).Normalize();
             FLOAT3D vOldHitPos = crRay.cr_vHit;
@@ -220,25 +238,25 @@ functions:
               vHitNormal = FLOAT3D(0,0,0);
             }
 
-            if(IsOfClass(penOfFlesh, "Gizmo") ||
-               IsOfClass(penOfFlesh, "Beast"))
+            // determine effect type
+			/*
+            if( IsOfClass( penOfFlesh, &CGizmo_DLLClass) || IsOfClass( penOfFlesh, &CBeast_DLLClass))
             {
               // spawn green blood hit spill effect
               SpawnHitTypeEffect(this, BHT_ACID, bSound, vHitNormal, crRay.cr_vHit, vHitDirection, vDistance);
             }
             else
             {
+			*/
               // spawn red blood hit spill effect
               SpawnHitTypeEffect(this, BHT_FLESH, bSound, vHitNormal, crRay.cr_vHit, vHitDirection, vDistance);
-            }
+            //}
             break;
           }
+          // stop casting ray if not brush
+          break;
         }
-
-        // stop casting ray if not brush
-        break;
-      }
-    }
+      }  
 
     if( bTrail)
     {
@@ -304,8 +322,8 @@ procedures:
   Main(EBulletInit eInit)
   {
     // remember the initial parameters
-    ASSERT(eInit.penOwner!=NULL);
-    m_penOwner = eInit.penOwner;
+    ASSERT(((CEntity*)eInit.eidOwner)!=NULL);
+    m_penOwner = eInit.eidOwner;
     m_fDamage = eInit.fDamage;
 
     InitAsVoid();

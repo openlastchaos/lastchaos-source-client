@@ -48,6 +48,8 @@ public:
 
   /* Make this placement be a linear interpolation between given two placements. */
   void Lerp(const CPlacement3D &pl0, const CPlacement3D &pl1, FLOAT fFactor);
+  /* Make this placement be a linear extrapolation from another placement, given the speed and the extrapolation factor. */
+  void Extrapolate(const CPlacement3D &plPlacement, const CPlacement3D &plSpeed, FLOAT fFactor);
 };
 /* Stream operations */
 ENGINE_API CTStream &operator>>(CTStream &strm, CPlacement3D &p3d);

@@ -299,7 +299,10 @@ public:
 // flags 0-2 are used by CObjectPolygon, flags 3-31 are used by CBrushPolygon
 // OPOF_PORTAL  // set if the polygon is a portal - used for CSG in CObject3D
 #define BPOF_DOUBLESIDED            (1UL<< 3)    // polygon is renderable from both sides
-#define BPOF_SHOOTTHRU              (1UL<< 4)    // physical ray-casts can pass through the polygon, even if it is not passable
+//강동민 수정 시작 물 퍼포먼스 작업
+//#define BPOF_SHOOTTHRU              (1UL<< 4)    // physical ray-casts can pass through the polygon, even if it is not passable
+#define BPOF_WATER					(1UL<< 4)
+//강동민 수정 끝 물 퍼포먼스 작업
 #define BPOF_TRANSPARENT            (1UL<< 5)    // render with alpha-testing and write z-buffer
 #define BPOF_RENDERASPORTAL         (1UL<< 6)    // internal used in rendering
 #define BPOF_STAIRS                 (1UL<< 7)    // polygon is part of a staircase
@@ -347,6 +350,67 @@ struct CBrushPolygonProperties {
   CBrushPolygonProperties(void) { memset(this, 0, sizeof(*this)); };
 };
 
+// Attributes of a polygon			// yjpark |<--
+#define	BPOA_NONE					0		// Nothing
+#define	BPOA_WALKABLE1F				1		// 1F <- Walkable : floor
+#define	BPOA_WALKABLE2F				2		// 2F
+#define	BPOA_WALKABLE3F				3		// 3F
+#define	BPOA_WALKABLE4F				4		// 4F
+#define	BPOA_WALKABLE5F				5		// 5F Walkable ->
+#define	BPOA_UNWALKABLE1F			11		// 1F <- Unwalkable : wall
+#define	BPOA_UNWALKABLE2F			12		// 2F
+#define	BPOA_UNWALKABLE3F			13		// 3F
+#define	BPOA_UNWALKABLE4F			14		// 4F
+#define	BPOA_UNWALKABLE5F			15		// 5F Unwalkable ->
+#define	BPOA_STAIR1F2F				21		// 1-2F <- Walkable : stair
+#define	BPOA_STAIR2F3F				22		// 2-3F
+#define	BPOA_STAIR3F4F				23		// 3-4F
+#define	BPOA_STAIR4F5F				24		// 4-5F Walkable ->
+#define	BPOA_STAIRWALL1F2F			31		// 1-2F <- Unwalkable : wall of stair
+#define	BPOA_STAIRWALL2F3F			32		// 2-3F
+#define	BPOA_STAIRWALL3F4F			33		// 3-4F
+#define	BPOA_STAIRWALL4F5F			34		// 4-5F Unwalkable ->
+#define	BPOA_PEACEZONE1F			41		// 1F <- Peace zone
+#define	BPOA_PEACEZONE2F			42		// 2F
+#define	BPOA_PEACEZONE3F			43		// 3F
+#define	BPOA_PEACEZONE4F			44		// 4F
+#define	BPOA_PEACEZONE5F			45		// 5F Peace zone ->
+#define	BPOA_PRODUCTZONE_PUBLIC1F	51		// 1F <- Production zone : public
+#define	BPOA_PRODUCTZONE_PUBLIC2F	52		// 2F
+#define	BPOA_PRODUCTZONE_PUBLIC3F	53		// 3F
+#define	BPOA_PRODUCTZONE_PUBLIC4F	54		// 4F
+#define	BPOA_PRODUCTZONE_PUBLIC5F	55		// 5F Production zone : public ->
+#define	BPOA_PRODUCTZONE_PRIVATE1F	61		// 1F <- Production zone : private
+#define	BPOA_PRODUCTZONE_PRIVATE2F	62		// 2F
+#define	BPOA_PRODUCTZONE_PRIVATE3F	63		// 3F
+#define	BPOA_PRODUCTZONE_PRIVATE4F	64		// 4F
+#define	BPOA_PRODUCTZONE_PRIVATE5F	65		// 5F Production zone : private ->
+#define	BPOA__WAR1F					71		// 1F War
+#define	BPOA__WAR2F					72		// 2F 
+#define	BPOA__WAR3F					73		// 3F 
+#define	BPOA__WAR4F					74		// 4F 
+#define	BPOA__WAR5F					75		// 5F 
+#define BPOA__FREEPKZONE1F			81		// 1F Free PK Zone
+#define BPOA__FREEPKZONE2F			82		// 2F Free PK Zone
+#define BPOA__FREEPKZONE3F			83		// 3F Free PK Zone
+#define BPOA__FREEPKZONE4F			84		// 4F Free PK Zone
+#define BPOA__FREEPKZONE5F			85		// 5F Free PK Zone
+
+
+// Colors of attribute map
+#define	ATTC_WALKABLE				0
+#define	ATTC_PEACE					10
+#define	ATTC_PRODUCT_PUBLIC			20
+#define	ATTC_PRODUCT_PRIVATE		30
+#define	ATTC_STAIR_UP				40
+#define	ATTC_STAIR_DOWN				50
+#define	ATTC_WAR					60
+#define ATTC_FREEPKZONE				70
+#define	ATTC_UNWALKABLE				255
+#define ATTC_TOTAL_COUNT			9
+
+									// yjpark     -->|
+
 class ENGINE_API CBrushPolygon {
 public:
 // implementation:
@@ -392,8 +456,10 @@ public:
   CListHead bpo_lhShadingInfos;               // for linking shading infos of entities
   INDEX bpo_iInWorld;   // index of the polygon in entire world
 
+  UBYTE	bpo_ubPolygonAttribute;				// The attribute of a polygon		// yjpark
+
   /* Default constructor. */
-  inline CBrushPolygon(void) : bpo_ulFlags(0) {};
+  inline CBrushPolygon(void) : bpo_ulFlags(0), bpo_ubPolygonAttribute( BPOA_NONE ) {};
   /* Clear the object. */
   void Clear(void);
   /* Destructor. */

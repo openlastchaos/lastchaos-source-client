@@ -1,6 +1,7 @@
 605
 %{
 #include "StdH.h"
+#include "EntitiesMP/EnvironmentParticlesHolder.h"
 %}
 
 class CWorldSettingsController: CEntity {
@@ -9,33 +10,33 @@ thumbnail "Thumbnails\\WorldSettingsController.tbn";
 features  "IsTargetable", "HasName", "IsImportant";
 
 properties:
-  1 FLOAT m_tmStormStart = -1.0f,                 // storm start time
+  1 FLOAT m_tmStormStart = -1.0f features(EPROPF_NETSEND),                 // storm start time
   2 CTString m_strName "Name" 'N' = "World settings controller",         // class name
-  3 FLOAT m_tmLightningStart = -1.0f,             // lightning start time
+  3 FLOAT m_tmLightningStart = -1.0f features(EPROPF_NETSEND),             // lightning start time
   4 FLOAT m_fLightningPower = 1.0f,               // lightning power
-  5 FLOAT m_tmStormEnd = -1.0f,                   // storm end time
-  6 FLOAT m_tmPyramidPlatesStart = 1e6,           // time when pyramid plates blend started
-  7 FLOAT m_tmActivatedPlate1 = 1e6,              // time when plate 1 has been activated
-  8 FLOAT m_tmDeactivatedPlate1 = 1e6,            // time when plate 1 has been deactivated
-  9 FLOAT m_tmActivatedPlate2 = 1e6,              // time when plate 2 has been activated
- 10 FLOAT m_tmDeactivatedPlate2 = 1e6,            // time when plate 2 has been deactivated
- 11 FLOAT m_tmActivatedPlate3 = 1e6,              // time when plate 3 has been activated
- 12 FLOAT m_tmDeactivatedPlate3 = 1e6,            // time when plate 3 has been deactivated
- 13 FLOAT m_tmActivatedPlate4 = 1e6,              // time when plate 4 has been activated
- 14 FLOAT m_tmDeactivatedPlate4 = 1e6,            // time when plate 4 has been deactivated
- 15 FLOAT m_tmPyramidMorphRoomActivated = 1e6,    // time when pyramid morph room has been activated
+  5 FLOAT m_tmStormEnd = -1.0f features(EPROPF_NETSEND),                   // storm end time
+  6 FLOAT m_tmPyramidPlatesStart = 1e6 features(EPROPF_NETSEND),           // time when pyramid plates blend started
+  7 FLOAT m_tmActivatedPlate1 = 1e6 features(EPROPF_NETSEND),              // time when plate 1 has been activated
+  8 FLOAT m_tmDeactivatedPlate1 = 1e6 features(EPROPF_NETSEND),            // time when plate 1 has been deactivated
+  9 FLOAT m_tmActivatedPlate2 = 1e6 features(EPROPF_NETSEND),              // time when plate 2 has been activated
+ 10 FLOAT m_tmDeactivatedPlate2 = 1e6 features(EPROPF_NETSEND),            // time when plate 2 has been deactivated
+ 11 FLOAT m_tmActivatedPlate3 = 1e6 features(EPROPF_NETSEND),              // time when plate 3 has been activated
+ 12 FLOAT m_tmDeactivatedPlate3 = 1e6 features(EPROPF_NETSEND),            // time when plate 3 has been deactivated
+ 13 FLOAT m_tmActivatedPlate4 = 1e6 features(EPROPF_NETSEND),              // time when plate 4 has been activated
+ 14 FLOAT m_tmDeactivatedPlate4 = 1e6 features(EPROPF_NETSEND),            // time when plate 4 has been deactivated
+ 15 FLOAT m_tmPyramidMorphRoomActivated = 1e6 features(EPROPF_NETSEND),    // time when pyramid morph room has been activated
 
- 20 FLOAT m_tmShakeStarted = -1.0f,       // time when shaking started
- 21 FLOAT3D m_vShakePos = FLOAT3D(0,0,0), // shake position
- 22 FLOAT m_fShakeFalloff = 100.0f,       // fall off with distance
- 23 FLOAT m_fShakeFade = 1.0f,            // fall off with time
- 24 FLOAT m_fShakeIntensityY = 1.0f,      // shake strength
- 25 FLOAT m_tmShakeFrequencyY = 1.0f,      // shake strength
- 26 FLOAT m_fShakeIntensityB = 1.0f,      // shake strength
- 27 FLOAT m_tmShakeFrequencyB = 1.0f,      // shake strength
- 31 FLOAT m_fShakeIntensityZ = 1.0f,      // shake strength
- 32 FLOAT m_tmShakeFrequencyZ = 1.0f,      // shake strength
- 33 BOOL  m_bShakeFadeIn = FALSE, // TRUE = intensify over time, FALSE = start immediately and falloff
+ 20 FLOAT m_tmShakeStarted = -1.0f features(EPROPF_NETSEND),       // time when shaking started
+ 21 FLOAT3D m_vShakePos = FLOAT3D(0,0,0) features(EPROPF_NETSEND), // shake position
+ 22 FLOAT m_fShakeFalloff = 100.0f features(EPROPF_NETSEND),       // fall off with distance
+ 23 FLOAT m_fShakeFade = 1.0f features(EPROPF_NETSEND),            // fall off with time
+ 24 FLOAT m_fShakeIntensityY = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 25 FLOAT m_tmShakeFrequencyY = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 26 FLOAT m_fShakeIntensityB = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 27 FLOAT m_tmShakeFrequencyB = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 31 FLOAT m_fShakeIntensityZ = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 32 FLOAT m_tmShakeFrequencyZ = 1.0f features(EPROPF_NETSEND),      // shake strength
+ 33 BOOL  m_bShakeFadeIn = FALSE features(EPROPF_NETSEND), // TRUE = intensify over time, FALSE = start immediately and falloff
 
  28 CEntityPointer m_penEnvPartHolder "Environment Particles Holder" 'T',
  29 BOOL  m_bNoSaveGame "No QuickSave on level start"= FALSE, // TRUE means no quicksave will be made when starting this level
@@ -43,16 +44,16 @@ properties:
  //29 CModelObject m_moHeightMapHolder,
  //30 FLOATaabbox3D m_boxHeightMap "Height map box" 'B' = FLOATaabbox3D(FLOAT3D(0,0,0), FLOAT3D(1,1,1)),
 
- 41 FLOAT m_tmGlaringStarted = -1.0f,          // glaring start time
- 42 FLOAT m_tmGlaringEnded = -1.0f,            // glaring end time
- 43 FLOAT m_fGlaringFadeInRatio = 0.1f,       // glaring fade in ratio
- 44 FLOAT m_fGlaringFadeOutRatio = 0.1f,      // glaring fade out ratio
- 45 COLOR m_colGlade = COLOR(C_WHITE|CT_TRANSPARENT),
+ 41 FLOAT m_tmGlaringStarted = -1.0f features(EPROPF_NETSEND),          // glaring start time
+ 42 FLOAT m_tmGlaringEnded = -1.0f features(EPROPF_NETSEND),            // glaring end time
+ 43 FLOAT m_fGlaringFadeInRatio = 0.1f features(EPROPF_NETSEND),       // glaring fade in ratio
+ 44 FLOAT m_fGlaringFadeOutRatio = 0.1f features(EPROPF_NETSEND),      // glaring fade out ratio
+ 45 COLOR m_colGlade = COLOR(C_WHITE|CT_TRANSPARENT) features(EPROPF_NETSEND),
 
- 50 COLOR m_colBlendStart = COLOR(C_WHITE|CT_TRANSPARENT),
- 51 COLOR m_colBlendStop = COLOR(C_WHITE|CT_OPAQUE),
- 52 COLOR m_colShadeStart = COLOR(C_WHITE|CT_OPAQUE),
- 53 COLOR m_colShadeStop = COLOR(C_GRAY|CT_OPAQUE),
+ 50 COLOR m_colBlendStart = COLOR(C_WHITE|CT_TRANSPARENT) features(EPROPF_NETSEND),
+ 51 COLOR m_colBlendStop = COLOR(C_WHITE|CT_OPAQUE) features(EPROPF_NETSEND),
+ 52 COLOR m_colShadeStart = COLOR(C_WHITE|CT_OPAQUE) features(EPROPF_NETSEND),
+ 53 COLOR m_colShadeStop = COLOR(C_GRAY|CT_OPAQUE) features(EPROPF_NETSEND),
 
  55 BOOL m_bApplyShadingToModels "Apply shading to models" = FALSE,
  
@@ -61,23 +62,21 @@ properties:
  62 FLOAT m_tmStormAppearTime = 10.0f,
  63 FLOAT m_tmStormDisappearTime = 10.0f,
 
- 70 CEntityPointer m_penScrollHolder,
- 71 CEntityPointer m_penTextFXHolder,
- 72 CEntityPointer m_penCreditsHolder,
+// 70 CEntityPointer m_penScrollHolder,
+// 71 CEntityPointer m_penTextFXHolder,
+// 72 CEntityPointer m_penCreditsHolder,
  73 CEntityPointer m_penHudPicFXHolder,
 
 components:
-  1 model   MODEL_WORLD_SETTINGS_CONTROLLER     "Models\\Editor\\WorldSettingsController.mdl",
-  2 texture TEXTURE_WORLD_SETTINGS_CONTROLLER   "Models\\Editor\\WorldSettingsController.tex"
+  1 editor model   MODEL_WORLD_SETTINGS_CONTROLLER     "Data\\Models\\Editor\\WorldSettingsController.mdl",
+  2 editor texture TEXTURE_WORLD_SETTINGS_CONTROLLER   "Data\\Models\\Editor\\WorldSettingsController.tex"
 
 functions:
   
   BOOL IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget)
   {
-    if( slPropertyOffset == offsetof(CWorldSettingsController, m_penEnvPartHolder))
-    {
-      if (IsOfClass(penTarget, "EnvironmentParticlesHolder")) { return TRUE; }
-      else { return FALSE; }
+    if( slPropertyOffset == offsetof(CWorldSettingsController, m_penEnvPartHolder)) {
+      return IsOfClass( penTarget, &CEnvironmentParticlesHolder_DLLClass);
     }   
     return CEntity::IsTargetValid(slPropertyOffset, penTarget);
   }
@@ -111,6 +110,7 @@ functions:
   /* Handle an event, return false if the event is not handled. */
   BOOL HandleEvent(const CEntityEvent &ee)
   {
+	  /*
     if( ee.ee_slEvent==EVENTCODE_EScroll)
     {
       EScroll escr = ((EScroll &) ee);
@@ -143,6 +143,7 @@ functions:
       }
       return TRUE;
     }
+	*/
     if( ee.ee_slEvent==EVENTCODE_EHudPicFX)
     {
       EHudPicFX ehpfx = ((EHudPicFX &) ee);
@@ -159,6 +160,7 @@ functions:
       }
       return TRUE;
     }
+	/*
     if( ee.ee_slEvent==EVENTCODE_ECredits)
     {
       ECredits ecr = ((ECredits &) ee);
@@ -175,14 +177,16 @@ functions:
       }
       return TRUE;
     }    
+	*/
     return FALSE;
   }
   
 procedures:
   Main(EVoid)
   {
-    m_penScrollHolder=NULL;
-    m_penTextFXHolder=NULL;
+//    m_penScrollHolder=NULL;
+//    m_penTextFXHolder=NULL;
+//    m_penCreditsHolder=NULL;
     // set appearance
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);

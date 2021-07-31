@@ -1,9 +1,25 @@
 219
 %{
 #include "StdH.h"
+#include "EntitiesMP/Player.h"
+#include <Engine/Interface/UIManager.h>
+#include <Engine/Interface/UISummon.h>
+#include <Engine/SlaveInfo.h>
 %}
 
 uses "EntitiesMP/BasicEffects";
+
+enum eTeleportType
+{
+	0 TELEPORT_DEFAULT		"Teleport Default",
+	1 TELEPORT_NETWORK		"Teleport Network",
+	2 TELEPORT_GOZONE		"Teleport Go-Zone",
+};
+
+event ETeleportActivate {
+};
+event ETeleportDeactivate {
+};
 
 class CTeleport : CRationalEntity {
 name      "Teleport";
@@ -18,15 +34,18 @@ properties:
   2 CEntityPointer m_penTarget  "Target" 'T' COLOR(C_BROWN|0xFF),
   4 FLOAT m_fWidth              "Width"  'W' = 2.0f,
   5 FLOAT m_fHeight             "Height" 'H' = 3.0f,
-  6 BOOL m_bActive              "Active" 'A' = TRUE,
+  6 BOOL m_bActive              "Active" 'A' = TRUE features(EPROPF_NETSEND),
   7 BOOL m_bPlayersOnly         "Players only" 'P' = TRUE,
   8 BOOL m_bForceStop           "Force stop" 'F' = FALSE,
+  9 enum eTeleportType	m_eTeleportType	"Teleport Type" = TELEPORT_DEFAULT,
+  10 INDEX m_iTeleportIndex		"Teleport/Zone Index"	= -1,
+  11 INDEX m_iTeleportExtIndex	"Teleport/Zone Extension Index"	= 0,
 
 
 components:
 
-  1 model   MODEL_TELEPORT     "Models\\Editor\\Teleport.mdl",
-  2 texture TEXTURE_TELEPORT   "Models\\Editor\\Teleport.tex",
+  1 model   MODEL_TELEPORT     "Data\\Models\\Editor\\Teleport.mdl",
+  2 editor texture TEXTURE_TELEPORT   "Data\\Models\\Editor\\Teleport.tex",
   3 class   CLASS_BASIC_EFFECT  "Classes\\BasicEffect.ecl",
 
 
@@ -56,7 +75,26 @@ functions:
     ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
     CEntityPointer penEffect = CreateEntity(pl, CLASS_BASIC_EFFECT);
     penEffect->Initialize(ese);
-  }
+
+	// 소환수도 이동시킵니다.
+	for( int i = UI_SUMMON_START; i <= UI_SUMMON_END; ++i )
+	{
+		CUISummon* pUISummon = (CUISummon*)_pUIMgr->GetUI(i);
+		if( pUISummon->GetSummonEntity() )
+		{
+			pUISummon->SetCommand(CSlaveInfo::COMMAND_HOLD);
+			pUISummon->GetSummonEntity()->SetPlacement(m_penTarget->GetPlacement());
+			pUISummon->GetSummonEntity()->FallDownToFloor();
+		}
+	}
+
+	// 애완동물도 이동 시킵니다.
+	if( _pNetwork->_PetTargetInfo.bIsActive && _pNetwork->_PetTargetInfo.pen_pEntity )
+	{
+		_pNetwork->_PetTargetInfo.pen_pEntity->SetPlacement(m_penTarget->GetPlacement());
+		_pNetwork->_PetTargetInfo.pen_pEntity->FallDownToFloor();
+	}
+}
 
 
   // returns bytes of memory used by this object
@@ -79,6 +117,9 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_TOUCHMODEL);
+    SetFlagOff(ENF_PROPSCHANGED);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOn(ENF_MARKDESTROY);
 
     // correct height so teleport could collide as sphere
     if(m_fHeight<m_fWidth)
@@ -95,24 +136,89 @@ procedures:
     while (TRUE) {
       // wait to someone enter and teleport it
       wait() {
-        on (EPass ePass) : {
-          if (m_penTarget!=NULL && m_bActive) {
-            if (m_bPlayersOnly && !IsOfClass(ePass.penOther, "Player")) {
-            resume;
-            }
-            TeleportEntity(ePass.penOther, m_penTarget->GetPlacement());
-            if (m_bForceStop && (ePass.penOther->GetPhysicsFlags()&EPF_MOVABLE) ) {
-              ((CMovableEntity*)&*ePass.penOther)->ForceFullStop();
-            }
-            stop;
+        on (EPass ePass) : 
+		{
+			if( m_eTeleportType == TELEPORT_DEFAULT )
+			{
+				if (m_penTarget!=NULL && m_bActive) 
+				{
+					if (m_bPlayersOnly && !IsOfClass( ePass.penOther, &CPlayer_DLLClass)) {
+						resume;
+					}
+					TeleportEntity(ePass.penOther, m_penTarget->GetPlacement());
+					if (m_bForceStop && (ePass.penOther->GetPhysicsFlags()&EPF_MOVABLE) ) 
+					{
+					((CMovableEntity*)&*ePass.penOther)->ForceFullStop();
+					}
+					stop;
+				}
+				resume;
+			}
+			else 
+			if( m_eTeleportType == TELEPORT_NETWORK )
+			{
+				if( m_bActive )
+				{
+					// HARD CODING ---wooss 060515-------------------------------------->>
+//					if(m_eTeleportType == TELEPORT_DEFAULT) { m_iTeleportIndex = 999; }
+					// -----------------------------------------------------------------<<
+					
+					if( !IsOfClass( ePass.penOther, &CPlayer_DLLClass))
+					{
+						resume;
+					}
+					ASSERT( m_iTeleportIndex != -1 && "Invalid Teleport Index!" );
+					// EDIT : BS : BEGIN : 텔레포트 보내고 Lock
+					CPlayer* pPlayer = (CPlayer*)CEntity::GetPlayerEntity(0); // 캐릭터 자신
+					if (pPlayer)
+					{
+						pPlayer->m_bRcvAtMsg			= FALSE;
+						pPlayer->m_bLockMove			= TRUE;
+						pPlayer->m_bReserveMove			= FALSE;
+						pPlayer->StopMove();
+					}
+					// EDIT : BS : END : 텔레포트 보내고 Lock
+					_pNetwork->SendWarpTeleport( m_iTeleportIndex );
+					stop;					
+				}
+				resume;
+			}
+			else
+			{
+				if( m_bActive )
+				{
+					if( !IsOfClass( ePass.penOther, &CPlayer_DLLClass))
+					{
+						resume;
+					}
+					ASSERT( m_iTeleportIndex != -1 && "Invalid Teleport Index!" );
+					const int iWorldNum = m_iTeleportIndex;						// 월드 번호.
+					const int iExtraNum = m_iTeleportExtIndex;					// Extra 번호.
+					_pNetwork->GoZone(iWorldNum, iExtraNum);
+					stop;
+				}
+				resume;
+			}
+        }
+        on (EActivate) : {
+          SetFlagOn(ENF_PROPSCHANGED);
+          if (_pNetwork->IsServer()) {
+            SendEvent(ETeleportActivate(),TRUE);
           }
           resume;
         }
-        on (EActivate) : {
+        on (ETeleportActivate) : {
           m_bActive = TRUE;
           resume;
         }
         on (EDeactivate) : {
+          SetFlagOn(ENF_PROPSCHANGED);
+          if (_pNetwork->IsServer()) {
+            SendEvent(ETeleportDeactivate(),TRUE);
+          }
+          resume;
+        }
+        on (ETeleportDeactivate) : {
           m_bActive = FALSE;
           resume;
         }

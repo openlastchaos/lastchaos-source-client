@@ -17,6 +17,11 @@ enum BlendControllerType {
   6 BCT_ACTIVATE_PYRAMID_MORPH_ROOM "Pyramid morph room",        // pyramid morph room activated
 };
 
+event EActivateBlend {
+};
+event EDeactivateBlend {
+};
+
 class CBlendController: CMarker
 {
 name      "Blend controller";
@@ -29,8 +34,8 @@ properties:
 
 components:
 
-  1 model   MODEL_CONTROLLER          "Models\\Editor\\BlendController.mdl",
-  2 texture TEXTURE_CONTROLLER        "Models\\Editor\\BlendController.tex",
+  1 editor model   MODEL_CONTROLLER          "Data\\Models\\Editor\\BlendController.mdl",
+  2 editor texture TEXTURE_CONTROLLER        "Data\\Models\\Editor\\BlendController.tex",
 
 
 functions:
@@ -46,6 +51,12 @@ functions:
     FLOAT tmNow = _pTimer->CurrentTick();
 
     if (ee.ee_slEvent==EVENTCODE_EActivate)
+    {
+      if (_pNetwork->IsServer()) {
+        SendEvent(EActivateBlend(),TRUE);
+      }
+      return TRUE;
+    } else if (ee.ee_slEvent==EVENTCODE_EActivateBlend)
     {
       switch(m_bctType)
       {
@@ -74,6 +85,11 @@ functions:
       }
     }
     else if (ee.ee_slEvent==EVENTCODE_EDeactivate)
+    { if (_pNetwork->IsServer()) {
+        SendEvent(EDeactivateBlend(),TRUE);
+      }
+      return TRUE;
+    } else if (ee.ee_slEvent==EVENTCODE_EDeactivateBlend)
     {
       switch(m_bctType)
       {

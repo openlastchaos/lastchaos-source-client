@@ -39,6 +39,11 @@ void CBuffer::Clear(void)
   bu_pubBuffer = NULL;
 }
 
+// how many bytes of data is in the buffer
+SLONG CBuffer::GetUsedSize() {
+  return bu_slSize - bu_slFree;
+}
+
 // expand buffer to be given number of bytes in size
 void CBuffer::Expand(SLONG slNewSize)
 {

@@ -6,6 +6,9 @@
 #include "EntitiesMP/Light.h"
 %}
 
+event ETriggerLightning {
+};
+
 %{
   struct ThunderInfo
   {
@@ -40,11 +43,11 @@ properties:
   11 FLOAT m_fSoundDelay "Sound delay" 'D' = 0.0f,         // thunder's delay
 
 components:
-  1 model   MODEL_TELEPORT     "Models\\Editor\\Teleport.mdl",
-  2 texture TEXTURE_TELEPORT   "Models\\Editor\\BoundingBox.tex",
-  3 sound   SOUND_THUNDER1       "Sounds\\Environment\\Thunders\\Thunder1.wav",
-  4 sound   SOUND_THUNDER2       "Sounds\\Environment\\Thunders\\Thunder2.wav",
-  5 sound   SOUND_THUNDER3       "Sounds\\Environment\\Thunders\\Thunder3.wav",
+  1 model   MODEL_TELEPORT     "Data\\Models\\Editor\\Teleport.mdl",
+  2 editor texture TEXTURE_TELEPORT   "Data\\Models\\Editor\\BoundingBox.tex",
+  3 sound   SOUND_THUNDER1       "data\\sounds\\Default.wav",
+  4 sound   SOUND_THUNDER2       "data\\sounds\\Default.wav",
+  5 sound   SOUND_THUNDER3       "data\\sounds\\Default.wav",
 
 functions:
   void Precache(void) 
@@ -63,29 +66,24 @@ functions:
     }
 
     // if light entity
-    if (IsOfClass(m_penLight, "Light"))
-    {
+    if( IsOfClass( m_penLight, &CLight_DLLClass)) {
       CLight *penLight = (CLight*)&*m_penLight;
-
-      if (slPropertyOffset==offsetof(CLightning, m_iLightAnim))
-      {
+      if (slPropertyOffset==offsetof(CLightning, m_iLightAnim)) {
         return penLight->m_aoLightAnimation.GetData();
       }
-    }
-    else
-    {
-      WarningMessage("Target '%s' is not of light class!", m_penLight->GetName());
+    } else {
+      WarningMessage( "Target '%s' is not of light class!", m_penLight->GetName());
     }
     return NULL;
   };
 
   void RenderParticles(void)
   {
-    if( m_penTarget==NULL || m_tmLightningStart == -1) {return;};
+    if( m_penTarget==NULL) {return;};
 
     TIME tmNow = _pTimer->GetLerpedCurrentTick();
     // if lightning is traveling
-    if(
+    if( m_tmLightningStart>0.0f &&
       ((tmNow-m_tmLightningStart) > 0.0f) &&
       ((tmNow-m_tmLightningStart) < 1.5f) )
     {
@@ -105,7 +103,7 @@ procedures:
     {
       m_iSoundPlaying=0;
     }
-    m_soThunder.SetVolume(1.5f*m_fLightningPower, 1.5f*m_fLightningPower);
+    m_soThunder.SetVolume( m_fLightningPower);
     m_soThunder.SetPitch(Lerp(0.9f, 1.2f, FRnd()));
     
     if( m_fSoundDelay == 0.0f)
@@ -144,18 +142,23 @@ procedures:
       PlaySound(m_soThunder, _atiThunderSounds[ m_iSoundPlaying].ti_iSound, 0);
     }
     
-    // wait until end of sound
-    wait( GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
-      _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay)
-    {
-      on (ETimer) :
+    TIME tmDelay = GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
+                    _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay;
+
+    if (tmDelay>0.0f) {
+      // wait until end of sound
+      wait( GetSoundLength(_atiThunderSounds[ m_iSoundPlaying].ti_iSound)-
+        _atiThunderSounds[ m_iSoundPlaying].ti_fThunderStrikeDelay)
       {
-        stop;
+        on (ETimer) :
+        {
+          stop;
+        }
+        otherwise() :
+        {
+          resume;
+        };
       }
-      otherwise() :
-      {
-        resume;
-      };
     }
 
     return EBegin();
@@ -167,6 +170,7 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     // set appearance
     SetModel(MODEL_TELEPORT);
@@ -199,7 +203,7 @@ procedures:
     }
     
     // must be world settings controller entity
-    if (!IsOfClass(m_penwsc, "WorldSettingsController"))
+    if( !IsOfClass( m_penwsc, &CWorldSettingsController_DLLClass)) 
     {
       // don't do anything
       return;
@@ -245,8 +249,13 @@ procedures:
       wait()
       {
         on (EBegin) : { resume; }
-        on (ETrigger eTrigger) :
-        {
+        on (ETrigger eTrigger) : {
+          if (_pNetwork->IsServer()) {
+            SendEvent(ETriggerLightning(),TRUE);
+          }
+          resume;
+        }
+        on (ETriggerLightning) : {
           call LightningStike();
           resume;
         }

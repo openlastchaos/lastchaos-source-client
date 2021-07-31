@@ -12,11 +12,23 @@
 // WORLD RENDER CONSTANTS
 
 // scene polygon flags
-#define SPOF_SELECTED     (1UL<< 0)   // is polygon currently selected or not?
-#define SPOF_TRANSPARENT  (1UL<< 1)   // polygon has alpha keying
-#define SPOF_RENDERFOG    (1UL<< 9)   // polygon has fog
-#define SPOF_RENDERHAZE   (1UL<<10)   // polygon has haze
-#define SPOF_BACKLIGHT    (1UL<<31)   // used internaly
+#define SPOF_SELECTED					(1UL<<0)   // is polygon currently selected or not?
+#define SPOF_TRANSPARENT				(1UL<<1)   // polygon has alpha keying
+#define SPOF_ATTRIBUTE					(1UL<<3)   // Polygon has the attribute						// yjpark |<--
+#define SPOF_ATTWALKABLE_EVEN			(1UL<<4)   // The attribute is walkable
+#define SPOF_ATTWALKABLE_ODD			(1UL<<5)   // The attribute is walkable
+#define SPOF_ATTUNWALKABLE_EVEN			(1UL<<6)   // The attribute is unwalkable
+#define SPOF_ATTUNWALKABLE_ODD			(1UL<<7)   // The attribute is unwalkable
+#define SPOF_ATTSTAIR					(1UL<<8)   // The attribute is stair
+#define SPOF_ATTSTAIRWALL				(1UL<<9)  // The attribute is the wall of stair
+#define	SPOF_ATTPEACE_ZONE				(1UL<<10)  // The attribute is peace zone
+#define	SPOF_ATTPRODUCT_ZONE_PUBLIC		(1UL<<11)  // The attribute is production zone - public
+#define	SPOF_ATTPRODUCT_ZONE_PRIVATE	(1UL<<12)  // The attribute is production zone - private	// yjpark     -->|
+#define SPOF_RENDERFOG					(1UL<<13)  // polygon has fog
+#define SPOF_RENDERHAZE					(1UL<<14)  // polygon has haze
+#define SPOF_ATTWAR_AREA				(1UL<<15)
+#define SPOF_FREEPK_ZONE				(1UL<<16)  // Free PK Zone
+#define SPOF_BACKLIGHT					(1UL<<31)  // used internaly
 
 // scene texture flags
 #define STXF_CLAMPU         (0x01)    // clamp u coordinate in texture
@@ -28,6 +40,9 @@
 #define STXF_BLEND_ALPHA    (0x10)    // alpha blend with screen
 #define STXF_BLEND_ADD      (0x20)    // add to screen
 #define STXF_BLEND_SHADE    (0x30)    // darken or brighten (same as used by shadow maps)
+//안태훈 수정 시작	//(Modify Worldbase Overbright to NonOver)(0.1)
+#define STXF_BLEND_MODIFIED_SHADE    (0x40)    // darken or brighten 신겜용.
+//안태훈 수정 끝	//(Modify Worldbase Overbright to NonOver)(0.1)
 
 #define STXF_BLEND_MASK     (0x70)
 

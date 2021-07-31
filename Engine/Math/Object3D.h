@@ -22,7 +22,12 @@ public:
   ULONG ovx_ulFlags;                // flags
 
   /* Default constructor. */
-  inline CObjectVertex(void) { ovx_ulFlags = 0;};
+  inline CObjectVertex(void) 
+  { 
+	  ovx_ulFlags	= 0;
+	  ovx_Remap		= NULL;
+	  ovx_Index		= -1;
+  };
   /* Constructor from vector. */
   inline CObjectVertex(const DOUBLE3D &v) : DOUBLE3D(v) { ovx_ulFlags = 0;};
   /* Clear the object. */
@@ -37,7 +42,11 @@ public:
   INDEX opl_Index;                  // index for easier conversions
 
   /* Default constructor. */
-  inline CObjectPlane(void) {};
+  inline CObjectPlane(void) 
+  {
+	  opl_Remap		= NULL;
+	  opl_Index		= -1;
+  };
   /* Constructor from plane. */
   inline CObjectPlane(const DOUBLEplane3D &pl) : DOUBLEplane3D(pl) {};
   /* Clear the object. */
@@ -68,10 +77,23 @@ public:
   CObjectVertex *oed_Vertex1;     // end vertex
 
   /* Default constructor. */
-  inline CObjectEdge(void) {};
+  inline CObjectEdge(void) 
+  {	  
+	  oed_Tag			= FALSE;
+	  oed_Index			= -1;
+	  oed_Vertex0		= NULL;
+	  oed_Vertex1		= NULL;
+	  optimize.oed_Remap		= NULL;
+	  optimize.oed_InverseEdge	= NULL;
+  };
   /* Constructor from vertex references. */
   inline CObjectEdge(CObjectVertex &ovxVertex0, CObjectVertex &ovxVertex1)
-    : oed_Vertex0(&ovxVertex0), oed_Vertex1(&ovxVertex1) {};
+    : oed_Vertex0(&ovxVertex0), oed_Vertex1(&ovxVertex1), oed_Index(-1)
+  {
+	  oed_Tag					= FALSE;
+	  optimize.oed_Remap		= NULL;
+	  optimize.oed_InverseEdge	= NULL;
+  };
   /* Clear the object. */
   inline void Clear(void) {};
 };
@@ -87,9 +109,9 @@ public:
   COLOR omt_Color;                // color of this material (surface)
 
   /* Default constructor. */
-  inline CObjectMaterial(void) : omt_Name("<unnamed>") {};
+  inline CObjectMaterial(void) : omt_Name("<unnamed>"), omt_Index(-1) {};
   /* Constructor from string. */
-  inline CObjectMaterial(const CTString &strName) : omt_Name(strName) {};
+  inline CObjectMaterial(const CTString &strName) : omt_Name(strName), omt_Index(-1) {};
   /* Copy constructor. */
   inline CObjectMaterial(const CObjectMaterial &omt) {
     omt_Name = omt.omt_Name;
@@ -125,7 +147,7 @@ public:
   BOOL ope_Backward;              // true if vertex0 and vertex1 must be swapped
 
   /* Default constructor. */
-  inline CObjectPolygonEdge(void) : ope_Backward(FALSE) {};
+  inline CObjectPolygonEdge(void) : ope_Backward(FALSE), ope_Edge(NULL) {};
   /* Constructor from edge pointer. */
   inline CObjectPolygonEdge(CObjectEdge *poed) : ope_Edge(poed), ope_Backward(FALSE) {};
   /* Constructor from edge pointer and reverse marker. */
@@ -160,7 +182,7 @@ public:
   void *opo_pvOriginal;                           // used for format conversions
 
   /* Default constructor. */
-  inline CObjectPolygon(void) : opo_Material(NULL), opo_ulFlags(0), opo_pvOriginal(NULL)
+  inline CObjectPolygon(void) : opo_Material(NULL), opo_ulFlags(0), opo_pvOriginal(NULL), opo_Plane(NULL), opo_Index(-1)
     { memset(&opo_ubUserData, 0, sizeof(opo_ubUserData)); };
   /* Clear the object. */
   inline void Clear(void) { opo_PolygonEdges.Clear(); };
@@ -182,6 +204,8 @@ public:
   inline CObjectEdge &CreateEdge(INDEX ivx0, INDEX ivx1) {
     // lock vertex array
     osc_aovxVertices.Lock();
+
+	ASSERT( ivx0 != ivx1 && "Invalid Edge Index!" );
     // create edge
     CObjectEdge &oeResult =
       *osc_aoedEdges.New(1) = CObjectEdge(osc_aovxVertices[ivx0], osc_aovxVertices[ivx1]);
@@ -191,19 +215,22 @@ public:
   }
 
   /* Create a new edge with two coordinates. */
-  inline CObjectEdge &CreateEdge(const DOUBLE3D &vx0, const DOUBLE3D &vx1) {
-    // create end vertices for the part
-    CObjectVertex *aovxs = osc_aovxVertices.New(2);
-    aovxs[0] = vx0;
-    aovxs[1] = vx1;
-    // create edge
-    return *osc_aoedEdges.New(1) = CObjectEdge(aovxs[0], aovxs[1]);
+  inline CObjectEdge &CreateEdge(const DOUBLE3D &vx0, const DOUBLE3D &vx1) 
+  {
+	  ASSERT( vx0 != vx1 && "Invalid Edge Index!" );
+		  // create end vertices for the part
+		  CObjectVertex *aovxs = osc_aovxVertices.New(2);
+	  aovxs[0] = vx0;
+	  aovxs[1] = vx1;
+	  // create edge
+	  return *osc_aoedEdges.New(1) = CObjectEdge(aovxs[0], aovxs[1]);
   }
-
+  
   /* Create an edge and add it to a polygon in this sector. */
   inline void CreateEdgeInPolygon(CObjectPolygon &opoPolygon,
-    const DOUBLE3D &vVertex0, const DOUBLE3D &vVertex1) {
-    *opoPolygon.opo_PolygonEdges.New(1) =
+	  const DOUBLE3D &vVertex0, const DOUBLE3D &vVertex1) 
+  {
+	  *opoPolygon.opo_PolygonEdges.New(1) =
       CObjectPolygonEdge( &CreateEdge(vVertex0, vVertex1));
   };
 
@@ -310,6 +337,8 @@ public:
   DOUBLE3D edx_vDirection;       // normalized direction vector of the line
   DOUBLE3D edx_vReferencePoint;  // reference point on the line
   BOOL edx_bReverse;            // set if the edge direction is opposite to the line direction
+
+  inline CEdgeEx() : edx_poedEdge(NULL)  {};
 
   /* Initialize the structure for the given edge. */
   inline void Initialize(CObjectEdge *poedEdge);

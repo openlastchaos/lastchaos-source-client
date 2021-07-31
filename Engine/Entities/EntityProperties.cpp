@@ -15,12 +15,15 @@
 #include <Engine/Templates/Stock_CModelData.h>
 #include <Engine/Templates/Stock_CSoundData.h>
 #include <Engine/Templates/Stock_CEntityClass.h>
+#include <Engine/Templates/Stock_CModelInstance.h>
 #include <Engine/Templates/StaticArray.cpp>
 
 #define FILTER_ALL            "All files (*.*)\0*.*\0"
 #define FILTER_END            "\0"
 
 #define PROPERTY(offset, type) ENTITYPROPERTY(this, offset, type)
+
+extern BOOL _bWorldEditorApp;
 
 /////////////////////////////////////////////////////////////////////
 // Property management functions
@@ -78,7 +81,7 @@ void CEntity::WriteEntityPointer_t(CTStream *ostrm, CEntityPointer pen)
 /*
  * Read all properties from a stream.
  */
-void CEntity::ReadProperties_t(CTStream &istrm) // throw char *
+void CEntity::ReadProperties_t(CTStream &istrm,BOOL bNetwork) // throw char *
 {
   istrm.ExpectID_t("PRPS");  // 'properties'
   CDLLEntityClass *pdecDLLClass = en_pecClass->ec_pdecDLLClass;
@@ -236,7 +239,7 @@ void CEntity::ReadProperties_t(CTStream &istrm) // throw char *
       // if it is SOUNDOBJECT
       case CEntityProperty::EPT_SOUNDOBJECT:
         // skip CSoundObject
-        SkipSoundObject_t(istrm);
+        SkipSoundObject_t(istrm,bNetwork);
         break;
       default:
         ASSERTALWAYS("Unknown property type");
@@ -294,27 +297,32 @@ void CEntity::ReadProperties_t(CTStream &istrm) // throw char *
         if (PROPERTY(pepProperty->ep_slOffset, CTFileName)=="") {
           break;
         }
-        // try to replace file name if it doesn't exist
-        for(;;)
-        {
-          if( !FileExists( PROPERTY(pepProperty->ep_slOffset, CTFileName)))
+#ifndef	FINALVERSION			// yjpark |<--
+        // if in editor
+        if (_bWorldEditorApp) {
+          // try to replace file name if it doesn't exist
+          for(;;)
           {
-            // if file was not found, ask for replacing file
-            CTFileName fnReplacingFile;
-            if( GetReplacingFile( PROPERTY(pepProperty->ep_slOffset, CTFileName),
-                                  fnReplacingFile, FILTER_ALL FILTER_END))
+            if( !FileExists( PROPERTY(pepProperty->ep_slOffset, CTFileName)))
             {
-              // replacing file was provided
-              PROPERTY(pepProperty->ep_slOffset, CTFileName) = fnReplacingFile;
-            } else {
-              ThrowF_t(TRANS("File '%s' does not exist"), (const char*)PROPERTY(pepProperty->ep_slOffset, CTFileName));
+              // if file was not found, ask for replacing file
+              CTFileName fnReplacingFile;
+              if( GetReplacingFile( PROPERTY(pepProperty->ep_slOffset, CTFileName),
+                                    fnReplacingFile, FILTER_ALL FILTER_END))
+              {
+                // replacing file was provided
+                PROPERTY(pepProperty->ep_slOffset, CTFileName) = fnReplacingFile;
+              } else {
+                ThrowF_t(TRANS("File '%s' does not exist"), (const char*)PROPERTY(pepProperty->ep_slOffset, CTFileName));
+              }
+            }
+            else
+            {
+              break;
             }
           }
-          else
-          {
-            break;
-          }
         }
+#endif	// FINALVERSION			// yjpark     -->|
         break;
       // if it is FILENAMENODEP
       case CEntityProperty::EPT_FILENAMENODEP:
@@ -376,7 +384,7 @@ void CEntity::ReadProperties_t(CTStream &istrm) // throw char *
         // read CSoundObject
         {
           CSoundObject &so = PROPERTY(pepProperty->ep_slOffset, CSoundObject);
-          ReadSoundObject_t(istrm, so);
+          ReadSoundObject_t(istrm, so, bNetwork);
           so.so_penEntity = this;
         }
         break;
@@ -395,7 +403,7 @@ void CEntity::ReadProperties_t(CTStream &istrm) // throw char *
 /*
  * Write all properties to a stream.
  */
-void CEntity::WriteProperties_t(CTStream &ostrm) // throw char *
+void CEntity::WriteProperties_t(CTStream &ostrm,BOOL bNetwork) // throw char *
 {
   INDEX ctProperties = 0;
   // for all classes in hierarchy of this entity
@@ -403,7 +411,18 @@ void CEntity::WriteProperties_t(CTStream &ostrm) // throw char *
       pdecDLLClass!=NULL;
       pdecDLLClass = pdecDLLClass->dec_pdecBase) {
     // count the properties
-    ctProperties+=pdecDLLClass->dec_ctProperties;
+    // if we are sending over the network, count only the properties with the EPROPF_NETSEND flag
+    if (!bNetwork) {
+      ctProperties+=pdecDLLClass->dec_ctProperties;
+    } else {
+      // for all properties
+      for(INDEX iProperty=0; iProperty<pdecDLLClass->dec_ctProperties; iProperty++) {
+        CEntityProperty &epProperty = pdecDLLClass->dec_aepProperties[iProperty];
+        if (epProperty.ep_ulFlags & EPROPF_NETSEND || (epProperty.ep_eptType == CEntityProperty::EPT_SOUNDOBJECT)) {
+          ctProperties++;
+        }
+      }
+    }
   }}
 
   ostrm.WriteID_t("PRPS");  // 'properties'
@@ -417,6 +436,11 @@ void CEntity::WriteProperties_t(CTStream &ostrm) // throw char *
     // for all properties
     for(INDEX iProperty=0; iProperty<pdecDLLClass->dec_ctProperties; iProperty++) {
       CEntityProperty &epProperty = pdecDLLClass->dec_aepProperties[iProperty];
+
+      // it this is a network write, and this property is not to be sent over network, skip it
+      if (bNetwork && !(epProperty.ep_ulFlags & EPROPF_NETSEND || (epProperty.ep_eptType == CEntityProperty::EPT_SOUNDOBJECT))) {
+        continue;
+      }
 
       // pack property ID and property type together
       ULONG ulID = epProperty.ep_ulID;
@@ -523,7 +547,7 @@ void CEntity::WriteProperties_t(CTStream &ostrm) // throw char *
       // if it is SOUNDOBJECT
       case CEntityProperty::EPT_SOUNDOBJECT:
         // write CSoundObject
-        WriteSoundObject_t(ostrm, PROPERTY(epProperty.ep_slOffset, CSoundObject));
+        WriteSoundObject_t(ostrm, PROPERTY(epProperty.ep_slOffset, CSoundObject),bNetwork);
         break;
       // if it is CPlacement3D
       case CEntityProperty::EPT_PLACEMENT3D:
@@ -543,6 +567,10 @@ void CEntity::WriteProperties_t(CTStream &ostrm) // throw char *
 /*
  * Obtain the component.
  */
+static const CTFileName &_fnDefaultModel    = CTFILENAME("Data\\Models\\Editor\\Axis.mdl");
+static const CTFileName &_fnDefaultTexture  = CTFILENAME("Data\\Textures\\Editor\\Default.tex");
+static const CTFileName &_fnDefaultSkaModel = CTFILENAME("Data\\Models\\Editor\\Ska\\Axis.smc");
+
 void CEntityComponent::Obtain_t(void)  // throw char *
 {
   // if obtained
@@ -553,21 +581,49 @@ void CEntityComponent::Obtain_t(void)  // throw char *
     return;
   }
 
+  extern INDEX wld_bExcludeEditorModels;
   INDEX ctUsed = 0;
   // check the component type
   switch(ec_ectType) {
     // if texture
     case ECT_TEXTURE:
-      // obtain texture data
-      ec_ptdTexture = _pTextureStock->Obtain_t(ec_fnmComponent);
+      // if no editor components and component has editor flag
+      if(wld_bExcludeEditorModels && ec_ulFlags&CF_EDITOR) {
+        // obtain default texture data
+        ec_ptdTexture = _pTextureStock->Obtain_t(_fnDefaultTexture);
+      } else {
+        // obtain texture data
+        ec_ptdTexture = _pTextureStock->Obtain_t(ec_fnmComponent);
+      }
       ctUsed = ec_ptdTexture->GetUsedCount();
       break;
     // if model
     case ECT_MODEL:
-      // obtain model data
-      ec_pmdModel = _pModelStock->Obtain_t(ec_fnmComponent);
+      // if no editor components and component has editor flag
+      if(wld_bExcludeEditorModels && ec_ulFlags&CF_EDITOR) {
+        // obtain default model data
+        ec_pmdModel = _pModelStock->Obtain_t(_fnDefaultModel);
+      } else {
+        // obtain model data
+        ec_pmdModel = _pModelStock->Obtain_t(ec_fnmComponent);
+      }
       ctUsed = ec_pmdModel->GetUsedCount();
       break;
+    // if ska model 
+    case ECT_SKAMODEL: {
+      // if no editor components and component has editor flag
+      if(wld_bExcludeEditorModels && ec_ulFlags&CF_EDITOR) {
+        // obtain default model instance from stock
+        ec_pmisModelInstance = _pModelInstanceStock->Obtain_t(_fnDefaultSkaModel);
+      } else {
+        // create model instance from stock
+        ec_pmisModelInstance = _pModelInstanceStock->Obtain_t(ec_fnmComponent);
+      }
+      ASSERT(ec_pmisModelInstance!=NULL);
+      ASSERT(ec_pmisModelInstance->mis_pmiModelInstance!=NULL);
+      ctUsed = ec_pmisModelInstance->GetUsedCount();
+      break;
+    }
     // if sound
     case ECT_SOUND:
       // obtain sound data
@@ -644,6 +700,10 @@ void CEntityComponent::Release(void)
     case ECT_MODEL:
       // release model data
       _pModelStock->Release(ec_pmdModel);
+      break;
+    case ECT_SKAMODEL:
+      // release model instance from stock
+      _pModelInstanceStock->Release(ec_pmisModelInstance);
       break;
     // if sound
     case ECT_SOUND:

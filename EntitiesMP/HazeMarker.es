@@ -1,6 +1,7 @@
 216
 %{
 #include "StdH.h"
+ENGINE_API extern FLOAT ter_fLODMul;
 %}
 
 uses "EntitiesMP/Marker";
@@ -29,8 +30,8 @@ properties:
  29 COLOR m_colWest        "Color (west)"   = (C_BLACK|CT_TRANSPARENT),
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\Haze.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\Haze.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Haze.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Haze.tex"
 
 functions:
 
@@ -86,8 +87,8 @@ functions:
     hpHaze.hp_colColor = colDir;
     hpHaze.hp_atType = (AttenuationType) m_faType;
     hpHaze.hp_fDensity = m_fDensity;
-    hpHaze.hp_fNear = m_fNear;
-    hpHaze.hp_fFar  = m_fFar;
+    hpHaze.hp_fNear = m_fNear * ter_fLODMul;
+    hpHaze.hp_fFar  = m_fFar * ter_fLODMul;
     hpHaze.hp_iSize = m_iSize;
     hpHaze.hp_ulFlags = 0;
     if (m_bVisibleFromOutside) {

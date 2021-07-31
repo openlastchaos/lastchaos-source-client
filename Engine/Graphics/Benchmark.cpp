@@ -19,9 +19,8 @@ static PIX _pixSizeJ;
 static CTimerValue _tv;
 static BOOL _bBlend = FALSE;
 static BOOL _bVisible = FALSE;
-static BOOL _bTexture = FALSE;
 static BOOL _bDepth = FALSE;
-static BOOL _bMultiTexture = FALSE;
+static INDEX _iTexture = 0; // how many texture units to use
 static UBYTE *_pubTexture;
 static ULONG _ulTexObject;
 static ULONG _ulTexFormat;
@@ -30,10 +29,11 @@ static INDEX _ctR = 100;
 static INDEX _ctC = 100;
 static CTexParams _tpLocal;
 
-static CStaticStackArray<GFXVertex>   _avtx;
-static CStaticStackArray<GFXTexCoord> _atex;
-static CStaticStackArray<GFXColor>    _acol;
-static CStaticStackArray<INDEX> _aiElements;
+
+static CStaticStackArray<GFXVertex>    _avtx;
+static CStaticStackArray<GFXTexCoord>  _atex;
+static CStaticStackArray<GFXColor>     _acol;
+static CStaticStackArray<UWORD> _auwElements;
 
 
 
@@ -57,15 +57,11 @@ static __forceinline DOUBLE StopTimer(void)
 // fill rate benchmark
 static DOUBLE FillRatePass(INDEX ct)
 {
-  if( !_pdp->Lock()) {
-    ASSERT(FALSE);
-    return 0;
-  }
-
-  StartTimer();
-
+  _pdp->SetAsCurrent();
   _pdp->Fill(C_GRAY|255);
   _pdp->FillZBuffer(1.0f);
+
+  StartTimer();
 
   GFXVertex avtx[4];
   avtx[0].x = 0;          avtx[0].y = 0;          avtx[0].z = 0.5f;  
@@ -74,27 +70,27 @@ static DOUBLE FillRatePass(INDEX ct)
   avtx[3].x = _pixSizeI;  avtx[3].y = 0;          avtx[3].z = 0.5f;  
   GFXTexCoord atex[4] = { {0,0}, {0,1}, {1,1}, {1,0} };
   GFXColor    acol[4] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000, 0xFFFF00FF };
-  INDEX       aidx[6] = { 0,1,2, 0,2,3};
+  UWORD       aidx[6] = { 0,1,2, 0,2,3};
   gfxSetVertexArray( &avtx[0], 4);
-  gfxSetTexCoordArray( &atex[0], FALSE);
-  gfxSetColorArray( &acol[0]);
+  gfxSetColorArray(  &acol[0]);
 
-  if(_bTexture) {
+  if(_iTexture) {
     gfxEnableTexture();
-    if(_bMultiTexture) {
-      gfxSetTextureUnit(1);
+    gfxSetTexCoordArray( &_atex[0]);
+    for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
+      gfxSetTextureUnit(iTex-1);
       gfxEnableTexture();
       gfxSetTexture( _ulTexObject, _tpLocal);
-      gfxSetTexCoordArray(atex, FALSE);
-      gfxSetTextureUnit(0);
-    }
+      gfxSetTexCoordArray( &atex[0]);
+    } // set 0 tex unit as default
+    if(_iTexture>1) gfxSetTextureUnit(0);
   } else {
     gfxDisableTexture();
   }
 
   if(_bBlend) {
     gfxEnableBlend();
-    if(_bTexture) {
+    if(_iTexture) {
       gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA); 
     } else {
       gfxBlendFunc( GFX_ONE, GFX_ONE);
@@ -112,18 +108,21 @@ static DOUBLE FillRatePass(INDEX ct)
   }
   gfxDisableAlphaTest();
 
+  // draw!
   for( INDEX i=0; i<ct; i++) gfxDrawElements( 6, &aidx[0]);
 
-  if(_bMultiTexture) {
-    gfxSetTextureUnit(1);
-    gfxDisableTexture();
+  // disable multi-texture units
+  if(_iTexture>1) {
+    for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
+      gfxSetTextureUnit(iTex-1);
+      gfxDisableTexture();
+    } // set 0 tex unit as default
     gfxSetTextureUnit(0);
   }
-  _pdp->Unlock();
 
-  gfxFinish();
+  // done
+  gfxFinish(TRUE);
   _pvp->SwapBuffers();
-
   return StopTimer();
 }
 
@@ -131,10 +130,13 @@ static DOUBLE FillRatePass(INDEX ct)
 CTString FillRateString(void)
 {
   CTString str;
-  str.PrintF( "%s, %s, %s ", 
-    _bTexture ? (_bMultiTexture ? "multitexture" : "texture") : "no texture", 
-    _bBlend ? "blending"  : "no blending", 
-    _bDepth ? "z-buffer:" : "no z-buffer:");
+  CTString strTex = "no texture";
+       if( _iTexture==0) strTex = "no texture";
+  else if( _iTexture==1) strTex = "1 texture ";
+  else if( _iTexture>=2) strTex.PrintF( "%d textures", _iTexture);
+  str.PrintF( "%s, %s, %s ", strTex,
+             _bBlend ? "blending"  : "no blending", 
+             _bDepth ? "z-buffer:" : "no z-buffer:");
   return str;
 }
 
@@ -152,8 +154,8 @@ static DOUBLE FillRate(void)
 
 static void InitTexture(void)
 {
-  const SLONG slSize = 256*256 *4 *4/3 +16;
-  _pubTexture = (UBYTE*)AllocMemory(slSize);
+  const SLONG dwSize = 256*256 *4 *4/3 +16;
+  _pubTexture = (UBYTE*)AllocMemory(dwSize);
   for( INDEX i=0; i<256; i++) {
     for( INDEX j=0; j<256; j++) {
       _pubTexture[(j*256+i)*4+0] = i;  
@@ -162,7 +164,7 @@ static void InitTexture(void)
       _pubTexture[(j*256+i)*4+3] = i-j;
     }
   }
-  MakeMipmaps( 15, (ULONG*)_pubTexture, 256,256);
+  MakeMipmaps( (ULONG*)_pubTexture, 256,256);
   _tpLocal.tp_bSingleMipmap = FALSE;
   gfxGenerateTexture( _ulTexObject);
   gfxSetTexture( _ulTexObject, _tpLocal);
@@ -196,16 +198,16 @@ static void InitTris(void)
     }
   }
   INDEX ctTri = (_ctR-1)*(_ctC-1)*2;
-  _aiElements.Push(ctTri*3);
+  _auwElements.Push(ctTri*3);
   for( iR=0; iR<_ctR-1; iR++) {
     for( iC=0; iC<_ctC-1; iC++) {
       INDEX iq = iR*(_ctC-1)+iC;
-      _aiElements[iq*6+0] = (iR+1) * _ctC + (iC+0);
-      _aiElements[iq*6+1] = (iR+1) * _ctC + (iC+1);
-      _aiElements[iq*6+2] = (iR+0) * _ctC + (iC+0);
-      _aiElements[iq*6+3] = (iR+0) * _ctC + (iC+0);
-      _aiElements[iq*6+4] = (iR+1) * _ctC + (iC+1);
-      _aiElements[iq*6+5] = (iR+0) * _ctC + (iC+1);
+      _auwElements[iq*6+0] = (iR+1) * _ctC + (iC+0);
+      _auwElements[iq*6+1] = (iR+1) * _ctC + (iC+1);
+      _auwElements[iq*6+2] = (iR+0) * _ctC + (iC+0);
+      _auwElements[iq*6+3] = (iR+0) * _ctC + (iC+0);
+      _auwElements[iq*6+4] = (iR+1) * _ctC + (iC+1);
+      _auwElements[iq*6+5] = (iR+0) * _ctC + (iC+1);
     }
   }
 }
@@ -216,31 +218,23 @@ static void EndTris(void)
   _avtx.Clear();
   _atex.Clear();
   _acol.Clear();
-  _aiElements.Clear();
+  _auwElements.Clear();
 }
+
 
 
 static DOUBLE TrisTroughputPass(INDEX ct)
 {
-  if( !_pdp->Lock()) {
-    ASSERT(FALSE);
-    return 0;
-  }
+  _pdp->SetAsCurrent();
 
   StartTimer();
 
   gfxSetFrustum( -0.5f, +0.5f, -0.5f, +0.5f, 0.5f, 2.0f);
-  gfxSetViewMatrix(NULL);
+  gfxSetViewMatrix();
   gfxCullFace(GFX_NONE);
 
   _pdp->Fill(C_GRAY|255);
   _pdp->FillZBuffer(1.0f);
-
-  if(_bTexture) {
-    gfxEnableTexture();
-  } else {
-    gfxDisableTexture();
-  }
 
   if(_bBlend) {
     gfxEnableBlend();
@@ -260,29 +254,39 @@ static DOUBLE TrisTroughputPass(INDEX ct)
 
   gfxSetVertexArray( &_avtx[0], _avtx.Count());
   gfxLockArrays();
-  gfxSetTexCoordArray( &_atex[0], FALSE);
   gfxSetColorArray( &_acol[0]);
 
-  if(_bMultiTexture) {
-    gfxSetTextureUnit(1);
+  if(_iTexture) {
     gfxEnableTexture();
-    gfxSetTexture( _ulTexObject, _tpLocal);
-    gfxSetTexCoordArray( &_atex[0], FALSE);
-    gfxSetTextureUnit(0);
+    gfxSetTexCoordArray( &_atex[0]);
+    for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
+      gfxSetTextureUnit(iTex-1);
+      gfxEnableTexture();
+      gfxSetTexture( _ulTexObject, _tpLocal);
+      gfxSetTexCoordArray( &_atex[0]);
+    } // set 0 tex unit as default
+    if(_iTexture>1) gfxSetTextureUnit(0);
+  } else {
+    gfxDisableTexture();
   }
-  for( INDEX i=0; i<ct; i++) gfxDrawElements( _aiElements.Count(), &_aiElements[0]);
+
+  // draw!
+  for( INDEX i=0; i<ct; i++) gfxDrawElements( _auwElements.Count(), &_auwElements[0]);
+
   gfxUnlockArrays();
 
-  if(_bMultiTexture) {
-    gfxSetTextureUnit(1);
-    gfxDisableTexture();
+  // disable multi-texture units
+  if(_iTexture>1) {
+    for( INDEX iTex=2; iTex<=_iTexture; iTex++) {
+      gfxSetTextureUnit(iTex-1);
+      gfxDisableTexture();
+    } // set 0 tex unit as default
     gfxSetTextureUnit(0);
   }
-  _pdp->Unlock();
 
-  gfxFinish();
+  // done
+  gfxFinish(TRUE);
   _pvp->SwapBuffers();
-
   return StopTimer();
 }
 
@@ -313,8 +317,6 @@ static DOUBLE _dX;
 static DOUBLE _dD;
 static void RunTest(DOUBLE (*pTest)(void), INDEX ct)
 {
-  CSetPriority sp(REALTIME_PRIORITY_CLASS, THREAD_PRIORITY_TIME_CRITICAL);
-
   DOUBLE dSum  = 0;
   DOUBLE dSum2 = 0;
   for(INDEX i=0; i<(ct+5); i++) {
@@ -337,11 +339,16 @@ void CGfxLibrary::Benchmark(CViewPort *pvp, CDrawPort *pdp)
   _pixSizeI = pdp->GetWidth();
   _pixSizeJ = pdp->GetHeight();
 
+  // determine maximum number of texture units usable for this test
+  const INDEX ctTextureUnits = ClampUp( Min( _pGfx->gl_ctRealTextureUnits, 1+_pGfx->gl_ctMaxStreams-GFX_MINSTREAMS), GFX_MAXTEXUNITS);
+
+  // boost thread priority to gain more accurate results
+  CSetPriority sp(REALTIME_PRIORITY_CLASS, THREAD_PRIORITY_TIME_CRITICAL);
+
+  // off to the testing...
   CTString strAPI = "";
        if( _pGfx->gl_eCurrentAPI==GAT_OGL) strAPI = "OpenGL";
-#ifdef SE1_D3D
   else if( _pGfx->gl_eCurrentAPI==GAT_D3D) strAPI = "Direct3D";
-#endif // SE1_D3D
   CPrintF("=====================================\n");
   CPrintF("%s performance testing ...\n", strAPI);
 
@@ -350,74 +357,136 @@ void CGfxLibrary::Benchmark(CViewPort *pvp, CDrawPort *pdp)
 
   CPrintF("\n--- Texture upload\n");
 
+  // texture uploading
   _ulTexFormat = TS.ts_tfRGBA8;
   _bSubImage = FALSE;
-  RunTest(TextureUpload, 10);
-  CPrintF("RGBA8 full: %6.02f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF("RGBA8  full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
   _bSubImage = TRUE;
-  RunTest(TextureUpload, 10);
-  CPrintF(    "   sub: %6.02f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
 
   _ulTexFormat = TS.ts_tfRGB8;
   _bSubImage = FALSE;
-  RunTest(TextureUpload, 10);
-  CPrintF("RGB8  full: %6.02f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF("RGB8   full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
   _bSubImage = TRUE;
-  RunTest(TextureUpload, 10);
-  CPrintF(    "   sub: %6.02f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
 
   _ulTexFormat = TS.ts_tfRGBA4;
   _bSubImage = FALSE;
-  RunTest(TextureUpload, 10);
-  CPrintF("RGBA4 full: %6.02f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF("RGBA4  full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
   _bSubImage = TRUE;
-  RunTest(TextureUpload, 10);
-  CPrintF(    "   sub: %6.02f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+
+  _ulTexFormat = TS.ts_tfRGB5A1;
+  _bSubImage = FALSE;
+  RunTest(TextureUpload, 9);
+  CPrintF("RGB5A1 full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  _bSubImage = TRUE;
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
 
   _ulTexFormat = TS.ts_tfRGB5;
   _bSubImage = FALSE;
-  RunTest(TextureUpload, 10);
-  CPrintF("RGB5  full: %6.02f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF("RGB5   full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
   _bSubImage = TRUE;
-  RunTest(TextureUpload, 10);
-  CPrintF(    "   sub: %6.02f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
 
+  _ulTexFormat = TS.ts_tfLA8;
+  _bSubImage = FALSE;
+  RunTest(TextureUpload, 9);
+  CPrintF("LA8    full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  _bSubImage = TRUE;
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+
+  _ulTexFormat = TS.ts_tfL8;
+  _bSubImage = FALSE;
+  RunTest(TextureUpload, 9);
+  CPrintF("L8     full: %5.01f +- %5.02f Mtex/s;" , _dX/1000/1000, _dD/1000/1000);
+  _bSubImage = TRUE;
+  RunTest(TextureUpload, 9);
+  CPrintF(     "   sub: %5.01f +- %5.02f Mtex/s\n", _dX/1000/1000, _dD/1000/1000);
+
+  // test compressed formats UL speed only if texture compression is supported
+  if( _pGfx->gl_ulFlags & GLF_TEXTURECOMPRESSION)
+  {  
+    _ulTexFormat = TS.ts_tfRGBc;
+    _bSubImage = FALSE;
+    RunTest(TextureUpload, 3);
+    CPrintF("RGB-C  full: %5.01f +- %5.02f Mtex/s\n" , _dX/1000/1000, _dD/1000/1000);
+
+    _ulTexFormat = TS.ts_tfRGBcA;
+    _bSubImage = FALSE;
+    RunTest(TextureUpload, 3);
+    CPrintF("RGBA-C full: %5.01f +- %5.02f Mtex/s\n" , _dX/1000/1000, _dD/1000/1000);
+
+    if( TS.ts_tfRGBcA != TS.ts_tfRGBcAc) {
+      _ulTexFormat = TS.ts_tfRGBcAc;
+      _bSubImage = FALSE;
+      RunTest(TextureUpload, 3);
+      CPrintF("RGBA-I full: %5.01f +- %5.02f Mtex/s\n" , _dX/1000/1000, _dD/1000/1000);
+    }
+  }
+
+  // revert to 16-bit texture for further tests
+  _ulTexFormat = TS.ts_tfRGB5;
+  _bSubImage = FALSE;
+  RunTest(TextureUpload, 1);
+
+  // fill rate
   CPrintF("\n--- Fill rate\n");
-  _bMultiTexture = 0;
-  _bBlend = 0; _bDepth = 0; _bTexture = 0;
-  RunTest(FillRate, 10);
-  CPrintF("%-38s %6.02f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
-  _bBlend = 0; _bDepth = 0; _bTexture = 1;
-  RunTest(FillRate, 10);
-  CPrintF("%-38s %6.02f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
-  _bBlend = 0; _bDepth = 1; _bTexture = 1;
-  RunTest(FillRate, 10);
-  CPrintF("%-38s %6.02f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
-  _bBlend = 1; _bDepth = 1; _bTexture = 1;
-  RunTest(FillRate, 10);
-  CPrintF("%-38s %6.02f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _bBlend = 0; _bDepth = 0; _iTexture = 0;
+  RunTest(FillRate, 9);
+  CPrintF("%-38s %6.01f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _bBlend = 0; _bDepth = 0; _iTexture = 1;
+  RunTest(FillRate, 9);
+  CPrintF("%-38s %6.01f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _bBlend = 1; _bDepth = 1; _iTexture = 1;
+  RunTest(FillRate, 9);
+  CPrintF("%-38s %6.01f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _bBlend = 0; _bDepth = 1; _iTexture = 1;
+  RunTest(FillRate, 9);
+  CPrintF("%-38s %6.01f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
 
-  if( _pGfx->gl_ctTextureUnits>1) {
-    _bMultiTexture = 1;
-    RunTest(FillRate, 10);
-    CPrintF("%-38s %6.02f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  // multi-texturing
+  if( ctTextureUnits>1) {
+    for( _iTexture=2; _iTexture<=ctTextureUnits; _iTexture++) {
+      RunTest(FillRate, 9);
+      CPrintF("%-38s %6.01f +- %5.02f Mpix/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+    } // reset current tex unit
+    _iTexture = 1;
   }
 
+  // triangle thruput
+  _bBlend = 0; _bDepth = 0; _iTexture = 0;
   CPrintF("\n--- Geometry speed (%dpix tris)\n", (_pixSizeI/_ctR)*(_pixSizeI/_ctC)/2);
-  _bMultiTexture = 0;
-  _bBlend = 0; _bDepth = 1; _bTexture = 1;
-  RunTest(TrisTroughput, 10);
-  CPrintF("%-34s %6.02f +- %5.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
-  _bBlend = 1; _bDepth = 1; _bTexture = 1;
-  RunTest(TrisTroughput, 10);
-  CPrintF("%-34s %6.02f +- %5.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _iTexture = 0;
+  RunTest(TrisTroughput, 5);
+  CPrintF("%-38s %5.02f +- %4.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  _iTexture = 1;
+  RunTest(TrisTroughput, 5);
+  CPrintF("%-38s %5.02f +- %4.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
 
-  if( _pGfx->gl_ctTextureUnits>1) {
-    _bMultiTexture = 1;
-    RunTest(TrisTroughput, 10);
-    CPrintF("%-34s %6.02f +- %5.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+  if( ctTextureUnits>1) {
+    for( _iTexture=2; _iTexture<=ctTextureUnits; _iTexture++) {
+      RunTest(TrisTroughput, 5);
+      CPrintF("%-38s %5.02f +- %4.02f Mtri/s\n", FillRateString(), _dX/1000/1000, _dD/1000/1000);
+    }
   }
 
+  // finito!
+  CPrintF("\n");
+  _pdp->Fill(C_BLACK|255);
+  _pvp->SwapBuffers();
+  _pdp->Fill(C_BLACK|255);
+  _pvp->SwapBuffers();
   EndTris();
   EndTexture();
 }

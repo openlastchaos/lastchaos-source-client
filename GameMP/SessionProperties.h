@@ -1,6 +1,15 @@
+#ifndef _SESSIONPROPERTIES_H_
+#define _SESSIONPROPERTIES_H_
+#ifdef	PRAGMA_ONCE
+	#pragma once
+#endif
 /*
  * Class responsible for describing game session
  */
+
+//강동민 수정 시작 로그인 처리 작업	07.07
+#include <Engine/Network/CNetwork.h>
+//강동민 수정 끝 로그인 처리 작업		07.07
 class CSessionProperties {
 public:
   enum GameMode {
@@ -10,10 +19,10 @@ public:
     GM_FRAGMATCH,
   };
   enum GameDifficulty {
-    GD_TOURIST = -1,
+//    GD_TOURIST = -1,
     GD_EASY = 0,
     GD_NORMAL,
-    GD_HARD,
+    //GD_HARD,
     GD_EXTREME,
   };
 
@@ -30,19 +39,21 @@ public:
   ULONG sp_ulSpawnFlags;
   BOOL sp_bMental;            // set if mental mode engaged
 
-  INDEX sp_iScoreLimit;       // stop game after a player/team reaches given score
+//  INDEX sp_iScoreLimit;       // stop game after a player/team reaches given score
   INDEX sp_iFragLimit;        // stop game after a player/team reaches given score
   INDEX sp_iTimeLimit;        // stop game after given number of minutes elapses
 
-  BOOL sp_bTeamPlay;          // players are divided in teams
-  BOOL sp_bFriendlyFire;      // can harm player of same team
-  BOOL sp_bWeaponsStay;       // weapon items do not dissapear when picked-up
-  BOOL sp_bAmmoStays;         // ammo items do not dissapear when picked-up
-  BOOL sp_bHealthArmorStays;  // health/armor items do exist
+//  BOOL sp_bTeamPlay;          // players are divided in teams
+//  BOOL sp_bFriendlyFire;      // can harm player of same team
+//  BOOL sp_bWeaponsStay;       // weapon items do not dissapear when picked-up
+//  BOOL sp_bAmmoStays;         // ammo items do not dissapear when picked-up
+//  BOOL sp_bHealthArmorStays;  // health/armor do not dissapear when picked-up
+//  BOOL sp_bPowerUpsStay;      // powerups do not dissapear when picked-up
   BOOL sp_bPlayEntireGame;    // don't finish after one level in coop
-  BOOL sp_bAllowHealth;       // health items do exist
-  BOOL sp_bAllowArmor;        // armor items do exist
-  BOOL sp_bInfiniteAmmo;      // ammo is not consumed when firing
+//  BOOL sp_bAllowHealth;       // health items do exist
+//  BOOL sp_bAllowArmor;        // armor items do exist
+//  BOOL sp_bAllowPowerups;     // powerup items do exist
+//  BOOL sp_bInfiniteAmmo;      // ammo is not consumed when firing
   BOOL sp_bRespawnInPlace;    // players respawn on the place where they were killed, not on markers (coop only)
 
   FLOAT sp_fEnemyMovementSpeed; // enemy speed multiplier
@@ -50,12 +61,12 @@ public:
   FLOAT sp_fDamageStrength;     // multiplier when damaged
   FLOAT sp_fAmmoQuantity;       // multiplier when picking up ammo
   FLOAT sp_fManaTransferFactor; // multiplier for the killed player mana that is to be added to killer's mana
-  INDEX sp_iInitialMana;        // life price (mana that each player'll have upon respawning)
+  //INDEX sp_iInitialMana;        // life price (mana that each player'll have upon respawning)
   FLOAT sp_fExtraEnemyStrength;            // fixed adder for extra enemy power 
   FLOAT sp_fExtraEnemyStrengthPerPlayer;   // adder for extra enemy power per each player playing
 
-  INDEX sp_ctCredits;           // number of credits for this game
-  INDEX sp_ctCreditsLeft;       // number of credits left on this level
+//  INDEX sp_ctCredits;           // number of credits for this game
+//  INDEX sp_ctCreditsLeft;       // number of credits left on this level
   FLOAT sp_tmSpawnInvulnerability;   // how many seconds players are invunerable after respawning
 
   INDEX sp_iBlood;         // blood/gibs type (0=none, 1=green, 2=red, 3=hippie)
@@ -85,3 +96,4 @@ public:
   operator CSessionProperties&(void) { return usp_sp; }
 };
 
+#endif

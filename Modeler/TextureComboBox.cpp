@@ -43,7 +43,7 @@ BOOL CTextureComboBox::OnIdle(LONG lCount)
     if( m_ptdSelectedTexture != NULL)
     {
       ResetContent();
-      AddString( L"None available");
+      AddString( "None available");
       SetCurSel( 0);
       m_ptdSelectedTexture = NULL;
     }
@@ -52,13 +52,13 @@ BOOL CTextureComboBox::OnIdle(LONG lCount)
 
   CModelerDoc *pDoc = (CModelerDoc *) pModelerView->GetDocument();
   INDEX ctTextures = pDoc->m_emEditModel.edm_WorkingSkins.Count();
-  // if count of textures changed or model has different texture, reflect change
+  // if count of textures changed or model has diferent texture, reflect change
   if( (GetCount() != ctTextures) || (pModelerView->m_ptdiTextureDataInfo->tdi_TextureData != m_ptdSelectedTexture) )
   {
     if( ctTextures == 0)
     {
       ResetContent();
-      AddString( L"None available");
+      AddString( "None available");
       SetCurSel( 0);
       m_ptdSelectedTexture = NULL;
       return TRUE;
@@ -69,7 +69,7 @@ BOOL CTextureComboBox::OnIdle(LONG lCount)
     INDEX iTexture=0;
     FOREACHINLIST( CTextureDataInfo, tdi_ListNode, pDoc->m_emEditModel.edm_WorkingSkins, it)
     {
-      int iAddedAs = AddString( CString(it->tdi_FileName.FileName()));
+      int iAddedAs = AddString( it->tdi_FileName.FileName());
       SetItemDataPtr( iAddedAs, &it.Current());
       if( pModelerView->m_ptdiTextureDataInfo == &it.Current())
       {

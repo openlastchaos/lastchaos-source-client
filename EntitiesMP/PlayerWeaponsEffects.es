@@ -42,11 +42,11 @@ properties:
 
 components:
 // ************** SHOTGUN SHELL ************
-  1 model   MODEL_SG_SHELL              "Models\\Weapons\\SingleShotgun\\Shell\\Shell.mdl",
-  2 texture TEXTURE_SG_SHELL            "Models\\Weapons\\SingleShotgun\\Shell\\Shell.tex",
+  1 model   MODEL_SG_SHELL              "Data\\Defaults\\Default.mdl",
+  2 texture TEXTURE_SG_SHELL            "Data\\Defaults\\Default.tex",
 // ************** MACHINEGUN SHELL ************
-  3 model   MODEL_MG_SHELL              "Models\\Weapons\\Minigun\\Shell\\Shell.mdl",
-  4 texture TEXTURE_MG_SHELL            "Models\\Weapons\\Minigun\\Shell\\Shell.tex",
+  3 model   MODEL_MG_SHELL              "Data\\Defaults\\Default.mdl",
+  4 texture TEXTURE_MG_SHELL            "Data\\Defaults\\Default.tex",
 
 functions:
 procedures:
@@ -89,7 +89,6 @@ procedures:
     m_penOwner = eInit.penOwner;
     m_EwetEffect = eInit.EwetEffect;
     SetFlags(GetFlags()|ENF_SEETHROUGH);
-    SetPredictable(TRUE);
 
     if (m_EwetEffect==WET_SHOTGUNSHELL) {
       autocall ShotgunShell() EEnd;

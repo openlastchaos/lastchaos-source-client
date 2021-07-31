@@ -1,17 +1,19 @@
 #include "StdH.h"
-#include <Engine/Ska/AnimSet.h>
-#include <Engine/Templates/StaticArray.h>
 #include <Engine/Base/CTString.h>
-#include <Engine/Ska/StringTable.h>
-#include <Engine/Templates/StaticArray.cpp>
-#include <Engine/templates/DynamicContainer.cpp>
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Console.h>
+#include <Engine/Base/Timer.h>
+#include <Engine/Ska/AnimSet.h>
+#include <Engine/Ska/Render.h>
+#include <Engine/Ska/StringTable.h>
 #include <Engine/Math/Functions.h>
 #include <Engine/Math/Geometry.h>
-#include <Engine/Base/Timer.h>
+#include <Engine/Math/Matrix12.h>
+#include <Engine/Templates/StaticArray.h>
+#include <Engine/Templates/StaticArray.cpp>
+#include <Engine/templates/DynamicContainer.cpp>
 
-#define ANIMSET_VERSION  14
+#define ANIMSET_VERSION  14 // TODO: on version change remove be_mDefaultPos from read and write and precache stuff from bone envelope
 #define ANIMSET_ID       "ANIM"
 
 // table for removed frames
@@ -31,7 +33,9 @@ CAnimSet::CAnimSet()
 }
 CAnimSet::~CAnimSet()
 {
+  Clear();
 }
+
 // conpres normal
 static void CompressAxis(const FLOAT3D &vNormal, UWORD &ubH, UWORD &ubP)
 {
@@ -69,7 +73,7 @@ BOOL RemoveRotFrame(AnimRot &ar1,AnimRot &ar2,AnimRot &ar3,FLOAT fTreshold)
   // calculate slerp factor for ar2'
   FLOAT fSlerpFactor = (FLOAT)(ar2.ar_iFrameNum - ar1.ar_iFrameNum)/(FLOAT)(ar3.ar_iFrameNum - ar1.ar_iFrameNum);
   // calculate ar2'
-  FLOATquat3D q2i = Slerp<FLOAT>(fSlerpFactor,ar1.ar_qRot,ar3.ar_qRot);
+  FLOATquat3D q2i = Slerp(fSlerpFactor,ar1.ar_qRot,ar3.ar_qRot);
   // read precalculated values
   ang1 = aangAngles[ar1.ar_iFrameNum];
   ang2 = aangAngles[ar2.ar_iFrameNum];
@@ -125,17 +129,19 @@ INDEX FindNextFrame(INDEX ifnToFind)
   }
   return -1;
 }
+
 // optimize all animations
-void CAnimSet::Optimize()
+void CAnimSet::Optimize(void)
 {
   INDEX ctan=as_Anims.Count();
   for(INDEX ian=0;ian<ctan;ian++)
   {
     Animation &an = as_Anims[ian];
     //CalculateExtraSpins(an);
-    OptimizeAnimation(an,an.an_fTreshold);
+    OptimizeAnimation(an,an.an_fThreshold);
   }
 }
+
 // optimize animation
 void CAnimSet::OptimizeAnimation(Animation &an, FLOAT fTreshold)
 {
@@ -149,8 +155,6 @@ void CAnimSet::OptimizeAnimation(Animation &an, FLOAT fTreshold)
   for(INDEX ibe=0;ibe<ctbe;ibe++)
   {
     BoneEnvelope &be = an.an_abeBones[ibe];
-    // calculate length on bone in default pos
-    be.be_OffSetLen = (FLOAT3D(be.be_mDefaultPos[3],be.be_mDefaultPos[7],be.be_mDefaultPos[11])).Length();
     // create a table for removed frames
     memset(&aiRemFrameTable[0],0,sizeof(BOOL)*ctfn);
     memset(&aangAngles[0],0,sizeof(ANGLE3D)*ctfn);
@@ -162,8 +166,7 @@ void CAnimSet::OptimizeAnimation(Animation &an, FLOAT fTreshold)
       DecomposeRotationMatrixNoSnap(aangAngles[im],mat);
     }
     // try to remove rotations, steping by 2
-    INDEX iloop=0;
-    for(;iloop<ctfn;iloop++)
+    for(INDEX iloop=0;iloop<ctfn;iloop++)
     {
       INDEX ctRemoved=0;
       // for each frame in bone envelope
@@ -208,8 +211,7 @@ void CAnimSet::OptimizeAnimation(Animation &an, FLOAT fTreshold)
     be.be_arRot.Clear();
     be.be_arRot.New(ctfl);
     // copy array of rotaions
-    INDEX fl=0;
-    for(;fl<ctfl;fl++)
+    for(INDEX fl=0;fl<ctfl;fl++)
     {
       be.be_arRot[fl] = arRot[fl];
     }
@@ -307,7 +309,8 @@ void CAnimSet::OptimizeAnimation(Animation &an, FLOAT fTreshold)
     an.an_ameMorphs[imeNew] = aMorphs[imeNew];
   }
 }
-// add animation to animset
+
+// Add new animation to animset
 void CAnimSet::AddAnimation(Animation *pan)
 {
   INDEX ctan = as_Anims.Count();
@@ -315,7 +318,8 @@ void CAnimSet::AddAnimation(Animation *pan)
   Animation &an = as_Anims[ctan];
   an = *pan;
 }
-// remove animation from animset
+
+// Remove animation from animset
 void CAnimSet::RemoveAnimation(Animation *pan)
 {
   INDEX ctan = as_Anims.Count();
@@ -362,7 +366,7 @@ void CAnimSet::Write_t(CTStream *ostrFile)
     // write num of frames
     (*ostrFile)<<an.an_iFrames;
     // write treshold
-    (*ostrFile)<<an.an_fTreshold;
+    (*ostrFile)<<an.an_fThreshold;
     // write if compresion is used
     (*ostrFile)<<an.an_bCompresed;
     // write bool if animstion uses custom speed
@@ -377,11 +381,13 @@ void CAnimSet::Write_t(CTStream *ostrFile)
     for(int ibe=0;ibe<ctbe;ibe++)
     {
       BoneEnvelope &be = an.an_abeBones[ibe];
-      CTString pstrNameID = ska_GetStringFromTable(be.be_iBoneID);
+      CTString pstrNameID2 = ska_GetStringFromTable(be.be_iBoneID);
       // write bone envelope ID
-      (*ostrFile)<<pstrNameID;
+      (*ostrFile)<<pstrNameID2;
       // write default pos(matrix12)
-      ostrFile->Write_t(&be.be_mDefaultPos[0],sizeof(FLOAT)*12);
+      Matrix12 mTemp;
+      MakeIdentityMatrix(mTemp);
+      ostrFile->Write_t(&mTemp[0],sizeof(FLOAT)*12);
       // count positions
       INDEX ctp = be.be_apPos.Count();
       // write position count
@@ -418,9 +424,9 @@ void CAnimSet::Write_t(CTStream *ostrFile)
     for(int ime=0;ime<ctme;ime++)
     {
       MorphEnvelope &me = an.an_ameMorphs[ime];
-      CTString pstrNameID = ska_GetStringFromTable(me.me_iMorphMapID);
+      CTString pstrNameID3 = ska_GetStringFromTable(me.me_iMorphMapID);
       // write morph map ID
-      (*ostrFile)<<pstrNameID;
+      (*ostrFile)<<pstrNameID3;
       // write morph factors count
       INDEX ctmf = me.me_aFactors.Count();
       (*ostrFile)<<ctmf;
@@ -447,8 +453,7 @@ void CAnimSet::Read_t(CTStream *istrFile)
   // create anims array
   as_Anims.New(ctan);
 
-  for(int ian=0;ian<ctan;ian++)
-  {
+  for(int ian=0;ian<ctan;ian++) {
     Animation &an = as_Anims[ian];
     CTString pstrNameID;
     // read anim source file
@@ -458,10 +463,11 @@ void CAnimSet::Read_t(CTStream *istrFile)
     an.an_iID = ska_GetIDFromStringTable(pstrNameID);
     // read secperframe
     (*istrFile)>>an.an_fSecPerFrame;
+	an.an_fSecPerFrame = fabsf(an.an_fSecPerFrame);
     // read num of frames
     (*istrFile)>>an.an_iFrames;
     // read treshold
-    (*istrFile)>>an.an_fTreshold;
+    (*istrFile)>>an.an_fThreshold;
     // read if compresion is used
     (*istrFile)>>an.an_bCompresed;
     // read bool if animstion uses custom speed
@@ -473,56 +479,51 @@ void CAnimSet::Read_t(CTStream *istrFile)
     (*istrFile)>>ctbe;
     // create bone envelopes array
     an.an_abeBones.New(ctbe);
+
     // read bone envelopes
-    for(int ibe=0;ibe<ctbe;ibe++)
-    {
+    for(INDEX ibe=0;ibe<ctbe;ibe++) {
       BoneEnvelope &be = an.an_abeBones[ibe];
-      CTString pstrNameID;
-      (*istrFile)>>pstrNameID;
+      CTString pstrNameID2;
+      (*istrFile)>>pstrNameID2;
       // read bone envelope ID
-      be.be_iBoneID = ska_GetIDFromStringTable(pstrNameID);
+      be.be_iBoneID = ska_GetIDFromStringTable(pstrNameID2);
+      Matrix12 mTemp;
       // read default pos(matrix12)
-      istrFile->Read_t(&be.be_mDefaultPos[0],sizeof(FLOAT)*12);
+      istrFile->Read_t(&mTemp[0],sizeof(FLOAT)*12);
 
       INDEX ctp;
       // read pos array
       (*istrFile)>>ctp;
       be.be_apPos.New(ctp);
-      for(INDEX ip=0;ip<ctp;ip++)
-      {
+      for(INDEX ip=0;ip<ctp;ip++) {
         istrFile->Read_t(&be.be_apPos[ip],sizeof(AnimPos));
       }
       INDEX ctr;
       // read rot array count
       (*istrFile)>>ctr;
-      if(!an.an_bCompresed)
-      {
+
+      // if animations aren't compresed
+      if(!an.an_bCompresed) {
         // create array for uncompresed rotations
         be.be_arRot.New(ctr);
-      }
-      else
-      {
+      } else {
         // if flag is set to remember uncompresed rotations
-        if(bAllRotations)
-        {
+        if(bAllRotations) {
           // create array for uncompresed rotations
           be.be_arRot.New(ctr);
         }
         // create array for compresed rotations
         be.be_arRotOpt.New(ctr);
       }
-      for(INDEX ir=0;ir<ctr;ir++)
-      {
+
+      for(INDEX ir=0;ir<ctr;ir++) {
         AnimRot arRot;// = be.be_arRot[ir];
         istrFile->Read_t(&arRot,sizeof(AnimRot));
-        if(!an.an_bCompresed)
-        {
+
+        if(!an.an_bCompresed) {
           be.be_arRot[ir] = arRot;
-        }
-        else
-        {
-          if(bAllRotations)
-          {
+        } else {
+          if(bAllRotations) {
             // fill uncompresed rotations
             be.be_arRot[ir] = arRot;
           }
@@ -545,6 +546,27 @@ void CAnimSet::Read_t(CTStream *istrFile)
       }
       // read offsetlen
       (*istrFile)>>be.be_OffSetLen;
+      
+      // Precache envelope pos stuff
+      INDEX ctap = be.be_apPos.Count();
+      const AnimPos &ap = be.be_apPos[ctap-1];
+      be.be_uwLastFramePos = ap.ap_iFrameNum;
+      be.be_fInvFrameStepPos = ((FLOAT)(ctap-1)) / (INDEX)be.be_uwLastFramePos;
+
+      // Precache envelope rot stuff
+      // for uncompressed animations
+      if(!an.an_bCompresed) {
+        INDEX ctar = be.be_arRot.Count();
+        const AnimRot &ar = be.be_arRot[ctar-1];
+        be.be_uwLastFrameRot = ar.ar_iFrameNum;
+        be.be_fInvFrameStepRot = ((FLOAT)(ctar-1)) / (INDEX)be.be_uwLastFrameRot;
+      // for compressed animations
+      } else {
+        INDEX ctaro = be.be_arRotOpt.Count();
+        const AnimRotOpt &aro = be.be_arRotOpt[ctaro-1];
+        be.be_uwLastFrameRot = aro.aro_iFrameNum;
+        be.be_fInvFrameStepRot = ((FLOAT)(ctaro-1)) / (INDEX)be.be_uwLastFrameRot;
+      }
     }
 
     // read morph envelopes
@@ -552,13 +574,12 @@ void CAnimSet::Read_t(CTStream *istrFile)
     // create morph envelopes array
     an.an_ameMorphs.New(ctme);
     // read morph envelopes
-    for(int ime=0;ime<ctme;ime++)
-    {
+    for(int ime=0;ime<ctme;ime++) {
       MorphEnvelope &me = an.an_ameMorphs[ime];
-      CTString pstrNameID;
+      CTString pstrNameID3;
       // read morph envelope ID
-      (*istrFile)>>pstrNameID;
-      me.me_iMorphMapID = ska_GetIDFromStringTable(pstrNameID);
+      (*istrFile)>>pstrNameID3;
+      me.me_iMorphMapID = ska_GetIDFromStringTable(pstrNameID3);
       INDEX ctmf;
       // read morph factors count
       (*istrFile)>>ctmf;
@@ -569,6 +590,7 @@ void CAnimSet::Read_t(CTStream *istrFile)
     }
   }
 }
+
 // clear animset
 void CAnimSet::Clear(void)
 {
@@ -622,4 +644,9 @@ SLONG CAnimSet::GetUsedMemory(void)
     }
   }
   return slMemoryUsed;
+}
+/* Get the description of this object. */
+CTString CAnimSet::GetDescription(void)
+{
+  return CTString(0, "%d anims", as_Anims.Count());
 }

@@ -134,11 +134,9 @@ void CDlgPreferences::DoDataExchange(CDataExchange* pDX)
       case 0:
         theApp.m_iApi=GAT_OGL;
         break;
-#ifdef SE1_D3D
       case 1:
         theApp.m_iApi=GAT_D3D;
         break;
-#endif // SE1_D3D
       default:
         {
         }
@@ -167,10 +165,8 @@ BOOL CDlgPreferences::OnInitDialog()
   CDialog::OnInitDialog();
 
   m_ctrlGfxApi.ResetContent();
-  m_ctrlGfxApi.AddString(L"OpenGL");
-#ifdef SE1_D3D
-  m_ctrlGfxApi.AddString(L"DirectX");
-#endif // SE1_D3D
+  m_ctrlGfxApi.AddString("OpenGL");
+  m_ctrlGfxApi.AddString("DirectX");
 
   if( IsWindow(m_ctrlGfxApi.m_hWnd))
   {
@@ -179,11 +175,9 @@ BOOL CDlgPreferences::OnInitDialog()
     case GAT_OGL:
       m_ctrlGfxApi.SetCurSel(0);
       break;
-#ifdef SE1_D3D
     case GAT_D3D:
       m_ctrlGfxApi.SetCurSel(1);
       break;
-#endif // SE1_D3D
     }
   }
 
@@ -199,7 +193,7 @@ void CDlgPreferences::InitTextureCombos()
   INDEX iChoosedWinBcg = 0;
   if( theApp.m_WorkingTextures.IsEmpty())
   {
-    m_ComboWinBcgTexture.AddString( L"None available");
+    m_ComboWinBcgTexture.AddString( "None available");
     m_ComboWinBcgTexture.EnableWindow( FALSE);
   }
   else
@@ -211,7 +205,7 @@ void CDlgPreferences::InitTextureCombos()
       if( it_wt->wt_FileName == m_Prefs.ap_DefaultWinBcgTexture)
         iChoosedWinBcg = iTexCt;
       
-      iIndex = m_ComboWinBcgTexture.AddString( CString(it_wt->wt_FileName.FileName()));
+      iIndex = m_ComboWinBcgTexture.AddString( it_wt->wt_FileName.FileName());
       m_ComboWinBcgTexture.SetItemDataPtr( iIndex, &it_wt.Current());
       iTexCt ++;
     }

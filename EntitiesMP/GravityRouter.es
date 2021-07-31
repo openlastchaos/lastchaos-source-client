@@ -1,6 +1,7 @@
 227
 %{
 #include "StdH.h"
+#include "EntitiesMP/GravityMarker.h"
 %}
 
 uses "EntitiesMP/Marker";
@@ -17,8 +18,8 @@ features "IsImportant";
 properties:
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\GravityRouter.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\GravityRouter.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\GravityRouter.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\GravityRouter.tex"
 
 functions:
 
@@ -32,7 +33,7 @@ functions:
   void GetForce(INDEX i, const FLOAT3D &vPoint, 
     CForceStrength &fsGravity, CForceStrength &fsField)
   {
-    if( (m_penTarget != NULL) && (IsOfClass( m_penTarget, "Gravity Marker")))
+    if( m_penTarget!=NULL && IsOfClass( m_penTarget, &CGravityMarker_DLLClass)) 
     {
       m_penTarget->GetForce(i, vPoint, fsGravity, fsField);
     }
@@ -72,7 +73,7 @@ procedures:
       m_strName = "Gravity Router";
     }
 
-    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, "Gravity Marker")) {
+    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CGravityMarker_DLLClass)) {
       WarningMessage( "Entity '%s' is not of Gravity Marker class!", m_penTarget);
       m_penTarget = NULL;
     }

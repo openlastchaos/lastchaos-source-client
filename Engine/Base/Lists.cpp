@@ -221,7 +221,7 @@ void CListNode::Remove(void)
 
   next.ln_Pred = &prev;
   prev.ln_Succ = &next;
-  // make a non-linked node
+  // make an non-linked node
   ln_Succ = NULL;
   ln_Pred = NULL;
 }

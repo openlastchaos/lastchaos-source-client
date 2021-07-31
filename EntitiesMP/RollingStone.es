@@ -37,17 +37,17 @@ properties:
  43 FLOAT3D m_vR = FLOAT3D(0,0,1),
 
 components:
- 1 model   MODEL_ROLLINGSTONE      "Models\\Ages\\Egypt\\Traps\\RollingStone\\RollingStone.mdl",
- 2 model   MODEL_STONESPHERE       "Models\\Ages\\Egypt\\Traps\\RollingStone\\Stone.mdl",
- 3 texture TEXTURE_ROLLINGSTONE    "Models\\Ages\\Egypt\\Traps\\RollingStone\\Stone.tex",
- 5 texture TEXTURE_DETAIL          "Models\\Ages\\Egypt\\Traps\\RollingStone\\Detail.tex",
+ 1 model   MODEL_ROLLINGSTONE      "Data\\Models\\Ages\\Egypt\\Traps\\RollingStone\\RollingStone.mdl",
+ 2 model   MODEL_STONESPHERE       "Data\\Models\\Ages\\Egypt\\Traps\\RollingStone\\Stone.mdl",
+ 3 texture TEXTURE_ROLLINGSTONE    "Data\\Models\\Ages\\Egypt\\Traps\\RollingStone\\Stone.tex",
+ 5 texture TEXTURE_DETAIL          "Data\\Models\\Ages\\Egypt\\Traps\\RollingStone\\Detail.tex",
 // ************** STONE PARTS **************
- 14 model     MODEL_STONE        "Models\\Effects\\Debris\\Stone\\Stone.mdl",
- 15 texture   TEXTURE_STONE      "Models\\Effects\\Debris\\Stone\\Stone.tex",
+ 14 model     MODEL_STONE        "Data\\Models\\Effects\\Debris\\Stone\\Stone.mdl",
+ 15 texture   TEXTURE_STONE      "Data\\Models\\Effects\\Debris\\Stone\\Stone.tex",
  16 class     CLASS_DEBRIS       "Classes\\Debris.ecl",
   4 class     CLASS_BASIC_EFFECT "Classes\\BasicEffect.ecl",
- 20 sound   SOUND_BOUNCE         "Sounds\\Misc\\RollingStone.wav",
- 21 sound   SOUND_ROLL           "Sounds\\Misc\\RollingStoneEnvironment.wav",
+ 20 sound   SOUND_BOUNCE         "data\\sounds\\Default.wav",
+ 21 sound   SOUND_ROLL           "data\\sounds\\Default.wav",
 
 functions:
   void Precache(void)
@@ -202,9 +202,7 @@ void BounceSound(FLOAT fSpeed) {
   FLOAT fHitStrength = fSpeed*fSpeed;
 
   FLOAT fVolume = fHitStrength/20.0f; 
-  //CPrintF("bounce %g->%g\n", fHitStrength, fVolume);
-  fVolume = Clamp( fVolume, 0.0f, 2.0f);
-  //FLOAT fVolume = Clamp(fHitStrength*5E-3f, 0.0f, 2.0f);
+  fVolume = Clamp( fVolume, 0.0f, 1.0f);
   FLOAT fPitch = Lerp(0.2f, 1.0f, Clamp(fHitStrength/100, 0.0f, 1.0f));
   if (fVolume<0.1f) {
     return;
@@ -285,7 +283,7 @@ procedures:
           FLOAT fDamageFactor = en_vCurrentTranslationAbsolute.Length()/10.0f;
           FLOAT fAppliedDamage = fDamageFactor*m_fDamage;
           // inflict damage
-          InflictDirectDamage( eTouch.penOther, this, DMT_CANNONBALL, fAppliedDamage,
+          InflictDirectDamage( eTouch.penOther, this, DMT_BOMB, fAppliedDamage,
                      eTouch.penOther->GetPlacement().pl_PositionVector, eTouch.plCollision);
         }
         else
@@ -293,7 +291,7 @@ procedures:
           if(en_vCurrentTranslationAbsolute.Length() != 0.0f)
           {
             // inflict damage
-            InflictDirectDamage( eTouch.penOther, this, DMT_CANNONBALL, m_fDamage,
+            InflictDirectDamage( eTouch.penOther, this, DMT_BOMB, m_fDamage,
                        eTouch.penOther->GetPlacement().pl_PositionVector, eTouch.plCollision);
           }
         }

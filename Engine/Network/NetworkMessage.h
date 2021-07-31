@@ -4,118 +4,64 @@
   #pragma once
 #endif
 
+#ifndef NUMTOBUF
+#define NUMTOBUF(b, n)	{ memcpy(b, &n, sizeof(n)); b += sizeof(n); }
+#define BUFTONUM(n, b)	{ memcpy(&n, b, sizeof(n)); b += sizeof(n); }
+#define HTONL(n)		{ n = htonl(n); }
+#define HTONS(n)		{ n = htons(n); }
+#define NTOHL(n)		{ n = ntohl(n); }
+#define NTOHS(n)		{ n = ntohs(n); }
+#define	HTONLL(n)		{ n	= htonll3(n);}
+#define	NTOHLL(n)		{ n = ntohll3(n);}
+#endif
+
 #include <Engine/Base/Lists.h>
 #include <Engine/Math/Vector.h>
+#include <Engine/Base/Console.h>
+#include <Engine/Base/Translation.h>
 
-// message type 
-// transmitted as 6-bit value
-// up to 64 values allowed
-// upper 2 bits are used to indicate compression used
+  // maximum server buffer size is 256k
+  #define SERVER_MAX_BUFFER_SIZE  256*1024
+// maximum size of message the server is allowed to send
+#define SERVER_MAX_MESSAGE_SIZE (SERVER_MAX_BUFFER_SIZE/3)
+// EDIT : BS : 070413 : 신규 패킷 암호화
+#define MAX_MESSAGE_DATA		(1000 - 1)
 
-// ADD NEW MESSAGE TYPES TO THE END!!!
-typedef enum NetworkMessageType {
-  // broadcast requesting server infos
-  MSG_REQ_ENUMSERVERS,
-  MSG_SERVERINFO,
-
-  MSG_KEEPALIVE,  // sent when there's nothing else to send - just to keep connections valid
-
-  // disconnection explanation from server
-  MSG_INF_DISCONNECTED,
-	
-  // info message with pings of all players
-  MSG_INF_PINGS,
-
-  // main session state connecting to server
-  MSG_REQ_CONNECTLOCALSESSIONSTATE,
-  MSG_REP_CONNECTLOCALSESSIONSTATE,
-
-  // remote session state connecting to server
-  MSG_REQ_CONNECTREMOTESESSIONSTATE,
-  MSG_REP_CONNECTREMOTESESSIONSTATE,
-
-  // remote session requesting current state delta from original
-  MSG_REQ_STATEDELTA,
-  MSG_REP_STATEDELTA,
-
-  // client initialing CRC check
-  MSG_REQ_CRCLIST,
-  MSG_REQ_CRCCHECK,
-  MSG_REP_CRCCHECK,
-
-  // player connecting to server
-  MSG_REQ_CONNECTPLAYER,
-  MSG_REP_CONNECTPLAYER,
-
-  MSG_REQ_PAUSE,  // request pause/unpause game
-
-  // request character change for a player
-  MSG_REQ_CHARACTERCHANGE,
-
-  // action packet from client to server
-  MSG_ACTION,
-  // data to check for lost synchronization (client to server)
-  MSG_SYNCCHECK,     
-  // a copy of action stored for prediction
-  MSG_ACTIONPREDICT,
-
-  // sequenced packets from server to session states
-  MSG_SEQ_ALLACTIONS,    // packed actions of all players from server to clients
-  MSG_SEQ_ADDPLAYER,     // instructions for adding a new player to session states
-  MSG_SEQ_REMPLAYER,     // instructions for removing a new player from session states
-  MSG_SEQ_PAUSE,         // game was paused/unpaused
-  MSG_SEQ_CHARACTERCHANGE, // a player has changed character
-
-  MSG_GAMESTREAMBLOCKS,         // packet with one or more game stream messages
-  MSG_REQUESTGAMESTREAMRESEND,  // request for resend of a game stream message
-
-  // chat messages
-  MSG_CHAT_IN,    // chat request from client to server
-  MSG_CHAT_OUT,   // chat message routed to certain clients
-
-  // parameter setting messages
-  MSG_SET_CLIENTSETTINGS,     // adjust server side settings of a client
-
-  // remote administration 
-  MSG_ADMIN_COMMAND,     // c2s incoming console command request
-  MSG_ADMIN_RESPONSE,    // s2c results of the console command
-
-  MSG_EXTRA = '/',      // used for special communications like rcon and similar
-
-
-  // added to the end so that it would not mess up old numbering - that would corrupt demo playing
-  // disconnection confirmation from the client
-	MSG_REP_DISCONNECTED,
-
-
-} MESSAGETYPE;
-
-extern struct ErrorTable MessageTypes;
+///////
 
 /*
  * Holder for network message, can be read/written like a stream.
  */
 class ENGINE_API CNetworkMessage {
 public:
-  MESSAGETYPE nm_mtType;                  // type of this message
+  UBYTE nm_mtType;                  // type of this message
 
-#define MAX_NETWORKMESSAGE_SIZE 2048      // max. length of message buffer
+#define MAX_NETWORKMESSAGE_SIZE (SERVER_MAX_MESSAGE_SIZE+1024)   // max. length of message buffer 
+                                                                 // enough to hold max server message plus a safety margin
   UBYTE *nm_pubMessage;       // the message data itself
   SLONG nm_slMaxSize;         // size of message buffer
 
   UBYTE *nm_pubPointer;       // pointer for reading/writing message
   SLONG nm_slSize;            // size of message
   INDEX nm_iBit;              // next bit index to read/write (0 if not reading/writing bits)
+  //0315 kwon
+  INDEX nm_iIndex;
 public:
   /* Constructor for empty message (for receiving). */
   CNetworkMessage(void);
   /* Constructor for initializing message that is to be sent. */
-  CNetworkMessage(MESSAGETYPE mtType);
+  CNetworkMessage(UBYTE mtType);
   /* Copying. */
   CNetworkMessage(const CNetworkMessage &nmOriginal);
   void operator=(const CNetworkMessage &nmOriginal);
   /* Destructor. */
   ~CNetworkMessage(void);
+  
+  // Network message initialization
+  void Initialize(void);
+  void Initialize(const CNetworkMessage &nmOriginal);
+  void Initialize(UBYTE mtType);
+
   // reinit a message that is to be sent (to write different contents)
   void Reinit(void);
 
@@ -125,7 +71,7 @@ public:
   void Dump(void);
 
   /* Get the type of this message. */
-  inline MESSAGETYPE GetType(void) const { ASSERT(this!=NULL); return MESSAGETYPE(nm_mtType&0x3F); };
+  inline UBYTE GetType(void) const { ASSERT(this!=NULL); return UBYTE(nm_mtType&0x3F); };
   /* Check if end of message. */
   BOOL EndOfMessage(void);
   // rewind message to start, so that written message can be read again
@@ -139,31 +85,80 @@ public:
   void UnpackDefault(CNetworkMessage &nmUnpacked);
 
   // read/write functions
-  void Read(void *pvBuffer, SLONG slSize);
-  void Write(const void *pvBuffer, SLONG slSize);
+  inline void Read(void *pvBuffer, SLONG slSize);
+  inline void Write(const void *pvBuffer, SLONG slSize);
   void ReadBits(void *pvBuffer, INDEX ctBits);
   void WriteBits(const void *pvBuffer, INDEX ctBits);
 
+ // LONGLONG ntohll(LONGLONG n);
+
+  inline LONGLONG ntohll3(LONGLONG n)
+  {
+#ifdef BIG_ENDIAN
+	  return n;
+#else
+	  char* p = (char*)&n;
+	  char ch;
+	  ch = p[0];	p[0] = p[7];	p[7] = ch;
+	  ch = p[1];	p[1] = p[6];	p[6] = ch;
+	  ch = p[2];	p[2] = p[5];	p[5] = ch;
+	  ch = p[3];	p[3] = p[4];	p[4] = ch;
+	  return n;
+#endif
+  }
+
+ inline LONGLONG htonll3(LONGLONG n)
+{
+#ifdef BIG_ENDIAN
+	return n;
+#else
+	char* p = (char*)&n;
+	char ch;
+	ch = p[0];	p[0] = p[7];	p[7] = ch;
+	ch = p[1];	p[1] = p[6];	p[6] = ch;
+	ch = p[2];	p[2] = p[5];	p[5] = ch;
+	ch = p[3];	p[3] = p[4];	p[4] = ch;
+	return n;
+#endif
+}
+ 
   /* Read an object from message. */
-  inline CNetworkMessage &operator>>(float  &f) { Read( &f, sizeof( f)); return *this; }
-  inline CNetworkMessage &operator>>(ULONG &ul) { Read(&ul, sizeof(ul)); return *this; }
-  inline CNetworkMessage &operator>>(UWORD &uw) { Read(&uw, sizeof(uw)); return *this; }
+  inline CNetworkMessage &operator>>(float  &f) { Read(&f,  sizeof(f)); return *this;}
+  inline CNetworkMessage &operator>>(double &d) { Read(&d,  sizeof(d)); return *this; }
+  inline CNetworkMessage &operator>>(ULONG &ul) { Read(&ul, sizeof(ul)); NTOHL(ul);  return *this; }
+  inline CNetworkMessage &operator>>(UWORD &uw) { Read(&uw, sizeof(uw)); NTOHS(uw); return *this; }
   inline CNetworkMessage &operator>>(UBYTE &ub) { Read(&ub, sizeof(ub)); return *this; }
-  inline CNetworkMessage &operator>>(SLONG &sl) { Read(&sl, sizeof(sl)); return *this; }
-  inline CNetworkMessage &operator>>(SWORD &sw) { Read(&sw, sizeof(sw)); return *this; }
+  inline CNetworkMessage &operator>>(SLONG &sl) { Read(&sl, sizeof(sl)); NTOHL(sl); return *this; }
+  inline CNetworkMessage &operator>>(SWORD &sw) { Read(&sw, sizeof(sw)); NTOHS(sw); return *this; }
   inline CNetworkMessage &operator>>(SBYTE &sb) { Read(&sb, sizeof(sb)); return *this; }
-  inline CNetworkMessage &operator>>(MESSAGETYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
-  CNetworkMessage &operator>>(CTString &str);
+  //inline CNetworkMessage &operator>>(UBYTE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_LOGIN_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_FAIL_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_MOVE_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_DB_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_MENU_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_CHAT_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator>>(MSG_CHAR_TYPE &mt) { Read(&mt, sizeof(mt)); return *this; }
+  inline CNetworkMessage &operator>>(SQUAD &ll) { Read(&ll, sizeof(ll)); NTOHLL(ll); return *this; }  	  	 	    
+  CNetworkMessage &operator>>(CTString &str); 
   /* Write an object into message. */
-  inline CNetworkMessage &operator<<(const float  &f) { Write( &f, sizeof( f)); return *this; }
-  inline CNetworkMessage &operator<<(const double &d) { Write( &d, sizeof( d)); return *this; }
-  inline CNetworkMessage &operator<<(const ULONG &ul) { Write(&ul, sizeof(ul)); return *this; }
-  inline CNetworkMessage &operator<<(const UWORD &uw) { Write(&uw, sizeof(uw)); return *this; }
+  inline CNetworkMessage &operator<<(const float  &f) { Write(&f,  sizeof(f)); return *this; }
+  inline CNetworkMessage &operator<<(const double &d) { Write(&d,  sizeof(d)); return *this; }
+  inline CNetworkMessage &operator<<(ULONG ul) { HTONL(ul); Write(&ul, sizeof(ul)); return *this; }
+  inline CNetworkMessage &operator<<(UWORD uw) { HTONS(uw); Write(&uw, sizeof(uw)); return *this; }
   inline CNetworkMessage &operator<<(const UBYTE &ub) { Write(&ub, sizeof(ub)); return *this; }
-  inline CNetworkMessage &operator<<(const SLONG &sl) { Write(&sl, sizeof(sl)); return *this; }
-  inline CNetworkMessage &operator<<(const SWORD &sw) { Write(&sw, sizeof(sw)); return *this; }
+  inline CNetworkMessage &operator<<(SLONG sl) { HTONL(sl); Write(&sl, sizeof(sl)); return *this; }
+  inline CNetworkMessage &operator<<(SWORD sw) { HTONS(sw); Write(&sw, sizeof(sw)); return *this; }
   inline CNetworkMessage &operator<<(const SBYTE &sb) { Write(&sb, sizeof(sb)); return *this; }
-  inline CNetworkMessage &operator<<(const MESSAGETYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const UBYTE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_LOGIN_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_FAIL_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_MOVE_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_DB_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_MENU_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_CHAT_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  //inline CNetworkMessage &operator<<(const MSG_CHAR_TYPE &mt) { Write(&mt, sizeof(mt)); return *this; }
+  inline CNetworkMessage &operator<<(SQUAD ll) { HTONLL(ll); Write(&ll, sizeof(ll)); return *this; }  
   CNetworkMessage &operator<<(const CTString &str);
 
   /* Insert a sub-message into this message. */
@@ -173,7 +168,42 @@ public:
 
   // shrink message buffer to exactly fit contents
   void Shrink(void);
+
+  void SetLoginType( UBYTE LoginType);
 };
+
+
+
+
+// read/write functions
+// memset and memcpy are intrinsinc functions and will be optimized by the compiler
+inline void CNetworkMessage::Read(void *pvBuffer, SLONG slSize)
+{
+  if (nm_pubPointer+slSize > nm_pubMessage+nm_slSize) {
+    CPrintF(TRANS("Warning: Message over-reading!\n"));
+    ASSERT(FALSE);
+    memset(pvBuffer, 0, slSize);
+    return;
+  }
+  memcpy(pvBuffer, nm_pubPointer, slSize);
+  nm_pubPointer += slSize;
+  nm_iBit = 0;
+}
+
+inline void CNetworkMessage::Write(const void *pvBuffer, SLONG slSize)
+{
+  if (nm_pubPointer+slSize > nm_pubMessage+nm_slMaxSize) {
+    CPrintF(TRANS("Warning: Message over-writing!\n"));
+    ASSERT(FALSE);
+    return;
+  }
+  memcpy(nm_pubPointer, pvBuffer, slSize);
+  nm_pubPointer += slSize;
+  nm_iBit = 0;
+  nm_slSize += slSize;
+}
+
+
 
 /*
  * A message block used for streaming data across network.
@@ -192,7 +222,7 @@ public:
   /* Constructor for receiving -- uninitialized block. */
   CNetworkStreamBlock(void);
   /* Constructor for sending -- empty packet with given type and sequence. */
-  CNetworkStreamBlock(MESSAGETYPE mtType, INDEX iSequenceNumber);
+  CNetworkStreamBlock(UBYTE mtType, INDEX iSequenceNumber);
 
   /* Read a block from a received message. */
   void ReadFromMessage(CNetworkMessage &nmToRead);
@@ -201,10 +231,14 @@ public:
 
   /* Remove the block from stream. */
   void RemoveFromStream(void);
+  /* Clear block */
+  void Clear(void);
 
   /* Read/write the block from file stream. */
   void Read_t(CTStream &strm); // throw char *
   void Write_t(CTStream &strm); // throw char *
+
+  void operator delete(void *p);
 };
 
 /*
@@ -265,7 +299,7 @@ public:
   ULONG pa_ulButtons;       // 32 bits for action buttons (application defined)
     // keep flags that are likely to be changed/set more often at lower bits,
     // so that better compression can be achieved for network transmission
-  __int64 pa_llCreated;     // when was created (for ping calc.) in ms
+  ULONG pa_ulCreated;     // when was created (for ping calc.) in ms
 
 public:
   CPlayerAction(void);
@@ -273,11 +307,6 @@ public:
   void Clear(void);
   // normalize action (remove invalid floats like -0)
   void Normalize(void);
-
-  // create a checksum value for sync-check
-  void ChecksumForSync(ULONG &ulCRC);
-  // dump sync data to text file
-  void DumpSync_t(CTStream &strm);  // throw char *
 
   void Lerp(const CPlayerAction &pa0, const CPlayerAction &pa1, FLOAT fFactor);
 
@@ -291,6 +320,10 @@ public:
   friend CTStream &operator>>(CTStream &strm, CPlayerAction &pa);
 };
 
+// Create new network stream block (use instead of new CNetworkStreamBlock)
+extern CNetworkStreamBlock *CreateNetworkStreamBlock(void);
+// Delete network stream block (use instead of delete CNetworkStreamBlock)
+extern void DeleteNetworkStreamBlock(CNetworkStreamBlock *ppaPacket);
 
 #endif  /* include-once check. */
 

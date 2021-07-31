@@ -24,8 +24,8 @@ properties:
  18 BOOL m_bStartTactics          "Start Tactics" = FALSE, 
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\EnemyMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\EnemyMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\EnemyMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\EnemyMarker.tex"
 
 functions:
   /* Check if entity is moved on a route set up by its targets. */
@@ -43,10 +43,8 @@ functions:
 
   BOOL IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget)
   {
-    if( slPropertyOffset == offsetof(CMarker, m_penTarget))
-    {
-      if (IsOfClass(penTarget, "Enemy Marker")) { return TRUE; }
-      else { return FALSE; }
+    if( slPropertyOffset == offsetof(CMarker, m_penTarget))  {
+      return IsOfClass( penTarget, &CEnemyMarker_DLLClass);
     }   
     return CEntity::IsTargetValid(slPropertyOffset, penTarget);
   }
@@ -54,6 +52,8 @@ functions:
 procedures:
   Main() {
     InitAsEditorModel();
+//   InitAsModel();
+
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
     
@@ -64,6 +64,9 @@ procedures:
     // set appearance
     SetModel(MODEL_MARKER);
     SetModelMainTexture(TEXTURE_MARKER);
+
+//	GetModelObject()->StretchModel(FLOAT3D(0.3f, 0.3f, 0.3f));
+
     return;
   }
 };

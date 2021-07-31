@@ -4,72 +4,28 @@
 
 #include <Engine/Base/Memory.h>
 #include <Engine/Base/Stream.h>
+#include <Engine/Base/Console.h>
 #include <Engine/Base/ListIterator.inl>
-#include <Engine/Sound/Wave.h>
 #include <Engine/Sound/SoundDecoder.h>
 #include <Engine/Sound/SoundLibrary.h>
 #include <Engine/Sound/SoundObject.h>
 
 #include <Engine/Templates/Stock_CSoundData.h>
 
-/* ====================================================
- *
- *  Sound data awareness functions
- */
-
-/*
- *  Pause all playing
- */
-void CSoundData::PausePlayingObjects(void)
-{
-  // for all objects linked to data pause playing
-  FOREACHINLIST(CSoundObject, so_Node, sd_ClhLinkList, itCsoPause) {
-    // pause playing
-    itCsoPause->Pause();
-  }
-}
-
-/*
- *  For all objects resume play
- */
-void CSoundData::ResumePlayingObjects(void)
-{
-  // for all objects resume play
-  FOREACHINLIST(CSoundObject, so_Node, sd_ClhLinkList, itCsoResume) {
-    // call play method again
-    itCsoResume->Resume();
-  }
-}
-
-
-/*
- *  Add object in sound aware list
- */
-void CSoundData::AddObjectLink(CSoundObject &CsoAdd)
-{
-  // add object to list tail
-  sd_ClhLinkList.AddTail(CsoAdd.so_Node);
-}
-
-/*
- *  Remove a object from aware list
- */
-void CSoundData::RemoveObjectLink(CSoundObject &CsoRemove)
-{
-  // remove it from list
-  CsoRemove.so_Node.Remove();
-}
-
-
-/* ====================================================
- *
- *  Class global methods
- */
+#define SD_ENCHEADERSIZE 16*1024 // header size for sound decoder
 
 // Constructor
 CSoundData::CSoundData()
 {
-  sd_pswBuffer = NULL;
+  sd_pswSamples = NULL;
+  sd_pdsBuffer  = NULL;
+  sd_pubDecoderHeader = NULL;
+  sd_slHeaderSize = 0;
+  sd_ctSamples = 0;      
+  sd_tmLength = 0.0;
+  sd_ulFlags = NONE;      
+  sd_fSoundMass = 0;
+  sd_wSamplesPerBlock = 64;  // just in case
 }
 
 // Destructor
@@ -82,22 +38,37 @@ CSoundData::~CSoundData()
 // Free Buffer (and all linked Objects)
 void CSoundData::ClearBuffer(void)
 {
-  // if buffer exist
-  if( sd_pswBuffer!=NULL) {
+  // cannot have both at same time
+  ASSERT( sd_pswSamples==NULL || sd_pdsBuffer==NULL);
+
+  // if this is decoded sound
+  if(sd_pubDecoderHeader!=NULL) {
+    // delete decoder header
+    delete[] sd_pubDecoderHeader;
+    sd_pubDecoderHeader = NULL;
+  }
+  // if sample buffer exist
+  if( sd_pswSamples!=NULL) {
     // release it
-    FreeMemory( sd_pswBuffer);
-    sd_pswBuffer = NULL;
+    FreeMemory( sd_pswSamples);
+    sd_pswSamples = NULL;
+  }
+
+  // if direct sound buffer exist
+  if( sd_pdsBuffer!=NULL) {
+    sd_pdsBuffer->Release();
+    sd_pdsBuffer = NULL;
   }
 }
 
 
 // Get Sound Length in seconds
-double CSoundData::GetSecondsLength(void)
+DOUBLE CSoundData::GetSecondsLength(void)
 {
   // if not encoded
   if (!(sd_ulFlags&SDF_ENCODED) ) {
     // len is read from wave
-    return sd_dSecondsLength;
+    return sd_tmLength;
   // if encoded
   } else {
     // implement this!!!!
@@ -113,56 +84,56 @@ double CSoundData::GetSecondsLength(void)
  */
 
 // Read sound in memory
-void CSoundData::Read_t(CTStream *inFile)  // throw char *
+void CSoundData::Read_t( CTStream *inFile)  // throw char *
 {
-  // synchronize access to sounds
-  CTSingleLock slSounds(&_pSound->sl_csSound, TRUE);
-
-  ASSERT( sd_pswBuffer==NULL);
+  ASSERT( sd_pswSamples==NULL && sd_pdsBuffer==NULL);
   sd_ulFlags = NONE;
+  sd_tmLength   = 0;
+  sd_ctSamples  = 0;      
+  sd_fSoundMass = 0;
 
   // get filename
   CTFileName fnm = inFile->GetDescription();
+
   // if this is encoded file
-  if (fnm.FileExt()==".ogg" || fnm.FileExt()==".mp3") {
+  if( fnm.FileExt()==".ogg" || fnm.FileExt()==".mp3" || fnm.FileExt()==".wma") {
+    // allocate decoder header
+    ASSERT(sd_pubDecoderHeader==NULL);
     CSoundDecoder *pmpd = new CSoundDecoder(fnm);
-    if (pmpd->IsOpen()) {
+    // if opened
+    if(pmpd->IsOpen()) {
+      // get decoder format
       pmpd->GetFormat(sd_wfeFormat);
+      sd_slHeaderSize = SD_ENCHEADERSIZE;
+      // precache decoder header
+      sd_pubDecoderHeader = new UBYTE[sd_slHeaderSize];
+      SLONG slReadHeader = pmpd->ReadHeader(sd_pubDecoderHeader, sd_slHeaderSize);
+      if(slReadHeader==(-1)) {
+        // delete header buffer
+        delete[] sd_pubDecoderHeader;
+        sd_pubDecoderHeader = NULL;
+      } else {
+        sd_slHeaderSize = slReadHeader;
+      }
     }
     delete pmpd;
     // mark that this is streaming encoded file
-    sd_ulFlags = SDF_ENCODED|SDF_STREAMING;
-
-  // if this is wave file
-  } else {
-    // load wave info
-    PCMWaveInput CpwiLoad;
-    sd_wfeFormat = CpwiLoad.LoadInfo_t(inFile);
-    // store sample length in seconds and average byte rate
-    sd_dSecondsLength = CpwiLoad.GetSecondsLength();
-
-    // if sound library is in lower format convert sound to library format
-    if ((_pSound->sl_SwfeFormat).nSamplesPerSec < sd_wfeFormat.nSamplesPerSec) {
-      sd_wfeFormat.nSamplesPerSec = (_pSound->sl_SwfeFormat).nSamplesPerSec;
-    }
-    // same goes for bits/sample (must be 16)
-    sd_wfeFormat.wBitsPerSample = 16;
-
-    // if library is active create buffer and load sound data
-    if (_pSound->IsActive()) {
-      // create Buffer
-      sd_slBufferSampleSize = CpwiLoad.GetDataLength(sd_wfeFormat);
-      SLONG slBufferSize = CpwiLoad.DetermineBufferSize(sd_wfeFormat);
-      sd_pswBuffer = (SWORD*)AllocMemory( slBufferSize+8);
-      // load data into buffer
-      CpwiLoad.LoadData_t( inFile, sd_pswBuffer, sd_wfeFormat);
-      // copy first sample to the last one (this is needed for linear interpolation)
-      (ULONG&)(((UBYTE*)sd_pswBuffer)[slBufferSize]) = *(ULONG*)sd_pswBuffer;
-    }
+    sd_ulFlags = SDF_ENCODED;
   }
-
-  // add to sound aware list
-  _pSound->AddSoundAware(*this);
+  // if this is wave file
+  else {
+    // load sound data and eventually report anomalies (for debugging purposes only!)
+    const SLONG slMaxSampleRate = _pSound->IsActive() ? _pSound->sl_wfeFormat.nSamplesPerSec : 0;
+    LoadWAV_t( inFile, slMaxSampleRate);  // sample rate is valid only if library is active 
+    extern INDEX snd_bReportStereoWaves;
+    if( snd_bReportStereoWaves) {
+      if( sd_wfeFormat.nChannels     !=1) CPrintF( "! Stereo wave: %s\n", fnm);
+      if( sd_wfeFormat.wBitsPerSample==8) CPrintF( "! 8-bits wave: %s\n", fnm);
+    }
+    // determine length of sound in seconds
+    sd_tmLength = sd_ctSamples / (DOUBLE)sd_wfeFormat.nSamplesPerSec;
+    sd_wSamplesPerBlock = 64;  // for the sake of ADPCM 
+  }
 }
 
 
@@ -173,15 +144,16 @@ void CSoundData::Write_t( CTStream *outFile)
   throw TRANS("Cannot write sounds!");
 }
 
-/* Get the description of this object. */
+
+// get the description of this object
 CTString CSoundData::GetDescription(void)
 {
   CTString str;
-  str.PrintF("%dkHz %dbit %s %.2lfs",
+  str.PrintF( "%dkHz %dbit %s %.2lfs",
     sd_wfeFormat.nSamplesPerSec/1000,
     sd_wfeFormat.wBitsPerSample,
     sd_wfeFormat.nChannels==1 ? "mono" : "stereo",
-    sd_dSecondsLength);
+    sd_tmLength);
   return str;
 }
 
@@ -194,19 +166,10 @@ CTString CSoundData::GetDescription(void)
 // Free memory allocated for sound and Release DXBuffer
 void CSoundData::Clear(void)
 {
-  // synchronize access to sounds
-  CTSingleLock slSounds(&_pSound->sl_csSound, TRUE);
-
-  // clear BASE class
+  // clear base class
   CSerial::Clear();
-
-  // free DXBuffer
+  // free buffer
   ClearBuffer();
-
-  // if added as sound aware, remove it from sound aware list
-  if(IsHooked()) {
-    _pSound->RemoveSoundAware(*this);
-  }
 }
 
 
@@ -221,32 +184,289 @@ BOOL CSoundData::IsAutoFreed(void)
 SLONG CSoundData::GetUsedMemory(void)
 {
   SLONG slUsed = sizeof(*this);
-  if( sd_pswBuffer!=NULL) {
+  if( sd_pswSamples!=NULL || sd_pdsBuffer!=NULL) {
     ASSERT( sd_wfeFormat.nChannels==1 || sd_wfeFormat.nChannels==2);
-    slUsed += sd_slBufferSampleSize * sd_wfeFormat.nChannels *2; // all sounds are 16-bit
-  }
+    SLONG slSize = sd_ctSamples * sd_wfeFormat.nChannels *sd_wfeFormat.wBitsPerSample/8;
+    slUsed += slSize; 
+    if( sd_pdsBuffer!=NULL) slUsed += sizeof(sd_pdsBuffer);
+  } 
   return slUsed;
 }
 
 
-/* ====================================================
- *
- *  Reference counting functions
- */
 
-// Add one reference
+// reference counting functions
 void CSoundData::AddReference(void)
 {
-  if (this!=NULL) {
-    MarkUsed();
-  }
+  if( this!=NULL) MarkUsed();
+}
+
+void CSoundData::RemReference(void)
+{
+  if( this!=NULL) _pSoundStock->Release(this);
 }
 
 
-// Remove one reference
-void CSoundData::RemReference(void)
+
+
+// WAVE FILE LOADER ROUTINES
+
+
+// load wave file into SoundData class
+void CSoundData::LoadWAV_t( CTStream *inFile, SLONG slMaxSampleRate)
 {
-  if (this!=NULL) {
-    _pSoundStock->Release(this);
+  ULONG ulDummy;
+  inFile->ExpectID_t(CChunkID("RIFF"));
+  (*inFile) >> ulDummy;
+
+  SLONG slFormatLength;
+  inFile->ExpectID_t(CChunkID("WAVE"));
+  inFile->ExpectID_t(CChunkID("fmt "));
+  (*inFile) >> slFormatLength;     // Format Chunk length
+
+  // read WAVE format
+  WAVEFORMATEX &wfe = sd_wfeFormat;
+  (*inFile) >> wfe.wFormatTag;
+  (*inFile) >> wfe.nChannels;
+  (*inFile) >> wfe.nSamplesPerSec;
+  (*inFile) >> wfe.nAvgBytesPerSec;
+  (*inFile) >> wfe.nBlockAlign;
+  (*inFile) >> wfe.wBitsPerSample;
+  wfe.cbSize = 0;   // for PCM
+
+  // only for PCM Wave - skip extra information if exists
+  if( slFormatLength>16) inFile->Seek_t( slFormatLength-16, CTStream::SD_CUR);
+
+  // skip 'fact' and/or 'PAD ' chunks if exist
+  CChunkID cID = inFile->GetID_t();
+  if( cID == CChunkID("fact")) {
+    SLONG slSkipSize;
+    (*inFile) >> slSkipSize;
+    inFile->Seek_t( slSkipSize, CTStream::SD_CUR);
+    cID = inFile->GetID_t();
   }
+  if( cID == CChunkID("PAD ")) {
+    SLONG slSkipSize;
+    (*inFile) >> slSkipSize;
+    inFile->Seek_t( slSkipSize, CTStream::SD_CUR);
+    cID = inFile->GetID_t();
+  }
+//안태훈 수정 시작	//(For New Snd Format)(0.1)
+  if(cID == CChunkID("cue "))
+  {
+	  SLONG slSkipSize;
+		(*inFile) >> slSkipSize;
+		inFile->Seek_t(slSkipSize, CTStream::SD_CUR);
+		cID = inFile->GetID_t();
+  }
+//안태훈 수정 끝	//(For New Snd Format)(0.1)
+
+  // read data length (in bytes)
+  ULONG ulDataLength;
+  if( cID != CChunkID("data")) 
+  {
+	  throw "Wrong chunk ID ('data' expected)!";
+  }
+  (*inFile) >> ulDataLength;
+
+  // check wave format
+  if( wfe.wFormatTag != WAVE_FORMAT_PCM
+  ) {
+    throw "Unsupported format tag in wave file!";
+  }
+  if( wfe.wBitsPerSample != 4
+   && wfe.wBitsPerSample != 8 
+   && wfe.wBitsPerSample != 16) {
+    throw "Unsupported BitsPerSample value in wave file!";
+  }
+  if( wfe.nChannels != 1
+   && wfe.nChannels != 2) {
+    throw "Unsupported number of channels in wave file!";
+  }
+  if( wfe.nSamplesPerSec != 11025
+   && wfe.nSamplesPerSec != 22050
+   && wfe.nSamplesPerSec != 44100) {
+    throw "Unsupported frequency of wave file!";
+  }
+
+  // some booleans
+  const BOOL bADPCM = (wfe.wFormatTag != WAVE_FORMAT_PCM);
+  const BOOL b16Bit = (wfe.wBitsPerSample == 16);
+  const BOOL bMono  = (wfe.nChannels == 1);
+
+  // if library is not active yet
+  if( slMaxSampleRate==0) {
+    // just calc sound size
+    if( bADPCM) {
+      sd_wSamplesPerBlock = 64; 
+      sd_ctSamples = ulDataLength * sd_wSamplesPerBlock / wfe.nBlockAlign;
+    } else {
+      sd_ctSamples = ulDataLength *8 / wfe.wBitsPerSample / wfe.nChannels;
+    }
+    // we're done here
+    return;
+  }
+
+  // load samples
+  DOUBLE dSampleRatio = 1;
+  void *pBuffer = NULL;
+  // ADPCM does not need conversion or shrinking
+  if( bADPCM) {
+    // must align memory for ADPCM to one block (36 bytes)
+    sd_pswSamples = (SWORD*)AllocMemory( ulDataLength);
+    inFile->Read_t( sd_pswSamples, ulDataLength);
+    wfe.cbSize = 2;   // for ADPCM
+    sd_wSamplesPerBlock = 64; 
+    sd_ctSamples = ulDataLength * sd_wSamplesPerBlock / wfe.nBlockAlign;
+  }
+  // PCM might need conversion and/or shrinking
+  else {
+    dSampleRatio = Min( (DOUBLE)slMaxSampleRate/(DOUBLE)wfe.nSamplesPerSec, 1.0);
+    const SLONG slMul = b16Bit ? 2 : 4;
+    pBuffer = AllocMemory( ulDataLength*slMul);
+    inFile->Read_t( pBuffer, ulDataLength);
+
+    // convert to 32-bit
+    if( slMul==2) {
+      // from 16-bit
+      sd_ctSamples = ulDataLength /2;
+      for( INDEX i=sd_ctSamples-1; i>=0; i--) {
+        ((ULONG*)pBuffer)[i] = (((SWORD*)pBuffer)[i] +0x8000) <<8;
+      }
+    } else {
+      // from 8-bit
+      sd_ctSamples = ulDataLength;
+      for( INDEX i=sd_ctSamples-1; i>=0; i--) {
+        ((ULONG*)pBuffer)[i] = ((UBYTE*)pBuffer)[i] <<16;
+      } // update format
+      wfe.wBitsPerSample   = 16;
+      wfe.nAvgBytesPerSec *= 2;
+      wfe.nBlockAlign     *= 2;
+      ulDataLength *= 2;
+    }
+    // set samples in total (not per channel)
+    if( !bMono) sd_ctSamples /= wfe.nChannels;
+  }
+
+  // shrink if needed
+  if( dSampleRatio<1.0) {
+    // prepare initial vars
+    dSampleRatio  = 1.0 / dSampleRatio;
+    ULONG *pulSrc = (ULONG*)pBuffer;
+    ULONG *pulDst = pulSrc;
+    DOUBLE dRatio = dSampleRatio;
+    DOUBLE dInterDataL = 0.0;
+    DOUBLE dInterDataR = 0.0;
+    DOUBLE dTempDataL, dTempDataR;
+
+    for( INDEX i=0; i<sd_ctSamples; i++)
+    {
+      // left (or mono) channel
+      if( dRatio<1.0) { // partial sample
+        dTempDataL = *pulSrc++;
+        dInterDataL += dTempDataL*dRatio;
+        *pulDst++ = (ULONG)(dInterDataL/dSampleRatio);
+        // new intermediate value
+        dRatio = 1 - dRatio;
+        dInterDataL = dTempDataL*dRatio;
+        dRatio = dSampleRatio - dRatio;
+      } else { // complete sample
+        dInterDataL += *pulSrc++;
+        dRatio -= 1.0;
+      }
+      // done here if mono
+      if( bMono) continue;
+
+      // right channel
+      if( dRatio<1.0) { // partial sample
+        dTempDataR = *pulSrc++;
+        dInterDataR += dTempDataR*dRatio;
+        *pulDst++ = (ULONG)(dInterDataR/dSampleRatio);
+        // new intermediate value
+        dRatio = 1 - dRatio;
+        dInterDataR = dTempDataR*dRatio;
+        dRatio = dSampleRatio - dRatio;
+      } else { // complete sample
+        dInterDataR += *pulSrc++;
+        dRatio -= 1.0;
+      }
+    }
+    // last sample(s)
+                *pulDst++ = (ULONG)(dInterDataL/(dSampleRatio-dRatio));
+    if( !bMono) *pulDst++ = (ULONG)(dInterDataR/(dSampleRatio-dRatio));
+
+    // update sample rate and sample count
+    wfe.nSamplesPerSec  = slMaxSampleRate;
+    wfe.nAvgBytesPerSec = slMaxSampleRate * wfe.nChannels *16/8;
+    sd_ctSamples = sd_ctSamples /dSampleRatio;
+    ulDataLength = ulDataLength /dSampleRatio;
+  }
+
+  // copy or convert to direct-sound buffer 
+  const INDEX ctStereoSamples = sd_ctSamples * wfe.nChannels;
+  sd_slBufferSize = ulDataLength;
+
+  if( _pSound->sl_ulFlags&SLF_USINGDS3D)
+  {
+    // create direct sound buffer
+    ASSERT( !bADPCM); // ADPCM is not supported on PC (yet:)
+    HRESULT hr;
+    DSBUFFERDESC dsbDesc;
+    LPDIRECTSOUND pDS = _pSound->sl_pDS;
+    ASSERT( sd_pdsBuffer==NULL && pDS!=NULL);
+    memset( &dsbDesc, 0, sizeof(dsbDesc));
+    dsbDesc.dwSize  = sizeof(DSBUFFERDESC);
+    dsbDesc.dwFlags = bMono ? DSBCAPS_3D : DSBCAPS_2D;
+    dsbDesc.dwBufferBytes = ulDataLength;
+    dsbDesc.lpwfxFormat = &wfe;
+    // determine which 3D-virtualzation algorithm to use
+    dsbDesc.guid3DAlgorithm = DS3DALG_DEFAULT;
+    extern INDEX snd_iEmulationType;
+    if( bMono && snd_iEmulationType) {
+      switch( snd_iEmulationType) {
+      case 3:  dsbDesc.guid3DAlgorithm = DS3DALG_HRTF_FULL;          break;
+      case 2:  dsbDesc.guid3DAlgorithm = DS3DALG_HRTF_LIGHT;         break;
+      case 1:  dsbDesc.guid3DAlgorithm = DS3DALG_NO_VIRTUALIZATION;  break;
+      default: snd_iEmulationType = 0;
+      }
+    } // create!
+    hr = pDS->CreateSoundBuffer( &dsbDesc, &sd_pdsBuffer, NULL);
+    ASSERT( !FAILED(hr) && sd_pdsBuffer!=NULL);
+
+    // fill if with samples
+    LPVOID pvAudioPtr1,   pvAudioPtr2;
+    DWORD  dwAudioBytes1, dwAudioBytes2;
+    hr = sd_pdsBuffer->Lock( 0, 0, &pvAudioPtr1,&dwAudioBytes1, &pvAudioPtr2,&dwAudioBytes2, DSBLOCK_ENTIREBUFFER);
+    ASSERT( !FAILED(hr) && pvAudioPtr2==NULL);
+    for( INDEX i=0; i<ctStereoSamples; i++) {
+      // convert
+      ((SWORD*)pvAudioPtr1)[i] = (((ULONG*)pBuffer)[i] >>8) -0x8000;
+    }
+    // filled
+    hr = sd_pdsBuffer->Unlock( pvAudioPtr1,dwAudioBytes1, pvAudioPtr2,dwAudioBytes2);
+    ASSERT( !FAILED(hr));
+  }
+
+  // convert to memory
+  else
+  {
+    if( !bADPCM) {
+      ASSERT( sd_pswSamples==NULL);
+      ULONG ulAllocSize = ctStereoSamples*sizeof(SWORD);
+      if( ulAllocSize&2) ulAllocSize += 2;  // align to 4
+      // on PC, just use heap memory
+      sd_pswSamples = (SWORD*)AllocMemory( ulAllocSize+8);
+      for( INDEX i=0; i<ctStereoSamples; i++) {
+        // convert
+        sd_pswSamples[i] = (((ULONG*)pBuffer)[i] >>8) -0x8000;
+      }
+      // copy first sample to the last one (this is needed for linear interpolation)
+      (ULONG&)(sd_pswSamples[ctStereoSamples]) = *(ULONG*)sd_pswSamples;
+      // alignment must be at 4 bytes!
+      ASSERT( (((SLONG)sd_pswSamples) %4) == 0);
+    }
+  }
+
+  // eventually free temp buffer
+  if( pBuffer!=NULL) FreeMemory(pBuffer);
 }

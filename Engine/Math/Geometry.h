@@ -48,7 +48,5 @@ ENGINE_API extern void operator!=(DOUBLEmatrix3D &t3dRotation, const ANGLE3D &a3
 ENGINE_API extern void operator^=(ANGLE3D &a3dAngles, const DOUBLEmatrix3D &t3dRotation);
 
 
-
-
 #endif  /* include-once check. */
 

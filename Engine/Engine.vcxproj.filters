@@ -2,215 +2,158 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{d2af37de-1340-4c84-a955-78272a7da707}</UniqueIdentifier>
+      <UniqueIdentifier>{603f08fb-3ffd-48f8-8299-168f11cb1d0d}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
-    <Filter Include="Source Files\Base">
-      <UniqueIdentifier>{a0bd9f7d-4f48-40f4-9848-b1d60ed1446f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Math">
-      <UniqueIdentifier>{013eefac-b492-492c-9ecd-8b1dd97fa78a}</UniqueIdentifier>
+      <UniqueIdentifier>{22769d5f-c189-4028-9da0-76d492850214}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Graphics">
-      <UniqueIdentifier>{6cadab3e-9717-462b-80df-0c2eb8edb1c9}</UniqueIdentifier>
+      <UniqueIdentifier>{517b19fe-ec62-4e4c-9136-766e5630633f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Sound">
-      <UniqueIdentifier>{b0e6bfff-1903-4a4d-b9a3-46f2cdd79f6f}</UniqueIdentifier>
+      <UniqueIdentifier>{3a9708cf-c468-4ee3-a886-fef6cd17c837}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Models">
-      <UniqueIdentifier>{f894ee20-ee60-4851-ab6a-826d50b2fac3}</UniqueIdentifier>
+      <UniqueIdentifier>{5c3256d1-654f-458e-bf53-e65e2f6c0ec1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\World">
-      <UniqueIdentifier>{f4f00d5f-72c2-46ed-a1ff-5a41d15f1402}</UniqueIdentifier>
+      <UniqueIdentifier>{ed8bc947-bfda-4ea1-86bc-71232af0b11e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Templates">
-      <UniqueIdentifier>{a22fae84-ca42-4995-92e4-7a59134dace4}</UniqueIdentifier>
+      <UniqueIdentifier>{5ca88357-aee1-4c7f-99a7-2abf699cfbe8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Network">
-      <UniqueIdentifier>{873bae33-3c40-4851-bc94-ca941db5ddcd}</UniqueIdentifier>
+      <UniqueIdentifier>{a8246b3d-d7f7-4a33-85c6-0bc58500aebd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Rendering">
-      <UniqueIdentifier>{795b33b1-2b76-4e77-95ed-2b9bcc7afa89}</UniqueIdentifier>
+      <UniqueIdentifier>{49775435-9e46-4110-9631-e1b2486884c1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Entities">
-      <UniqueIdentifier>{e57fb559-f958-49e6-90ef-9a6daa202a01}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Brushes">
-      <UniqueIdentifier>{06923da8-3781-46a1-ae5c-a9140e34f662}</UniqueIdentifier>
+      <UniqueIdentifier>{f0ade12f-51cb-43ec-9c19-4a3b0772fa48}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Light">
-      <UniqueIdentifier>{12376991-b050-4460-b833-319fe3e1dfa9}</UniqueIdentifier>
+      <UniqueIdentifier>{1d70c6e5-c1b1-4bbd-bd6b-eff213825a62}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\zlib">
-      <UniqueIdentifier>{e949b98b-06d0-4289-98bd-bb485f6ba16f}</UniqueIdentifier>
+      <UniqueIdentifier>{e4a4e8d9-cafb-4cd8-9e15-c0a1939a29bb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Ska">
-      <UniqueIdentifier>{23578051-c3bd-4c95-82c7-03bd7b80b788}</UniqueIdentifier>
+      <UniqueIdentifier>{78287b9a-2b83-413b-9b95-f33261ab4595}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Terrain">
-      <UniqueIdentifier>{dddbfcbd-a0ad-40dd-844c-c2c5c91ba8ef}</UniqueIdentifier>
+      <UniqueIdentifier>{8d233c90-7307-493a-b6bf-56ad50d3268a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\XBox">
+      <UniqueIdentifier>{6b4c3865-b704-4c14-be26-3d0f2d349d3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Effect">
+      <UniqueIdentifier>{fa3e3b73-1a71-4ff2-9e8d-6075bc3d3e5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Effect\Effects">
+      <UniqueIdentifier>{cc6eba1f-2433-42aa-8c54-f635ac952e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Effect\Particle">
+      <UniqueIdentifier>{7fbbfb7c-222c-45c3-8bbd-ea3c8d64bdc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Effect\Tags">
+      <UniqueIdentifier>{117fb84a-77da-4214-a3f2-66862829e013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Interface">
+      <UniqueIdentifier>{5ab84cae-d414-4694-b381-356aee69b5cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Base">
+      <UniqueIdentifier>{dc293471-a0c2-42c9-89af-a20d11dce9e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Brushes">
+      <UniqueIdentifier>{c2e7efff-e9d9-425f-b786-824bf20bd119}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{5e8127f8-8cfb-46ce-aed9-9a2bb7540cc9}</UniqueIdentifier>
+      <UniqueIdentifier>{d2f3553f-5180-4a73-8238-f1c25226d7e1}</UniqueIdentifier>
       <Extensions>h;inl;hxx</Extensions>
     </Filter>
     <Filter Include="Header Files\Base Headers">
-      <UniqueIdentifier>{d6ec3ddc-21ac-40c6-baf8-dc9fda4d7d16}</UniqueIdentifier>
+      <UniqueIdentifier>{2e90a2d3-bd96-4d7a-be67-ed6a217037a1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Math Headers">
-      <UniqueIdentifier>{489064e6-536a-4b64-8967-b3a8bca50e47}</UniqueIdentifier>
+      <UniqueIdentifier>{13f3050c-35b3-4b26-846d-d726fec0d2e9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Graphics Headers">
-      <UniqueIdentifier>{cd29c299-0f6e-45d4-8be8-b6c7ee902c9d}</UniqueIdentifier>
+      <UniqueIdentifier>{32a3b0a1-26eb-4636-9066-571847a29087}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Sound Headers">
-      <UniqueIdentifier>{4dfab12e-091a-491f-b490-12be3e8ecfb7}</UniqueIdentifier>
+      <UniqueIdentifier>{dfd14735-bc72-4b0f-8163-387574d9386b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Models Headers">
-      <UniqueIdentifier>{ee32d05d-33d3-4aa5-8acd-ed80d579dcce}</UniqueIdentifier>
+      <UniqueIdentifier>{29cd28c1-e471-4bff-8c14-1f2e243cc934}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Templates Headers">
-      <UniqueIdentifier>{9ad10322-5eba-4f0f-97e8-a94dbe1437d9}</UniqueIdentifier>
+      <UniqueIdentifier>{a59748f7-0a18-42e5-871f-e80d82c6659e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Rendering Headers">
-      <UniqueIdentifier>{566403f6-f0b5-4144-b4f9-16fd48b28902}</UniqueIdentifier>
+      <UniqueIdentifier>{f437c3ce-b2dc-4c94-b41e-a2a43622dad9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Entities Headers">
-      <UniqueIdentifier>{0577ebde-c09c-4032-917b-d3a03ed96e9a}</UniqueIdentifier>
+      <UniqueIdentifier>{d5598727-5499-4dc9-8881-8a1f2e0f9528}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Brushes Headers">
-      <UniqueIdentifier>{0fb7a18d-048a-4edd-8d16-249973dcd024}</UniqueIdentifier>
+      <UniqueIdentifier>{2b10f33c-ae19-4fb4-b3d3-a22adc75acb9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Network Headers">
-      <UniqueIdentifier>{cf3367d0-9482-4c25-943f-620ab33a2d31}</UniqueIdentifier>
+      <UniqueIdentifier>{c9b72847-ec38-4614-977c-5e774aa595d5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Light Headers">
-      <UniqueIdentifier>{007f2692-6d91-486f-95a3-3fd602a1b232}</UniqueIdentifier>
+      <UniqueIdentifier>{7e8a95e9-0c4d-4dfa-9da2-768ae404d8ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\zlib Headers">
-      <UniqueIdentifier>{22ff6724-e781-4878-a594-b526f04ffcb3}</UniqueIdentifier>
+      <UniqueIdentifier>{98801f5d-cbd1-47ad-8ffb-e8797dc67c6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\exploration3d">
+      <UniqueIdentifier>{119eaf91-9560-47f6-9ff2-0c96c421c14a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Ska Headers">
-      <UniqueIdentifier>{9e9b829a-a1b4-4d50-b915-38027bb2ef24}</UniqueIdentifier>
+      <UniqueIdentifier>{fd7c7dbd-3509-4407-886b-01e9387f1463}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\World Headers">
-      <UniqueIdentifier>{8106ef61-3f70-4fa9-8c74-684b476fa56e}</UniqueIdentifier>
+      <UniqueIdentifier>{fb359abc-ef87-4add-83bb-15acf386dfc8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Terrain Headers">
-      <UniqueIdentifier>{bb506cc5-e844-41c1-abf8-58370e1e40a5}</UniqueIdentifier>
+      <UniqueIdentifier>{7c61f25e-4cb5-4691-8417-0481b89cf7dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\XBox Headers">
+      <UniqueIdentifier>{9fd47d78-c47d-45e3-adf4-96c45428592d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Effect Headers">
+      <UniqueIdentifier>{cd46bf55-a02e-476f-9a16-ab11930ff873}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Effect Headers\Effects Headers">
+      <UniqueIdentifier>{01c3cbd4-08ea-45e9-ae27-a10613da89ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Effect Headers\Particle Headers">
+      <UniqueIdentifier>{7b4233ef-a672-47f7-a96a-21cbcabcea1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Effect Headers\Tags Headers">
+      <UniqueIdentifier>{c196dbad-58f3-4c4a-b2bc-a0524a46a83a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Interface Headers">
+      <UniqueIdentifier>{30b46ec3-c8d9-4837-9ccf-f111e5f4a020}</UniqueIdentifier>
     </Filter>
     <Filter Include="Grammar Files">
-      <UniqueIdentifier>{12d770e9-4595-473a-93a4-6adf8e70321d}</UniqueIdentifier>
+      <UniqueIdentifier>{6bf0489d-964d-40c4-a5ec-2a16787c9b3f}</UniqueIdentifier>
       <Extensions>y;l;skl</Extensions>
     </Filter>
     <Filter Include="Generated Sources">
-      <UniqueIdentifier>{1fee903d-4db4-423d-aa35-10c6eb197ce0}</UniqueIdentifier>
+      <UniqueIdentifier>{fad4649c-3f79-4452-8a7a-2cc035d0575a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Entity Class Files">
-      <UniqueIdentifier>{050e5524-f62c-40c6-83a0-a7eb090337ec}</UniqueIdentifier>
+      <UniqueIdentifier>{dfdddbe0-2918-4c37-9781-8896681e90c5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{a16b8831-a69d-41ad-83ab-393fe06504f5}</UniqueIdentifier>
+      <UniqueIdentifier>{9dc833d2-d974-4a05-b1db-a14692a242e8}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
-    </Filter>
-    <Filter Include="Source Files\GameAgent">
-      <UniqueIdentifier>{3de7b00a-0b6d-478e-a6b7-e12806e1f7f7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\GameAgent Headers">
-      <UniqueIdentifier>{213d6870-6a86-43c8-b4be-01096c1ccddf}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Base\Anim.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Changeable.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Console.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\CRC.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\CRCTable.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\CTString.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Directory.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\ErrorReporting.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\FileName.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\IFeel.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Input.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Lists.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Memory.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Profiling.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\ProgressHook.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Protection.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Registry.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Relations.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\ReplaceFile.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Serial.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Shell.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\ShellTypes.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\StackDump.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Statistics.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Stream.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Synchronization.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Timer.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Translation.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Unzip.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Base\Updateable.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
     <ClCompile Include="Math\Float.cpp">
       <Filter>Source Files\Math</Filter>
     </ClCompile>
@@ -283,6 +226,9 @@
     <ClCompile Include="Graphics\DrawPort_RenderScene.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\DXTC.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
     <ClCompile Include="Graphics\Fog.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
@@ -296,6 +242,9 @@
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Gfx_Direct3D_Textures.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Gfx_Direct3D_XBox.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Gfx_OpenGL.cpp">
@@ -314,9 +263,6 @@
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\GfxLibrary.cpp">
-      <Filter>Source Files\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Graphics\GfxProfile.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\Graphics.cpp">
@@ -367,12 +313,6 @@
     <ClCompile Include="Sound\SoundObject.cpp">
       <Filter>Source Files\Sound</Filter>
     </ClCompile>
-    <ClCompile Include="Sound\SoundProfile.cpp">
-      <Filter>Source Files\Sound</Filter>
-    </ClCompile>
-    <ClCompile Include="Sound\Wave.cpp">
-      <Filter>Source Files\Sound</Filter>
-    </ClCompile>
     <ClCompile Include="Models\EditModel.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
@@ -380,9 +320,6 @@
       <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="Models\Model.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="Models\ModelProfile.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="Models\Normals.cpp">
@@ -400,9 +337,6 @@
     <ClCompile Include="Models\VertexGetting.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
-    <ClCompile Include="World\PhysicsProfile.cpp">
-      <Filter>Source Files\World</Filter>
-    </ClCompile>
     <ClCompile Include="World\World.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
@@ -416,6 +350,9 @@
       <Filter>Source Files\World</Filter>
     </ClCompile>
     <ClCompile Include="World\WorldEditingProfile.cpp">
+      <Filter>Source Files\World</Filter>
+    </ClCompile>
+    <ClCompile Include="World\WorldEntityHashing.cpp">
       <Filter>Source Files\World</Filter>
     </ClCompile>
     <ClCompile Include="World\WorldIO.cpp">
@@ -439,6 +376,9 @@
     <ClCompile Include="Templates\DynamicStackArray.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
+    <ClCompile Include="Templates\HashTableTemplate.cpp">
+      <Filter>Source Files\Templates</Filter>
+    </ClCompile>
     <ClCompile Include="Templates\LinearAllocator.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
@@ -449,6 +389,9 @@
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
     <ClCompile Include="Templates\NameTable_CTranslationPair.cpp">
+      <Filter>Source Files\Templates</Filter>
+    </ClCompile>
+    <ClCompile Include="Templates\ReusableContainer.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
     <ClCompile Include="Templates\Selection.cpp">
@@ -472,10 +415,16 @@
     <ClCompile Include="Templates\Stock_CEntityClass.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
+    <ClCompile Include="Templates\Stock_CFontData.cpp">
+      <Filter>Source Files\Templates</Filter>
+    </ClCompile>
     <ClCompile Include="Templates\Stock_CMesh.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
     <ClCompile Include="Templates\Stock_CModelData.cpp">
+      <Filter>Source Files\Templates</Filter>
+    </ClCompile>
+    <ClCompile Include="Templates\Stock_CModelInstance.cpp">
       <Filter>Source Files\Templates</Filter>
     </ClCompile>
     <ClCompile Include="Templates\Stock_CShader.cpp">
@@ -493,7 +442,22 @@
     <ClCompile Include="Network\ActionBuffer.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
+    <ClCompile Include="Network\Buffer.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\CharacterTarget.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\ChatMsgBuffer.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
     <ClCompile Include="Network\ClientInterface.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\cmd.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\CNetwork.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
     <ClCompile Include="Network\CommunicationInterface.cpp">
@@ -508,10 +472,25 @@
     <ClCompile Include="Network\Diff.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
+    <ClCompile Include="Network\EMsgBuffer.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\EntityHashing.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\InputBuffer.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\ItemTarget.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
     <ClCompile Include="Network\MessageDispatcher.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Network\Network.cpp">
+    <ClCompile Include="Network\MobTarget.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\MultiTarget.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
     <ClCompile Include="Network\NetworkMessage.cpp">
@@ -520,7 +499,7 @@
     <ClCompile Include="Network\NetworkProfile.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
-    <ClCompile Include="Network\PlayerBuffer.cpp">
+    <ClCompile Include="Network\PetTarget.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
     <ClCompile Include="Network\PlayerSource.cpp">
@@ -533,6 +512,24 @@
       <Filter>Source Files\Network</Filter>
     </ClCompile>
     <ClCompile Include="Network\SessionState.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\SessionStateExten.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\SlaveTarget.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\TcpIpConnection.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\ThreadWrapper.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\TxtQueue.cpp">
+      <Filter>Source Files\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\Web.cpp">
       <Filter>Source Files\Network</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RenCache.cpp">
@@ -550,13 +547,13 @@
     <ClCompile Include="Rendering\RenderAdding.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\RenderBloom.cpp">
+      <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
     <ClCompile Include="Rendering\RenderBrushes.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RenderModels.cpp">
-      <Filter>Source Files\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Rendering\RenderProfile.cpp">
       <Filter>Source Files\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RendMisc.cpp">
@@ -564,6 +561,12 @@
     </ClCompile>
     <ClCompile Include="Rendering\SelectOnRender.cpp">
       <Filter>Source Files\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\Action.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\CashShopData.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
     <ClCompile Include="Entities\Entity.cpp">
       <Filter>Source Files\Entities</Filter>
@@ -583,44 +586,62 @@
     <ClCompile Include="Entities\FieldBSPTesting.cpp">
       <Filter>Source Files\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="Entities\ItemData.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\ItemEffect.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\Items.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
     <ClCompile Include="Entities\LastPositions.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\MissionCase.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\MobData.cpp">
       <Filter>Source Files\Entities</Filter>
     </ClCompile>
     <ClCompile Include="Entities\NearestPolygon.cpp">
       <Filter>Source Files\Entities</Filter>
     </ClCompile>
+    <ClCompile Include="Entities\NpcHelp.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="Entities\OptionData.cpp">
+      <Filter>Source Files\Entities</Filter>
+    </ClCompile>
     <ClCompile Include="Entities\PlayerCharacter.cpp">
       <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\Brush.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\QuestSystem.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushArchive.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\ShopData.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushExport.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\Skill.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushImport.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\SmcInfo.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushIO.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\SmcParser.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushMip.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\SpecialSkill.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushPolygon.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\StatusEffect.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushSector.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\TargetInfo.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
-    <ClCompile Include="Brushes\BrushShadows.cpp">
-      <Filter>Source Files\Brushes</Filter>
-    </ClCompile>
-    <ClCompile Include="Brushes\BrushTriangularize.cpp">
-      <Filter>Source Files\Brushes</Filter>
+    <ClCompile Include="Entities\WildPetData.cpp">
+      <Filter>Source Files\Entities</Filter>
     </ClCompile>
     <ClCompile Include="Light\LayerMaker.cpp">
       <Filter>Source Files\Light</Filter>
@@ -676,6 +697,12 @@
     <ClCompile Include="Ska\ModelInstance.cpp">
       <Filter>Source Files\Ska</Filter>
     </ClCompile>
+    <ClCompile Include="Ska\NmFileIO.cpp">
+      <Filter>Source Files\Ska</Filter>
+    </ClCompile>
+    <ClCompile Include="Ska\RMMisc.cpp">
+      <Filter>Source Files\Ska</Filter>
+    </ClCompile>
     <ClCompile Include="Ska\RMRender.cpp">
       <Filter>Source Files\Ska</Filter>
     </ClCompile>
@@ -688,37 +715,679 @@
     <ClCompile Include="Ska\StringTable.cpp">
       <Filter>Source Files\Ska</Filter>
     </ClCompile>
-    <ClCompile Include="Terrain\ArrayHolder.cpp">
-      <Filter>Source Files\Terrain</Filter>
-    </ClCompile>
     <ClCompile Include="Terrain\Terrain.cpp">
       <Filter>Source Files\Terrain</Filter>
     </ClCompile>
     <ClCompile Include="Terrain\TerrainArchive.cpp">
       <Filter>Source Files\Terrain</Filter>
     </ClCompile>
-    <ClCompile Include="Terrain\TerrainEditing.cpp">
-      <Filter>Source Files\Terrain</Filter>
-    </ClCompile>
-    <ClCompile Include="Terrain\TerrainLayer.cpp">
-      <Filter>Source Files\Terrain</Filter>
-    </ClCompile>
-    <ClCompile Include="Terrain\TerrainMisc.cpp">
-      <Filter>Source Files\Terrain</Filter>
-    </ClCompile>
-    <ClCompile Include="Terrain\TerrainRayCasting.cpp">
-      <Filter>Source Files\Terrain</Filter>
-    </ClCompile>
-    <ClCompile Include="Terrain\TerrainRender.cpp">
+    <ClCompile Include="Terrain\TerrainInt.cpp">
       <Filter>Source Files\Terrain</Filter>
     </ClCompile>
     <ClCompile Include="Terrain\TerrainTile.cpp">
       <Filter>Source Files\Terrain</Filter>
     </ClCompile>
+    <ClCompile Include="Terrain\TREditing.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRGenerate.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRLayer.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRLayerImp.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRMisc.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRRayCast.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRRender.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShader_1TRL.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShader_2TRL.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShader_Base.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShader_Fog.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShader_Shadow.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain\TRShadows.cpp">
+      <Filter>Source Files\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="XBox\IFeel_X.cpp">
+      <Filter>Source Files\XBox</Filter>
+    </ClCompile>
+    <ClCompile Include="XBox\Input_X.cpp">
+      <Filter>Source Files\XBox</Filter>
+    </ClCompile>
+    <ClCompile Include="XBox\SoundDecoder_X.cpp">
+      <Filter>Source Files\XBox</Filter>
+    </ClCompile>
+    <ClCompile Include="XBox\SymbolLocator_X.cpp">
+      <Filter>Source Files\XBox</Filter>
+    </ClCompile>
+    <ClCompile Include="XBox\VideoDecoder_X.cpp">
+      <Filter>Source Files\XBox</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CCameraEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEffectControl.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEffectGroup.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEffectGroupManager.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEffectManager.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEntityEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CLightEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CMdlEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\COrbitEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticleEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CShockWaveEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CSkaEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CSoundEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CSplineBillboardEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CSplinePathEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CTerrainEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CTraceEffect.cpp">
+      <Filter>Source Files\Effect\Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticle.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticleGroup.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticleGroupManager.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticles.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesAbsorption.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesAbsorptionDefault.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesAbsorptionSphere.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesCommonProcess.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesEmitter.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesEmitterCone.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesEmitterCylinder.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesEmitterSphere.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesProcessControl.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesProcessDynamicState.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesProcessForce.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesProcessPointGoal.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CParticlesProcessVelocity.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CRandomTable.cpp">
+      <Filter>Source Files\Effect\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CEntityTag.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CGroupTag.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CSkaTag.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CTag.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CTagManager.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CWorldTag.cpp">
+      <Filter>Source Files\Effect\Tags</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CManager.cpp">
+      <Filter>Source Files\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\CNiceWater.cpp">
+      <Filter>Source Files\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect\EffectCommon.cpp">
+      <Filter>Source Files\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIAuction.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIAutoHelp.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIBilling.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIBillItem.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIBingoBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIBuff.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIButton.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIButtonEx.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICashShop.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIChangeWeapon.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICharacterInfo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIChatting.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICheckButton.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICollectBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIComboBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICompound.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UICreateChar.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIDrawFigure.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIEditBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIExchange.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIFiltering.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIFlowerTree.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGamble.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGroup.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGuild.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGuildBattle.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGuildNotice.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGuildStash.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGuildWarPortal.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIGWMix.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIHelp.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIHelper.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIHelpIcon.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIHelpOld.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIImageBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIIME.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIInitJob.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIInventory.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIListBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIListBoxEx.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UILogin.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIManager.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMap.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMessageBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMessageBoxL.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMessenger.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMinigame.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMix.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMixNew.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMonsterCombo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMultiEditBox.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIMultList.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UINotice.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UINpcHelp.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIOption.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIOXQuizEvent.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIParty.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPartyAuto.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPersonalShop.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPetFree.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPetInfo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPetItemMix.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPetTarget.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPetTraining.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPlayerInfo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIPortal.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIProcess.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIProcessNPC.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIProduct.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIQuest.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIQuestBook.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIQuickSlot.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIQuiz.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIRadar.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIRanking.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIRectString.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIRefine.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIRemission.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIScrollBar.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISecurity.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISelChar.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISelectList.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISelectResource.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISelectServer.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISelectWord.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIShop.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISiegeWarfare.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISiegeWarfareDoc.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISiegeWarfareNew.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISignBoard.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISimplePop.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISingleBattle.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISkillLearn.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISlideBar.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISpinButton.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISummon.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UISystemMenu.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITalk.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITargetInfo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITatoo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITeleport.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITextureManager.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UITrackPopup.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIWareHouse.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIWebBoard.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\UIWildPetInfo.cpp">
+      <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Anim.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Changeable.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Console.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\CRC.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\CRCTable.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\CTString.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\CTWString.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Directory.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\ErrorReporting.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\FileName.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\IFeel.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Input.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Lists.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Memory.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\MemoryTracking.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Profiling.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\ProgressHook.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Protection.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Registry.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Relations.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\ReplaceFile.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Serial.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Shell.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\ShellTypes.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\SimpleHashTable.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\StackDump.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Statistics.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Stream.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Synchronization.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Timer.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Translation.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Unzip.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Base\Updateable.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\Brush.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushArchive.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushExport.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushImport.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushIO.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushMip.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushPolygon.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushSector.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushShadows.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
+    <ClCompile Include="Brushes\BrushTriangularize.cpp">
+      <Filter>Source Files\Brushes</Filter>
+    </ClCompile>
     <ClCompile Include="Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GameState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MiniDump.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PetInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SlaveInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="StdH.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Version.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Classes\BaseEvents.cpp">
@@ -745,11 +1414,8 @@
     <ClCompile Include="Ska\smcPars.cpp">
       <Filter>Generated Sources</Filter>
     </ClCompile>
-    <ClCompile Include="Ska\Smcscan.cpp">
+    <ClCompile Include="Ska\SMCSCAN.CPP">
       <Filter>Generated Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="GameAgent\GameAgent.cpp">
-      <Filter>Source Files\GameAgent</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -783,6 +1449,9 @@
     <ClInclude Include="Base\CTString.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Base\CTWString.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Base\ErrorReporting.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
@@ -810,7 +1479,16 @@
     <ClInclude Include="Base\Memory.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Base\MemoryTracking.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Base\ObjectRestore.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Base\ParsingSymbols.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Base\PersistentSymbolsEncode.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
     <ClInclude Include="Base\Profiling.h">
@@ -823,6 +1501,9 @@
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
     <ClInclude Include="Base\Protection.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Base\Rect.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
     <ClInclude Include="Base\Registry.h">
@@ -841,6 +1522,12 @@
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
     <ClInclude Include="Base\Shell_internal.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Base\SimpleHashTable.h">
+      <Filter>Header Files\Base Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Base\StackDump.h">
       <Filter>Header Files\Base Headers</Filter>
     </ClInclude>
     <ClInclude Include="Base\Statistics.h">
@@ -879,6 +1566,12 @@
     <ClInclude Include="Math\AABBox.h">
       <Filter>Header Files\Math Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Math\AdditionalFunction.h">
+      <Filter>Header Files\Math Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\ExtensionMath.h">
+      <Filter>Header Files\Math Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Math\FixInt.h">
       <Filter>Header Files\Math Headers</Filter>
     </ClInclude>
@@ -892,6 +1585,9 @@
       <Filter>Header Files\Math Headers</Filter>
     </ClInclude>
     <ClInclude Include="Math\Matrix.h">
+      <Filter>Header Files\Math Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Matrix12.h">
       <Filter>Header Files\Math Headers</Filter>
     </ClInclude>
     <ClInclude Include="Math\OBBox.h">
@@ -933,6 +1629,9 @@
     <ClInclude Include="Graphics\DrawPort.h">
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\dxtlib.h">
+      <Filter>Header Files\Graphics Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Graphics\Fog.h">
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
@@ -946,9 +1645,6 @@
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\GfxLibrary.h">
-      <Filter>Header Files\Graphics Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Graphics\GfxProfile.h">
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\gl_functions.h">
@@ -978,6 +1674,9 @@
     <ClInclude Include="Graphics\Shader.h">
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\ShaderCode.h">
+      <Filter>Header Files\Graphics Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Graphics\ShadowMap.h">
       <Filter>Header Files\Graphics Headers</Filter>
     </ClInclude>
@@ -999,9 +1698,6 @@
     <ClInclude Include="Sound\al_functions.h">
       <Filter>Header Files\Sound Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Sound\DSound.h">
-      <Filter>Header Files\Sound Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Sound\eax.h">
       <Filter>Header Files\Sound Headers</Filter>
     </ClInclude>
@@ -1014,16 +1710,7 @@
     <ClInclude Include="Sound\SoundLibrary.h">
       <Filter>Header Files\Sound Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Sound\SoundListener.h">
-      <Filter>Header Files\Sound Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Sound\SoundObject.h">
-      <Filter>Header Files\Sound Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Sound\SoundProfile.h">
-      <Filter>Header Files\Sound Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Sound\Wave.h">
       <Filter>Header Files\Sound Headers</Filter>
     </ClInclude>
     <ClInclude Include="Models\EditModel.h">
@@ -1042,9 +1729,6 @@
       <Filter>Header Files\Models Headers</Filter>
     </ClInclude>
     <ClInclude Include="Models\ModelObject.h">
-      <Filter>Header Files\Models Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Models\ModelProfile.h">
       <Filter>Header Files\Models Headers</Filter>
     </ClInclude>
     <ClInclude Include="Models\Normals.h">
@@ -1074,7 +1758,13 @@
     <ClInclude Include="Templates\DynamicStackArray.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Templates\HashTableTemplate.h">
+      <Filter>Header Files\Templates Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Templates\LinearAllocator.h">
+      <Filter>Header Files\Templates Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Templates\MapOfData.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
     <ClInclude Include="Templates\NameTable.h">
@@ -1084,6 +1774,9 @@
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
     <ClInclude Include="Templates\NameTable_CTranslationPair.h">
+      <Filter>Header Files\Templates Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Templates\ReusableContainer.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
     <ClInclude Include="Templates\Selection.h">
@@ -1107,10 +1800,16 @@
     <ClInclude Include="Templates\Stock_CEntityClass.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Templates\Stock_CFontData.h">
+      <Filter>Header Files\Templates Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Templates\Stock_CMesh.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
     <ClInclude Include="Templates\Stock_CModelData.h">
+      <Filter>Header Files\Templates Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Templates\Stock_CModelInstance.h">
       <Filter>Header Files\Templates Headers</Filter>
     </ClInclude>
     <ClInclude Include="Templates\Stock_CShader.h">
@@ -1131,8 +1830,14 @@
     <ClInclude Include="Rendering\Render_internal.h">
       <Filter>Header Files\Rendering Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\RenderProfile.h">
-      <Filter>Header Files\Rendering Headers</Filter>
+    <ClInclude Include="Entities\Action.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\CashShopData.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\CharacterAnimation.h">
+      <Filter>Header Files\Entities Headers</Filter>
     </ClInclude>
     <ClInclude Include="Entities\Entity.h">
       <Filter>Header Files\Entities Headers</Filter>
@@ -1158,7 +1863,28 @@
     <ClInclude Include="Entities\InternalClasses.h">
       <Filter>Header Files\Entities Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Entities\ItemData.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\ItemEffect.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\Items.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Entities\LastPositions.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\MissionCase.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\MobData.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\NpcHelp.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\OptionData.h">
       <Filter>Header Files\Entities Headers</Filter>
     </ClInclude>
     <ClInclude Include="Entities\PlayerCharacter.h">
@@ -1167,7 +1893,34 @@
     <ClInclude Include="Entities\Precaching.h">
       <Filter>Header Files\Entities Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Entities\QuestSystem.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Entities\ShadingInfo.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\ShopData.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\Skill.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\SmcInfo.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\SmcParser.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\SpecialSkill.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\StatusEffect.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\TargetInfo.h">
+      <Filter>Header Files\Entities Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entities\WildPetData.h">
       <Filter>Header Files\Entities Headers</Filter>
     </ClInclude>
     <ClInclude Include="Brushes\Brush.h">
@@ -1185,7 +1938,25 @@
     <ClInclude Include="Network\ActionBuffer.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Network\Buffer.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\CharacterTarget.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\ChatMsgBuffer.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Network\ClientInterface.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\cmd.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\CNetwork.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\Common.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Network\CommunicationInterface.h">
@@ -1197,16 +1968,37 @@
     <ClInclude Include="Network\CPacket.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Network\CryptNetMsg.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Network\Diff.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\EMsgBuffer.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\EntityHashing.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\InputBuffer.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\ItemTarget.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Network\LevelChange.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Network\MessageDefine.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Network\MessageDispatcher.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Network\Network.h">
+    <ClInclude Include="Network\MobTarget.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\MultiTarget.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Network\NetworkMessage.h">
@@ -1215,7 +2007,7 @@
     <ClInclude Include="Network\NetworkProfile.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Network\PlayerBuffer.h">
+    <ClInclude Include="Network\PetTarget.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Network\PlayerSource.h">
@@ -1234,6 +2026,21 @@
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Light\Shadows_internal.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\SlaveTarget.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\TcpIpConnection.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\ThreadWrapper.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\TxtQueue.h">
+      <Filter>Header Files\Network Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\Web.h">
       <Filter>Header Files\Network Headers</Filter>
     </ClInclude>
     <ClInclude Include="Light\Gradient.h">
@@ -1278,6 +2085,21 @@
     <ClInclude Include="zlib\zutil.h">
       <Filter>Header Files\zlib Headers</Filter>
     </ClInclude>
+    <ClInclude Include="exploration3d\E3BASE.H">
+      <Filter>Header Files\exploration3d</Filter>
+    </ClInclude>
+    <ClInclude Include="exploration3d\E3CALL.H">
+      <Filter>Header Files\exploration3d</Filter>
+    </ClInclude>
+    <ClInclude Include="exploration3d\E3EXT.H">
+      <Filter>Header Files\exploration3d</Filter>
+    </ClInclude>
+    <ClInclude Include="exploration3d\E3TYPES.H">
+      <Filter>Header Files\exploration3d</Filter>
+    </ClInclude>
+    <ClInclude Include="exploration3d\EXPLOR3D.H">
+      <Filter>Header Files\exploration3d</Filter>
+    </ClInclude>
     <ClInclude Include="Ska\AnimSet.h">
       <Filter>Header Files\Ska Headers</Filter>
     </ClInclude>
@@ -1287,10 +2109,16 @@
     <ClInclude Include="Ska\ModelInstance.h">
       <Filter>Header Files\Ska Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Ska\NmFileIO.h">
+      <Filter>Header Files\Ska Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Ska\ParsingSmbs.h">
       <Filter>Header Files\Ska Headers</Filter>
     </ClInclude>
     <ClInclude Include="Ska\Render.h">
+      <Filter>Header Files\Ska Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Ska\SkaAssert.h">
       <Filter>Header Files\Ska Headers</Filter>
     </ClInclude>
     <ClInclude Include="Ska\Skeleton.h">
@@ -1298,9 +2126,6 @@
     </ClInclude>
     <ClInclude Include="Ska\StringTable.h">
       <Filter>Header Files\Ska Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="World\PhysicsProfile.h">
-      <Filter>Header Files\World Headers</Filter>
     </ClInclude>
     <ClInclude Include="World\World.h">
       <Filter>Header Files\World Headers</Filter>
@@ -1311,38 +2136,548 @@
     <ClInclude Include="World\WorldEditingProfile.h">
       <Filter>Header Files\World Headers</Filter>
     </ClInclude>
+    <ClInclude Include="World\WorldEntityHashing.h">
+      <Filter>Header Files\World Headers</Filter>
+    </ClInclude>
     <ClInclude Include="World\WorldRayCasting.h">
       <Filter>Header Files\World Headers</Filter>
     </ClInclude>
     <ClInclude Include="World\WorldSettings.h">
       <Filter>Header Files\World Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Terrain\ArrayHolder.h">
+    <ClInclude Include="Terrain\Terrain.h">
       <Filter>Header Files\Terrain Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Terrain\Terrain.h">
+    <ClInclude Include="Terrain\Terrain.hpp">
       <Filter>Header Files\Terrain Headers</Filter>
     </ClInclude>
     <ClInclude Include="Terrain\TerrainArchive.h">
       <Filter>Header Files\Terrain Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Terrain\TerrainEditing.h">
-      <Filter>Header Files\Terrain Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Terrain\TerrainLayer.h">
-      <Filter>Header Files\Terrain Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Terrain\TerrainMisc.h">
-      <Filter>Header Files\Terrain Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Terrain\TerrainRayCasting.h">
-      <Filter>Header Files\Terrain Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Terrain\TerrainRender.h">
-      <Filter>Header Files\Terrain Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Terrain\TerrainTile.h">
       <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TerrainTile.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRDataArray.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TREditing.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRGenerate.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRLayer.h">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRLayer.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRMisc.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRRayCast.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain\TRShadows.hpp">
+      <Filter>Header Files\Terrain Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="XBox\SymbolLocator_X.h">
+      <Filter>Header Files\XBox Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="XBox\VideoDecoder_X.h">
+      <Filter>Header Files\XBox Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="XBox\XKeyboard.h">
+      <Filter>Header Files\XBox Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CCameraEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEffectControl.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEffectGroup.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEffectGroupManager.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEffectManager.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEntityEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CLightEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CMdlEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\COrbitEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticleEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CShockWaveEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSkaEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSoundEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSplineBillboardEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSplinePathEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CTerrainEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CTraceEffect.h">
+      <Filter>Header Files\Effect Headers\Effects Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CConeSpace.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CCylinderSpace.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CForce.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticle.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticleGroup.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticleGroupManager.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticles.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesAbsorption.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesAbsorptionDefault.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesAbsorptionSphere.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesCommonProcess.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesEmitter.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesEmitterCone.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesEmitterCylinder.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesEmitterSphere.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesProcessControl.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesProcessDynamicState.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesProcessForce.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesProcessPointGoal.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CParticlesProcessVelocity.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CRandomTable.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSphereSpace.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CVelocity.h">
+      <Filter>Header Files\Effect Headers\Particle Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CEntityTag.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CGroupTag.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CRefCountPtr.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSkaTag.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CTag.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CTagManager.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CWorldTag.h">
+      <Filter>Header Files\Effect Headers\Tags Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CManager.h">
+      <Filter>Header Files\Effect Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CNiceWater.h">
+      <Filter>Header Files\Effect Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\CSampleSpline.h">
+      <Filter>Header Files\Effect Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\EffectCommon.h">
+      <Filter>Header Files\Effect Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect\FreeMemStack.h">
+      <Filter>Header Files\Effect Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIAuction.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIAutoHelp.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIBilling.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIBillItem.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIBingoBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIBuff.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIButton.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIButtonEx.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICashShop.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIChangeWeapon.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICharacterInfo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIChatting.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICheckButton.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICollectBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIComboBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICompound.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UICreateChar.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIDrawFigure.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIEditBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIExchange.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIFiltering.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIFlowerTree.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGamble.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGroup.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGuild.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGuildBattle.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGuildNotice.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGuildStash.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGuildWarPortal.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIGWMix.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIHelp.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIHelper.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIHelpIcon.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIHelpOld.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIImageBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIIME.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIInitJob.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIInternalClasses.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIInventory.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIListBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIListBoxEx.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UILogin.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIManager.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMap.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMessageBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMessageBoxL.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMessenger.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMinigame.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMix.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMixNew.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMonsterCombo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMouseCursor.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMultiEditBox.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIMultList.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UINotice.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UINpcHelp.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIOption.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIOXQuizEvent.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIParty.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPartyAuto.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPersonalShop.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPetFree.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPetInfo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPetItemMix.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPetTarget.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPetTraining.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPlayerInfo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIPortal.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIProcess.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIProcessNPC.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIProduct.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIQuest.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIQuestBook.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIQuickSlot.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIQuiz.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIRadar.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIRanking.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIRectString.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIRefine.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIRemission.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIScrollBar.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISecurity.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISelChar.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISelectList.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISelectResource.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISelectServer.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISelectWord.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIShop.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISiegeWarfare.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISiegeWarfareDoc.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISiegeWarfareNew.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISignBoard.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISimplePop.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISingleBattle.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISkillLearn.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISlideBar.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISpinButton.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISummon.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UISystemMenu.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITalk.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITargetInfo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITatoo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITeleport.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITextureManager.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UITrackPopup.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIWareHouse.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIWebBoard.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIWildPetInfo.h">
+      <Filter>Header Files\Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\UIWindow.h">
+      <Filter>Header Files\Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="Build.h">
       <Filter>Header Files</Filter>
@@ -1356,18 +2691,39 @@
     <ClInclude Include="GameShell.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalDefinition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JobInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalDefine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MiniDump.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sound\ov_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PetInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SlaveInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="StdH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameAgent\GameAgent.h">
-      <Filter>Header Files\GameAgent Headers</Filter>
+    <ClInclude Include="TransformInfo.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GameAgent\MSLegacy.h">
-      <Filter>Header Files\GameAgent Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Sound\ov_functions.h">
-      <Filter>Header Files\Sound Headers</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ChangeLog.txt" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="Base\CTString.inl">
@@ -1390,6 +2746,9 @@
     </CustomBuild>
     <CustomBuild Include="Math\Geometry.inl">
       <Filter>Header Files\Math Headers</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Network\CryptNetMsg_TransTable">
+      <Filter>Header Files\Network Headers</Filter>
     </CustomBuild>
     <CustomBuild Include="Base\FLEX.SKL">
       <Filter>Grammar Files</Filter>
@@ -1424,7 +2783,5 @@
     <CustomBuild Include="Classes\PlayerEntity.es">
       <Filter>Entity Class Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="ReadMe.txt" />
-    <CustomBuild Include="..\..\Flesh\Help\ShellSymbols.txt" />
   </ItemGroup>
 </Project>

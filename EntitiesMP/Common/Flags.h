@@ -49,6 +49,11 @@
   ((ECBI_MODEL|ECBI_BRUSH)<<ECB_TEST) |\
   ((ECBI_MODEL)<<ECB_PASS) |\
   ((ECBI_ITEM)<<ECB_IS))
+//0427
+#define ECF_MODEL_NO_COLLISION ( \
+  ((ECBI_MODEL|ECBI_BRUSH)<<ECB_TEST) |\
+  ((ECBI_MODEL)<<ECB_PASS) |\
+  ((ECBI_ITEM)<<ECB_IS))
 
 // touch model
 #define ECF_TOUCHMODEL ( \

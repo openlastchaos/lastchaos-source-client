@@ -32,8 +32,8 @@ properties:
   }
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\MessageHolder.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\MessageHolder.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\MessageHolder.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\MessageHolder.tex"
 
 functions:
   const CTString &GetDescription(void) const {
@@ -133,12 +133,11 @@ functions:
     CTString strEmpty;
 
     CDrawPort *pdpCurr=pdp;
-    pdp->Unlock();
-    pdpCurr->Lock();
+    pdpCurr->SetAsCurrent();
     
     pixW = pdpCurr->GetWidth();
     pixH = pdpCurr->GetHeight();
-    fResolutionScaling = (FLOAT)pixH / 360.0f;
+    fResolutionScaling = (FLOAT)pixH / 360.0f *0.75f;
     pdpCurr->SetFont( _pfdDisplayFont);
     pixLineHeight = floor(20*fResolutionScaling);     
 
@@ -150,15 +149,14 @@ functions:
     {
       CTString *pstr = &_astrLines[iLine];
       pdp->SetFont( _pfdDisplayFont);
-      pdp->SetTextScaling( fResolutionScaling);
+      pdp->SetTextScaling( fResolutionScaling/2);
       pdp->SetTextAspect( 1.0f);
+      pdp->SetTextShadow( +2);
       FLOAT fRatio=1.0f;
-      if( fNow>m_tmFadeOutStart)
-      {
+      if( fNow>m_tmFadeOutStart) {
         fRatio=CalculateRatio(fNow, m_tmFadeOutStart, m_tmFadeOutStart+m_tmFadeOutLen, 0, 1);
       }
-      if( fNow<m_tmFadeInStart+m_tmFadeInLen)
-      {
+      if( fNow<m_tmFadeInStart+m_tmFadeInLen) {
         fRatio=CalculateRatio(fNow, m_tmFadeInStart, m_tmFadeInStart+m_tmFadeInLen, 1, 0);
       }
       UBYTE ubA=ClampUp(UBYTE(fRatio*255.0f), UBYTE(255));
@@ -166,8 +164,7 @@ functions:
       pixJ+=pixLineHeight;
     }
 
-    pdpCurr->Unlock();
-    pdp->Lock();
+    pdp->SetAsCurrent();
 
     return 1;
   }

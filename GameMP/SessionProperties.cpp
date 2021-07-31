@@ -8,23 +8,23 @@ extern FLOAT gam_afAmmoQuantity[5];
 extern FLOAT gam_fManaTransferFactor;
 extern FLOAT gam_fExtraEnemyStrength          ;
 extern FLOAT gam_fExtraEnemyStrengthPerPlayer ;
-extern INDEX gam_iCredits;
+//extern INDEX gam_iCredits;
 extern FLOAT gam_tmSpawnInvulnerability;
-extern INDEX gam_iScoreLimit;
+//extern INDEX gam_iScoreLimit;
 extern INDEX gam_iFragLimit;
 extern INDEX gam_iTimeLimit;
 extern INDEX gam_ctMaxPlayers;
 extern INDEX gam_bWaitAllPlayers;
-extern INDEX gam_bAmmoStays       ;
-extern INDEX gam_bHealthArmorStays;
-extern INDEX gam_bAllowHealth     ;
-extern INDEX gam_bAllowArmor      ;
-extern INDEX gam_bInfiniteAmmo    ;
+//extern INDEX gam_bAmmoStays       ;
+//extern INDEX gam_bHealthArmorStays;
+//extern INDEX gam_bAllowHealth     ;
+//extern INDEX gam_bAllowArmor      ;
+//extern INDEX gam_bInfiniteAmmo    ;
 extern INDEX gam_bRespawnInPlace  ;
 extern INDEX gam_bPlayEntireGame;
-extern INDEX gam_bWeaponsStay;
-extern INDEX gam_bFriendlyFire;
-extern INDEX gam_iInitialMana;
+//extern INDEX gam_bWeaponsStay;
+//extern INDEX gam_bFriendlyFire;
+//extern INDEX gam_iInitialMana;
 extern INDEX gam_iQuickStartDifficulty;
 extern INDEX gam_iQuickStartMode;
 extern INDEX gam_bQuickStartMP;
@@ -33,7 +33,7 @@ extern INDEX gam_iStartMode;
 extern INDEX gam_iBlood;
 extern INDEX gam_bGibs;
 extern INDEX gam_bUseExtraEnemies;
-extern CTString gam_strGameAgentExtras;
+extern CTString gam_strGameSpyExtras;
 
 
 static void SetGameModeParameters(CSessionProperties &sp)
@@ -66,7 +66,9 @@ static void SetDifficultyParameters(CSessionProperties &sp)
   }
   sp.sp_gdGameDifficulty = (CSessionProperties::GameDifficulty) Clamp(INDEX(iDifficulty), -1L, 3L);
 
-  switch (sp.sp_gdGameDifficulty) {
+	switch (sp.sp_gdGameDifficulty) 
+	{
+		/*
   case CSessionProperties::GD_TOURIST:
     sp.sp_ulSpawnFlags = SPF_EASY;//SPF_TOURIST; !!!!
     sp.sp_fEnemyMovementSpeed = gam_afEnemyMovementSpeed [0];
@@ -74,6 +76,7 @@ static void SetDifficultyParameters(CSessionProperties &sp)
     sp.sp_fDamageStrength     = gam_afDamageStrength     [0];
     sp.sp_fAmmoQuantity       = gam_afAmmoQuantity       [0];
     break;
+		*/
   case CSessionProperties::GD_EASY:
     sp.sp_ulSpawnFlags = SPF_EASY;
     sp.sp_fEnemyMovementSpeed = gam_afEnemyMovementSpeed [1];
@@ -90,6 +93,7 @@ static void SetDifficultyParameters(CSessionProperties &sp)
     sp.sp_fDamageStrength     = gam_afDamageStrength     [2];
     sp.sp_fAmmoQuantity       = gam_afAmmoQuantity       [2];
     break;
+	/*
   case CSessionProperties::GD_HARD:
     sp.sp_ulSpawnFlags = SPF_HARD;
     sp.sp_fEnemyMovementSpeed = gam_afEnemyMovementSpeed [3];
@@ -104,6 +108,7 @@ static void SetDifficultyParameters(CSessionProperties &sp)
     sp.sp_fDamageStrength     = gam_afDamageStrength     [4];
     sp.sp_fAmmoQuantity       = gam_afAmmoQuantity       [4];
     break;
+	*/
   }
 }
 
@@ -126,30 +131,30 @@ void CGame::SetSinglePlayerSession(CSessionProperties &sp)
   sp.sp_bSinglePlayer = TRUE;
   sp.sp_bUseFrags = FALSE;
 
-  sp.sp_iScoreLimit = 0;
+//  sp.sp_iScoreLimit = 0;
   sp.sp_iFragLimit  = 0; 
   sp.sp_iTimeLimit  = 0; 
 
-  sp.sp_ctCredits     = 0;
-  sp.sp_ctCreditsLeft = 0;
+//  sp.sp_ctCredits     = 0;
+//  sp.sp_ctCreditsLeft = 0;
   sp.sp_tmSpawnInvulnerability = 0;
 
-  sp.sp_bTeamPlay = FALSE;
-  sp.sp_bFriendlyFire = FALSE;
-  sp.sp_bWeaponsStay = FALSE;
+//  sp.sp_bTeamPlay = FALSE;
+//  sp.sp_bFriendlyFire = FALSE;
+  //sp.sp_bWeaponsStay = FALSE;
   sp.sp_bPlayEntireGame = TRUE;
 
-  sp.sp_bAmmoStays        = FALSE;
-  sp.sp_bHealthArmorStays = FALSE;
-  sp.sp_bAllowHealth = TRUE;
-  sp.sp_bAllowArmor = TRUE;
-  sp.sp_bInfiniteAmmo = FALSE;
+  //sp.sp_bAmmoStays        = FALSE;
+  //sp.sp_bHealthArmorStays = FALSE;
+  //sp.sp_bAllowHealth = TRUE;
+  //sp.sp_bAllowArmor = TRUE;
+  //sp.sp_bInfiniteAmmo = FALSE;
   sp.sp_bRespawnInPlace = FALSE;
   sp.sp_fExtraEnemyStrength          = 0;
   sp.sp_fExtraEnemyStrengthPerPlayer = 0;
 
-  sp.sp_iBlood = Clamp( gam_iBlood, 0L, 3L);
-  sp.sp_bGibs  = gam_bGibs;
+  sp.sp_iBlood = Clamp( _pShell->GetINDEX("gam_iBlood"), 0L, 3L);
+  sp.sp_bGibs  = _pShell->GetINDEX("gam_bGibs");
 }
 
 // set properties for a quick start session
@@ -186,56 +191,61 @@ void CGame::SetMultiPlayerSession(CSessionProperties &sp)
   sp.sp_bSinglePlayer = FALSE;
   sp.sp_bPlayEntireGame = gam_bPlayEntireGame;
   sp.sp_bUseFrags = sp.sp_gmGameMode==CSessionProperties::GM_FRAGMATCH;
-  sp.sp_bWeaponsStay = gam_bWeaponsStay;
-  sp.sp_bFriendlyFire = gam_bFriendlyFire;
+//  sp.sp_bWeaponsStay = gam_bWeaponsStay;
+//  sp.sp_bFriendlyFire = gam_bFriendlyFire;
   sp.sp_ctMaxPlayers = gam_ctMaxPlayers;
   sp.sp_bWaitAllPlayers = gam_bWaitAllPlayers;
 
-  sp.sp_bAmmoStays        = gam_bAmmoStays       ;
-  sp.sp_bHealthArmorStays = gam_bHealthArmorStays;
-  sp.sp_bAllowHealth      = gam_bAllowHealth     ;
-  sp.sp_bAllowArmor       = gam_bAllowArmor      ;
-  sp.sp_bInfiniteAmmo     = gam_bInfiniteAmmo    ;
-  sp.sp_bRespawnInPlace   = gam_bRespawnInPlace  ;
+  //sp.sp_bAmmoStays        = gam_bAmmoStays       ;
+  //sp.sp_bHealthArmorStays = gam_bHealthArmorStays;
+  //sp.sp_bAllowHealth      = gam_bAllowHealth     ;
+  //sp.sp_bAllowArmor       = gam_bAllowArmor      ;
+  //sp.sp_bInfiniteAmmo     = gam_bInfiniteAmmo    ;
+  //sp.sp_bRespawnInPlace   = gam_bRespawnInPlace  ;
 
   sp.sp_fManaTransferFactor = gam_fManaTransferFactor;
   sp.sp_fExtraEnemyStrength          = gam_fExtraEnemyStrength         ;
   sp.sp_fExtraEnemyStrengthPerPlayer = gam_fExtraEnemyStrengthPerPlayer;
-  sp.sp_iInitialMana        = gam_iInitialMana;
-
-  sp.sp_iBlood = Clamp( gam_iBlood, 0L, 3L);
-  sp.sp_bGibs  = gam_bGibs;
+//  sp.sp_iInitialMana        = gam_iInitialMana;
+//0105 2line »èÁ¦
+//  sp.sp_iBlood = Clamp( _pShell->GetINDEX("gam_iBlood"), 0L, 3L);
+//  sp.sp_bGibs  = _pShell->GetINDEX("gam_bGibs");
+//0105
+  sp.sp_iBlood = 1;
+  sp.sp_bGibs  = 0;
+//..
   sp.sp_tmSpawnInvulnerability = gam_tmSpawnInvulnerability;
 
   sp.sp_bUseExtraEnemies = gam_bUseExtraEnemies;
 
   // set credits and limits
   if (sp.sp_bCooperative) {
-    sp.sp_ctCredits     = gam_iCredits;
-    sp.sp_ctCreditsLeft = gam_iCredits;
-    sp.sp_iScoreLimit = 0;
+    //sp.sp_ctCredits     = gam_iCredits;
+    //sp.sp_ctCreditsLeft = gam_iCredits;
+    //sp.sp_iScoreLimit = 0;
     sp.sp_iFragLimit  = 0;
     sp.sp_iTimeLimit  = 0;
-    sp.sp_bAllowHealth = TRUE;
-    sp.sp_bAllowArmor  = TRUE;
+    //sp.sp_bAllowHealth = TRUE;
+    //sp.sp_bAllowArmor  = TRUE;
 
   } else {
-    sp.sp_ctCredits     = -1;
-    sp.sp_ctCreditsLeft = -1;
-    sp.sp_iScoreLimit = gam_iScoreLimit;
+    //sp.sp_ctCredits     = -1;
+    //sp.sp_ctCreditsLeft = -1;
+    //sp.sp_iScoreLimit = gam_iScoreLimit;
     sp.sp_iFragLimit  = gam_iFragLimit;
     sp.sp_iTimeLimit  = gam_iTimeLimit;
-    sp.sp_bWeaponsStay = FALSE;
-    sp.sp_bAmmoStays = FALSE;
-    sp.sp_bHealthArmorStays = FALSE;
+    //sp.sp_bWeaponsStay = FALSE;
+    //sp.sp_bAmmoStays = FALSE;
+    //sp.sp_bHealthArmorStays = FALSE;
     if (sp.sp_bUseFrags) {
-      sp.sp_iScoreLimit = 0;
+//      sp.sp_iScoreLimit = 0;
     } else {
       sp.sp_iFragLimit = 0;
     }
   }
 }
 
+/*
 BOOL IsMenuEnabled(const CTString &strMenuName)
 {
   if (strMenuName=="Single Player") {
@@ -254,11 +264,7 @@ BOOL IsMenuEnabled(const CTString &strMenuName)
     return TRUE;
   }
 }
-BOOL IsMenuEnabledCfunc(void* pArgs)
-{
-  CTString strMenuName = *NEXTARGUMENT(CTString*);
-  return IsMenuEnabled(strMenuName);
-}
+*/
 
 CTString GetGameTypeName(INDEX iMode)
 {
@@ -280,22 +286,19 @@ CTString GetGameTypeName(INDEX iMode)
     break;
   }
 }
-CTString GetGameTypeNameCfunc(void* pArgs)
-{
-  INDEX iMode = NEXTARGUMENT(INDEX);
-  return GetGameTypeName(iMode);
-}
 CTString GetCurrentGameTypeName()
 {
   const CSessionProperties &sp = *GetSP();
   return GetGameTypeName(sp.sp_gmGameMode);
 }
 
-CTString GetGameAgentRulesInfo(void)
+/*
+CTString GetGameSpyRulesInfo(void)
 {
   CTString strOut;
-  CTString strKey;
+	CTString strKey;
   const CSessionProperties &sp = *GetSP();
+
 
   CTString strDifficulty;
   if (sp.sp_bMental) {
@@ -322,50 +325,51 @@ CTString GetGameAgentRulesInfo(void)
     }
   }
 
-  strKey.PrintF(";difficulty;%s", (const char*)strDifficulty);
-  strOut+=strKey;
+	strKey.PrintF("\\difficulty\\%s", (const char*)strDifficulty);
+	strOut+=strKey;
 
-  strKey.PrintF(";friendlyfire;%d", sp.sp_bFriendlyFire?0:1);
-  strOut+=strKey;
+  strKey.PrintF("\\friendlyfire\\%d", sp.sp_bFriendlyFire?0:1);
+	strOut+=strKey;
+  
+  strKey.PrintF("\\weaponsstay\\%d", sp.sp_bWeaponsStay?0:1);
+	strOut+=strKey;
 
-  strKey.PrintF(";weaponsstay;%d", sp.sp_bWeaponsStay?0:1);
-  strOut+=strKey;
-
-  strKey.PrintF(";ammostays;%d", sp.sp_bAmmoStays                   ?0:1);	strOut+=strKey;
-  strKey.PrintF(";healthandarmorstays;%d", sp.sp_bHealthArmorStays  ?0:1);	strOut+=strKey;
-  strKey.PrintF(";allowhealth;%d", sp.sp_bAllowHealth               ?0:1);	strOut+=strKey;
-  strKey.PrintF(";allowarmor;%d", sp.sp_bAllowArmor                 ?0:1);	strOut+=strKey;
-  strKey.PrintF(";infiniteammo;%d", sp.sp_bInfiniteAmmo             ?0:1);	strOut+=strKey;
-  strKey.PrintF(";respawninplace;%d", sp.sp_bRespawnInPlace         ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\ammostays\\%d", sp.sp_bAmmoStays                   ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\healthandarmorstays\\%d", sp.sp_bHealthArmorStays  ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\allowhealth\\%d", sp.sp_bAllowHealth               ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\allowarmor\\%d", sp.sp_bAllowArmor                 ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\infiniteammo\\%d", sp.sp_bInfiniteAmmo             ?0:1);	strOut+=strKey;
+  strKey.PrintF("\\respawninplace\\%d", sp.sp_bRespawnInPlace         ?0:1);	strOut+=strKey;
 
   if (sp.sp_bCooperative) {
     if (sp.sp_ctCredits<0) {
-      strKey.PrintF(";credits;infinite");
-      strOut+=strKey;
+      strKey.PrintF("\\credits\\infinite");
+  	  strOut+=strKey;
     } else if (sp.sp_ctCredits>0) {
-      strKey.PrintF(";credits;%d", sp.sp_ctCredits);
-      strOut+=strKey;
-      strKey.PrintF(";credits_left;%d", sp.sp_ctCreditsLeft);
-      strOut+=strKey;
+      strKey.PrintF("\\credits\\%d", sp.sp_ctCredits);
+  	  strOut+=strKey;
+      strKey.PrintF("\\credits_left\\%d", sp.sp_ctCreditsLeft);
+  	  strOut+=strKey;
     }
   } else {
     if (sp.sp_bUseFrags && sp.sp_iFragLimit>0) {
-      strKey.PrintF(";fraglimit;%d", sp.sp_iFragLimit);
-      strOut+=strKey;
+      strKey.PrintF("\\fraglimit\\%d", sp.sp_iFragLimit);
+  	  strOut+=strKey;
     }
     if (!sp.sp_bUseFrags && sp.sp_iScoreLimit>0) {
-      strKey.PrintF(";fraglimit;%d", sp.sp_iScoreLimit);
-      strOut+=strKey;
+      strKey.PrintF("\\fraglimit\\%d", sp.sp_iScoreLimit);
+  	  strOut+=strKey;
     }
     if (sp.sp_iTimeLimit>0) {
-      strKey.PrintF(";timelimit;%d", sp.sp_iTimeLimit);
-      strOut+=strKey;
+      strKey.PrintF("\\timelimit\\%d", sp.sp_iTimeLimit);
+  	  strOut+=strKey;
     }
   }
 
-  strOut+=gam_strGameAgentExtras;
+  strOut+=gam_strGameSpyExtras;
   return strOut;
 }
+*/
 
 ULONG GetSpawnFlagsForGameType(INDEX iGameType)
 {
@@ -376,10 +380,5 @@ ULONG GetSpawnFlagsForGameType(INDEX iGameType)
   case CSessionProperties::GM_SCOREMATCH:   return SPF_DEATHMATCH;
   case CSessionProperties::GM_FRAGMATCH:    return SPF_DEATHMATCH;
   };
-}
-ULONG GetSpawnFlagsForGameTypeCfunc(void* pArgs)
-{
-  INDEX iGameType = NEXTARGUMENT(INDEX);
-  return GetSpawnFlagsForGameType(iGameType);
 }
 

@@ -90,6 +90,12 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
+#if _MSC_VER>=1300
+#define DWORD_OR_HTASK DWORD
+#else 
+#define DWORD_OR_HTASK HTASK
+#endif
+
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CMainFrame)
@@ -123,7 +129,7 @@ protected:
 	afx_msg void OnToggleAllBars();
 	afx_msg void OnViewMapping();
 	afx_msg void OnUpdateViewMapping(CCmdUI* pCmdUI);
-	afx_msg void OnActivateApp(BOOL bActive, DWORD hTask);
+	afx_msg void OnActivateApp(BOOL bActive, DWORD_OR_HTASK hTask);
 	afx_msg void OnEditSpecular();
 	afx_msg void OnCreateReflectionTexture();
 	afx_msg void OnHelpFinder();

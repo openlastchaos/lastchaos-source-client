@@ -1,6 +1,7 @@
 #include "stdh.h"
 
 #include <Engine/Network/NetworkMessage.h>
+#include <Engine/Network/MessageDefine.h>
 #include <Engine/Network/Compression.h>
 
 #include <Engine/Math/Functions.h>
@@ -10,27 +11,34 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/ErrorTable.h>
 #include <Engine/Base/ErrorReporting.h>
+#include <Engine/Base/ObjectRestore.h>
 
 #include <Engine/Base/ListIterator.inl>
+#include <Engine/Templates/ReusableContainer.cpp>
+#include <Engine/Base/MemoryTracking.h>
+
+// array of stream blocks to reduce allocation and dealocations
+CReusableContainer<CNetworkStreamBlock> _rcStreamBlockContainer(4);
 
 static struct ErrorCode ErrorCodes[] = {
 // message types
-  ERRORCODE(MSG_REQ_ENUMSERVERS, "MSG_REQ_ENUMSERVERS"),
-  ERRORCODE(MSG_SERVERINFO, "MSG_SERVERINFO"),
-  ERRORCODE(MSG_INF_DISCONNECTED, "MSG_INF_DISCONNECTED"),
+//0522 kwon 삭제.
+//ERRORCODE(MSG_REQ_ENUMSERVERS, "MSG_REQ_ENUMSERVERS"),
+//ERRORCODE(MSG_SERVERINFO, "MSG_SERVERINFO"),
+//ERRORCODE(MSG_INF_DISCONNECTED, "MSG_INF_DISCONNECTED"),
   ERRORCODE(MSG_REQ_CONNECTLOCALSESSIONSTATE, "MSG_REQ_CONNECTLOCALSESSIONSTATE"),
   ERRORCODE(MSG_REP_CONNECTLOCALSESSIONSTATE, "MSG_REP_CONNECTLOCALSESSIONSTATE"),
-  ERRORCODE(MSG_REQ_CONNECTREMOTESESSIONSTATE, "MSG_REQ_CONNECTREMOTESESSIONSTATE"),
-  ERRORCODE(MSG_REP_CONNECTREMOTESESSIONSTATE, "MSG_REP_CONNECTREMOTESESSIONSTATE"),
-  ERRORCODE(MSG_REQ_STATEDELTA, "MSG_REQ_STATEDELTA"),
-  ERRORCODE(MSG_REQ_STATEDELTA, "MSG_REP_STATEDELTA"),
+//ERRORCODE(MSG_REQ_CONNECTREMOTESESSIONSTATE, "MSG_REQ_CONNECTREMOTESESSIONSTATE"),
+//ERRORCODE(MSG_REP_CONNECTREMOTESESSIONSTATE, "MSG_REP_CONNECTREMOTESESSIONSTATE"),
+//ERRORCODE(MSG_REQ_GAMESTATE, "MSG_REQ_GAMESTATE"),
+//ERRORCODE(MSG_REQ_GAMESTATE, "MSG_REP_GAMESTATE"),
   ERRORCODE(MSG_REQ_CONNECTPLAYER, "MSG_REQ_CONNECTPLAYER"),
   ERRORCODE(MSG_REP_CONNECTPLAYER, "MSG_REP_CONNECTPLAYER"),
-  ERRORCODE(MSG_ACTION, "MSG_ACTION"),
-  ERRORCODE(MSG_ACTIONPREDICT, "MSG_ACTIONPREDICT"),
+  ERRORCODE(MSG_ACTIONS, "MSG_ACTIONS"),
+//ERRORCODE(MSG_ACTIONPREDICT, "MSG_ACTIONPREDICT"),
   ERRORCODE(MSG_SEQ_ALLACTIONS, "MSG_SEQ_ALLACTIONS"),   
-  ERRORCODE(MSG_SEQ_ADDPLAYER, "MSG_SEQ_ADDPLAYER"),    
-  ERRORCODE(MSG_SEQ_REMPLAYER, "MSG_SEQ_REMPLAYER"),    
+//ERRORCODE(MSG_SEQ_ADDPLAYER, "MSG_SEQ_ADDPLAYER"),    
+//ERRORCODE(MSG_SEQ_REMPLAYER, "MSG_SEQ_REMPLAYER"),    
   ERRORCODE(MSG_GAMESTREAMBLOCKS, "MSG_GAMESTREAMBLOCKS"), 
   ERRORCODE(MSG_REQUESTGAMESTREAMRESEND, "MSG_REQUESTGAMESTREAMRESEND"),
 };
@@ -44,71 +52,38 @@ extern struct ErrorTable MessageTypes = ERRORTABLE(ErrorCodes);
  */
 CNetworkMessage::CNetworkMessage(void)
 {
-  // allocate message buffer
   nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
+  // Allocate memory required by network message
   nm_pubMessage = (UBYTE*) AllocMemory(nm_slMaxSize);
-
-  // mangle pointer and size so that it could not be accidentally read/written
-  nm_pubPointer = NULL;
-  nm_iBit = -1;
-  nm_slSize = -1;
-}
-
-// reinit a message that is to be sent (to write different contents)
-void CNetworkMessage::Reinit(void)
-{
-  // init read/write pointer and size
-  nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
-  nm_pubPointer = nm_pubMessage;
-  nm_iBit = 0;
-  nm_slSize = 0;
-  // write the type
-  UBYTE ubType = nm_mtType;
-  Write(&ubType, sizeof(ubType));
+  // Initialize network message
+  Initialize();
 }
 
 /*
  * Constructor for initializing message that is to be sent.
  */
-CNetworkMessage::CNetworkMessage(MESSAGETYPE mtType)
+CNetworkMessage::CNetworkMessage(UBYTE mtType)
 {
-  // allocate message buffer
   nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
+  // Allocate memory required by network message
   nm_pubMessage = (UBYTE*) AllocMemory(nm_slMaxSize);
-
-  // init read/write pointer and size
-  nm_pubPointer = nm_pubMessage;
-  nm_iBit = 0;
-  nm_slSize = 0;
-
-  // remember the type
-  nm_mtType = mtType;
-  // write the type
-  UBYTE ubType = nm_mtType;
-  Write(&ubType, sizeof(ubType));
+  Initialize(mtType);
 }
+
 /* Copying. */
 CNetworkMessage::CNetworkMessage(const CNetworkMessage &nmOriginal)
 {
   // allocate message buffer
   nm_slMaxSize = nmOriginal.nm_slMaxSize;
   nm_pubMessage = (UBYTE*) AllocMemory(nm_slMaxSize);
-
-  // init read/write pointer and size
-  nm_pubPointer = nm_pubMessage + (nmOriginal.nm_pubPointer-nmOriginal.nm_pubMessage);
-  nm_iBit = nmOriginal.nm_iBit;
-  nm_slSize = nmOriginal.nm_slSize;
-
-  // copy from original
-  memcpy(nm_pubMessage, nmOriginal.nm_pubMessage, nm_slSize);
-
-  // remember the type
-  nm_mtType = nmOriginal.nm_mtType;
+  Initialize(nmOriginal);
 }
 
 void CNetworkMessage::operator=(const CNetworkMessage &nmOriginal)
 {
   if (nm_slMaxSize != nmOriginal.nm_slMaxSize) {
+    ASSERTALWAYS("Must be same size");
+
     if (nm_pubMessage!=NULL) {
       FreeMemory(nm_pubMessage);
     }
@@ -138,7 +113,73 @@ CNetworkMessage::~CNetworkMessage(void)
   ASSERT(nm_pubMessage!=NULL);
   if (nm_pubMessage!=NULL) {
     FreeMemory(nm_pubMessage);
+    nm_pubMessage = NULL;
   }
+}
+
+// Network message initialization
+void CNetworkMessage::Initialize(void)
+{
+  ASSERT(nm_pubMessage!=NULL); // must be valid
+
+  // mangle pointer and size so that it could not be accidentally read/written
+  nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
+  nm_pubPointer = NULL;
+  nm_iBit = -1;
+  nm_slSize = -1;
+}
+
+void CNetworkMessage::Initialize(const CNetworkMessage &nmOriginal)
+{
+  ASSERT(nm_pubMessage!=NULL); // must be valid
+
+  nm_slMaxSize = nmOriginal.nm_slMaxSize;
+  // init read/write pointer and size
+  nm_pubPointer = nm_pubMessage + (nmOriginal.nm_pubPointer-nmOriginal.nm_pubMessage);
+  nm_iBit = nmOriginal.nm_iBit;
+  nm_slSize = nmOriginal.nm_slSize;
+
+  // copy from original
+  memcpy(nm_pubMessage, nmOriginal.nm_pubMessage, nm_slSize);
+
+  // remember the type
+  nm_mtType = nmOriginal.nm_mtType;
+}
+
+void CNetworkMessage::Initialize(UBYTE mtType)
+{
+  ASSERT(nm_pubMessage!=NULL); // must be valid
+
+  // init read/write pointer and size
+  nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
+  nm_pubPointer = nm_pubMessage;
+  nm_iBit = 0;
+  nm_slSize = 0;
+
+  // remember the type
+  nm_mtType = mtType;
+  // write the type
+  UBYTE ubType = nm_mtType;
+  Write(&ubType, sizeof(ubType));
+}
+//0524 kwon 추가.
+void CNetworkMessage::SetLoginType( UBYTE LoginType)
+{
+	UBYTE ubType = nm_mtType;
+	Write(&ubType, sizeof(ubType));
+}
+
+// reinit a message that is to be sent (to write different contents)
+void CNetworkMessage::Reinit(void)
+{
+  // init read/write pointer and size
+  nm_slMaxSize = MAX_NETWORKMESSAGE_SIZE;
+  nm_pubPointer = nm_pubMessage;
+  nm_iBit = 0;
+  nm_slSize = 0;
+  // write the type
+  UBYTE ubType = nm_mtType;
+  Write(&ubType, sizeof(ubType));
 }
 
 /*
@@ -156,31 +197,6 @@ BOOL CNetworkMessage::EndOfMessage(void)
   return (nm_pubPointer-nm_pubMessage) >= nm_slSize;
 }
 
-// read/write functions
-void CNetworkMessage::Read(void *pvBuffer, SLONG slSize)
-{
-  if (nm_pubPointer+slSize > nm_pubMessage+nm_slSize) {
-    CPrintF(TRANS("Warning: Message over-reading!\n"));
-    ASSERT(FALSE);
-    memset(pvBuffer, 0, slSize);
-    return;
-  }
-  memcpy(pvBuffer, nm_pubPointer, slSize);
-  nm_pubPointer += slSize;
-  nm_iBit = 0;
-}
-void CNetworkMessage::Write(const void *pvBuffer, SLONG slSize)
-{
-  if (nm_pubPointer+slSize > nm_pubMessage+nm_slMaxSize) {
-    CPrintF(TRANS("Warning: Message over-writing!\n"));
-    ASSERT(FALSE);
-    return;
-  }
-  memcpy(nm_pubPointer, pvBuffer, slSize);
-  nm_pubPointer += slSize;
-  nm_iBit = 0;
-  nm_slSize += slSize;
-}
 CNetworkMessage &CNetworkMessage::operator>>(CTString &str)
 {
   // start reading string from message
@@ -264,7 +280,7 @@ void CNetworkMessage::ExtractSubMessage(CNetworkMessage &nmSubMessage)
   // get the submessage type
   UBYTE ubType = 0;
   nmSubMessage>>ubType;
-  nmSubMessage.nm_mtType = (MESSAGETYPE)ubType;
+  nmSubMessage.nm_mtType = (UBYTE)ubType;
 }
 
 // rewind message to start, so that written message can be read again
@@ -321,12 +337,22 @@ void CNetworkMessage::Unpack(CNetworkMessage &nmUnpacked, CCompressor &comp)
 void CNetworkMessage::PackDefault(CNetworkMessage &nmPacked)
 {
   extern INDEX net_iCompression;
-  if (net_iCompression==2) {
+//0707
+
+  int comp_type = 0;
+#ifdef COMPRESSION_MESSAGE
+	comp_type = 2;
+#else
+	comp_type = 0;
+#endif
+  
+
+  if (comp_type==2) {
     // pack with zlib only
     CzlibCompressor compzlib;
     Pack(nmPacked, compzlib);
     (int&)nmPacked.nm_mtType|=0<<6;
-  } else if (net_iCompression==1) {
+  } else if (comp_type==1) {
     // pack with LZ only
     CLZCompressor compLZ;
     Pack(nmPacked, compLZ);
@@ -399,13 +425,17 @@ void CNetworkMessage::Dump(void)
   CPrintF("\n--\n");
 }
 
+//! 메시지 버퍼를 꼭 맞게 줄인다.
 // shrink message buffer to exactly fit contents
 void CNetworkMessage::Shrink(void)
 {
+  // return; // shrinkg has been disabled cos of CReusableContainer
+
+  ASSERT(nm_slSize>0);
   // remember original pointer offset
   SLONG slOffset = nm_pubPointer-nm_pubMessage;
   // allocate message buffer
-  ShrinkMemory((void**)&nm_pubMessage, nm_slSize);
+  // ShrinkMemory((void**)&nm_pubMessage, nm_slSize);
   nm_slMaxSize = nm_slSize;
   // set new pointer
   nm_pubPointer = nm_pubMessage + slOffset;
@@ -492,6 +522,7 @@ void CNetworkMessage::WriteBits(const void *pvBuffer, INDEX ctBits)
   }
 }
 
+
 /////////////////////////////////////////////////////////////////////
 // CNetworkStreamBlock
 
@@ -507,12 +538,13 @@ CNetworkStreamBlock::CNetworkStreamBlock(void)
 /*
  * Constructor for sending -- empty packet with given type and sequence.
  */
-CNetworkStreamBlock::CNetworkStreamBlock(MESSAGETYPE mtType, INDEX iSequenceNumber)
+CNetworkStreamBlock::CNetworkStreamBlock(UBYTE mtType, INDEX iSequenceNumber)
   : CNetworkMessage(mtType)
   , nsb_iSequenceNumber(iSequenceNumber)
 {
 }
 
+//! 받은 메시지로부터 블록을 읽어들인다.
 /*
  * Read a block from a received message.
  */
@@ -544,6 +576,23 @@ void CNetworkStreamBlock::RemoveFromStream(void)
   nsb_lnInStream.Remove();
 }
 
+// Network stream block clearing (same block may be used again)
+void CNetworkStreamBlock::Clear(void)
+{
+  // Fake list node destructor
+  if(nsb_lnInStream.IsLinked()) {
+    // remove it from list
+    nsb_lnInStream.Remove();
+  }
+  // must be unlinked by now
+  ASSERT(!nsb_lnInStream.IsLinked());
+  // Reset sequence number
+  nsb_iSequenceNumber = -1;
+  // Fake network message initialization
+  Initialize();
+  // 
+}
+
 /* Read/write the block from file stream. */
 void CNetworkStreamBlock::Write_t(CTStream &strm) // throw char *
 {
@@ -568,7 +617,21 @@ void CNetworkStreamBlock::Read_t(CTStream &strm) // throw char *
   // get the message type
   UBYTE ubType = 0;
   (*this)>>ubType;
-  nm_mtType = (MESSAGETYPE)ubType;
+  nm_mtType = (UBYTE)ubType;
+}
+
+void CNetworkStreamBlock::operator delete(void *p)
+{
+  // delete must be called from DeleteNetworkStreamBlock function
+  if(!_rcStreamBlockContainer.rc_bNowDeleting) {
+    ASSERTALWAYS("Block must be deleted with DeleteNetworkStreamBlock function");
+    // Halt release version if not this isn't final version
+    extern INDEX dbg_bAtHome;
+    if(dbg_bAtHome) {
+      _asm int 3;
+    }
+  }
+  FreeMemory(p);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -601,7 +664,7 @@ void CNetworkStream::Clear(void)
     // remove it from list
     itnsbInList->nsb_lnInStream.Remove();
     // delete it
-    delete &*itnsbInList;
+    DeleteNetworkStreamBlock(&*itnsbInList);
   }
 }
 /* Copy from another network stream. */
@@ -646,17 +709,18 @@ INDEX CNetworkStream::GetNewestSequence(void)
   return pnsb->nsb_iSequenceNumber;
 }
 
+//! 블록을 이미 할당된 스트림에 더한다.
 /*
  * Add a block that is already allocated to the stream.
  */
 void CNetworkStream::AddAllocatedBlock(CNetworkStreamBlock *pnsbBlock)
 {
   // search all blocks already in list
-  FOREACHINLISTKEEP(CNetworkStreamBlock, nsb_lnInStream, ns_lhBlocks, itnsbInList) {
+  FOREACHINLIST(CNetworkStreamBlock, nsb_lnInStream, ns_lhBlocks, itnsbInList) {
     // if the block in list has same sequence as the one to add
     if (itnsbInList->nsb_iSequenceNumber == pnsbBlock->nsb_iSequenceNumber) {
       // just discard the new block
-      delete pnsbBlock;
+      DeleteNetworkStreamBlock(pnsbBlock);
       return;
     }
     // if the block in list has lower sequence than the one to add
@@ -674,21 +738,31 @@ void CNetworkStream::AddAllocatedBlock(CNetworkStreamBlock *pnsbBlock)
  */
 void CNetworkStream::AddBlock(CNetworkStreamBlock &nsbBlock)
 {
+  // CNetworkStreamBlock *pnsbCopy = new CNetworkStreamBlock(nsbBlock);
+
   // create a copy of the block
-  CNetworkStreamBlock *pnsbCopy = new CNetworkStreamBlock(nsbBlock);
+  CNetworkStreamBlock *pnsbCopy = CreateNetworkStreamBlock();
+  // Fake constructor for CNetworkMessage
+  pnsbCopy->Initialize(nsbBlock);
+  // Rest of copy copy constructor for CNetworkStreamBlock
+  pnsbCopy->nsb_iSequenceNumber = nsbBlock.nsb_iSequenceNumber;
+
   // shrink it
   pnsbCopy->Shrink();
   // add it to the list
   AddAllocatedBlock(pnsbCopy);
 }
 
+//! 서브메시지로서 블록을 메시지로부터 읽는다. 그리고 그것을 스트림에 추가한다.
 /*
  * Read a block as a submessage from a message and add it to the stream.
  */
 void CNetworkStream::ReadBlock(CNetworkMessage &nmMessage)
 {
   // create an empty block
-  CNetworkStreamBlock *pnsbRead = new CNetworkStreamBlock();
+  CNetworkStreamBlock *pnsbRead = CreateNetworkStreamBlock();
+  // CNetworkStreamBlock *pnsbRead = new CNetworkStreamBlock();
+
   // read it from message
   pnsbRead->ReadFromMessage(nmMessage);
   // shrink it
@@ -790,7 +864,7 @@ void CNetworkStream::RemoveOlderBlocks(INDEX ctBlocksToKeep)
       // remove it from list
       itnsbInList->nsb_lnInStream.Remove();
       // delete it
-      delete &*itnsbInList;
+      DeleteNetworkStreamBlock(&*itnsbInList);
     }
   }
 }
@@ -808,7 +882,7 @@ void CNetworkStream::RemoveOlderBlocksBySequence(INDEX iLastSequenceToKeep)
       break;
     }
     // remove the tail
-    delete pnsb;
+    DeleteNetworkStreamBlock(pnsb);
   };
 }
 
@@ -829,7 +903,7 @@ void CPlayerAction::Clear(void)
   pa_aRotation = ANGLE3D(0,0,0);
   pa_aViewRotation = ANGLE3D(0,0,0);
   pa_ulButtons = 0;
-  pa_llCreated = 0;
+  pa_ulCreated = 0;
 }
 // normalize action (remove invalid floats like -0)
 void CPlayerAction::Normalize(void)
@@ -841,26 +915,6 @@ void CPlayerAction::Normalize(void)
     }
     pf++;
   }
-}
-// create a checksum value for sync-check
-void CPlayerAction::ChecksumForSync(ULONG &ulCRC)
-{
-  CRC_AddBlock(ulCRC, (UBYTE*)this, sizeof(this));
-}
-
-#define DUMPVECTOR(v) \
-  strm.FPrintF_t(#v ":  %g,%g,%g %08x,%08x,%08x\n", \
-    (v)(1), (v)(2), (v)(3), (ULONG&)(v)(1), (ULONG&)(v)(2), (ULONG&)(v)(3))
-#define DUMPLONG(l) \
-  strm.FPrintF_t(#l ":  %08x\n", l)
-
-// dump sync data to text file
-void CPlayerAction::DumpSync_t(CTStream &strm)  // throw char *
-{
-  DUMPVECTOR(pa_vTranslation);
-  DUMPVECTOR(pa_aRotation);
-  DUMPVECTOR(pa_aViewRotation);
-  DUMPLONG(pa_ulButtons);
 }
 
 void CPlayerAction::Lerp(const CPlayerAction &pa0, const CPlayerAction &pa1, FLOAT fFactor)
@@ -889,7 +943,7 @@ void CPlayerAction::Lerp(const CPlayerAction &pa0, const CPlayerAction &pa1, FLO
 /* Write an object into message. */
 CNetworkMessage &operator<<(CNetworkMessage &nm, const CPlayerAction &pa)
 {
-  nm.Write(&pa.pa_llCreated, sizeof(pa.pa_llCreated));
+  nm.Write(&pa.pa_ulCreated, sizeof(pa.pa_ulCreated));
 
   const ULONG *pul = (const ULONG*)&pa.pa_vTranslation;
   for (INDEX i=0; i<9; i++) {
@@ -944,7 +998,7 @@ CNetworkMessage &operator<<(CNetworkMessage &nm, const CPlayerAction &pa)
 /* Read an object from message. */
 CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerAction &pa)
 {
-  nm.Read(&pa.pa_llCreated, sizeof(pa.pa_llCreated));
+  nm.Read(&pa.pa_ulCreated, sizeof(pa.pa_ulCreated));
 
   ULONG *pul = (ULONG*)&pa.pa_vTranslation;
   for (INDEX i=0; i<9; i++) {
@@ -959,8 +1013,7 @@ CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerAction &pa)
   }
 
   // find number of zero bits for flags
-  INDEX iZeros=0;
-  for(; iZeros<6; iZeros++) {
+  for(INDEX iZeros=0; iZeros<6; iZeros++) {
     UBYTE ub=0;
     nm.ReadBits(&ub, 1);
     if (ub!=0) {
@@ -1011,4 +1064,20 @@ CTStream &operator>>(CTStream &strm, CPlayerAction &pa)
 {
   strm.Read_t(&pa,sizeof(pa));
   return strm;
+}
+
+
+// Create new network stream block (use instead of new CNetworkStreamBlock)
+extern CNetworkStreamBlock *CreateNetworkStreamBlock(void)
+{
+  TRACKMEM(Mem,"Network");
+  return _rcStreamBlockContainer.CreateObject();
+}
+
+// Delete network stream block (use instead of delete CNetworkStreamBlock)
+extern void DeleteNetworkStreamBlock(CNetworkStreamBlock *pnsbBlock)
+{
+  TRACKMEM(Mem,"Network");
+  CObjectRestore<BOOL> or(_rcStreamBlockContainer.rc_bNowDeleting,TRUE);
+  _rcStreamBlockContainer.DeleteObject(pnsbBlock);
 }

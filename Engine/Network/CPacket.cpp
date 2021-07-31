@@ -1,13 +1,17 @@
 #include "stdh.h"
 
 #include <Engine/Base/Console.h>
+#include <Engine/Base/Translation.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Math/Functions.h>
 #include <Engine/Base/Lists.h>
 #include <Engine/Base/Memory.h>
+#include <Engine/Base/MemoryTracking.h>
 #include <Engine/Network/CPacket.h>
+#include <Engine/Base/ObjectRestore.h>
 
 #include <Engine/Base/Listiterator.inl>
+#include <Engine/Templates/ReusableContainer.cpp>
 
 // should the packet transfers in/out of the buffer be reported to the console
 extern INDEX net_bReportPackets;
@@ -16,6 +20,17 @@ extern FLOAT net_fSendRetryWait;
 
 #define MAX_RETRIES 10
 #define RETRY_INTERVAL 3.0f
+
+#define HTONL(n)		{ n = htonl(n); }
+#define HTONS(n)		{ n = htons(n); }
+#define NTOHL(n)		{ n = ntohl(n); }
+#define NTOHS(n)		{ n = ntohs(n); }
+
+extern INDEX net_iUDPBlockSize = MAX_UDP_BLOCK_SIZE;
+extern INDEX net_iMaxPacketSize = net_iUDPBlockSize + MAX_HEADER_SIZE;
+
+// array of packets to reduce packet allocation and dealocations
+CReusableContainer<CPacket> _rcPacketContainer(32);
 
 // make the address broadcast
 void CAddress::MakeBroadcast(void)
@@ -44,7 +59,7 @@ CPacket::CPacket(CPacket &paOriginal)
   pa_slTransferSize = paOriginal.pa_slTransferSize;
 
 	pa_ulSequence = paOriginal.pa_ulSequence;
-	pa_ubReliable = paOriginal.pa_ubReliable;
+	pa_uwReliable = paOriginal.pa_uwReliable;
 	pa_tvSendWhen = paOriginal.pa_tvSendWhen;
 	pa_ubRetryNumber = paOriginal.pa_ubRetryNumber;
 	pa_adrAddress.adr_ulAddress = paOriginal.pa_adrAddress.adr_ulAddress;
@@ -61,12 +76,31 @@ void CPacket::Clear()
 
 	pa_slSize = 0;
   pa_slTransferSize = 0;
-	pa_ubReliable = UDP_PACKET_UNRELIABLE;
+	pa_uwReliable = 0;
 	pa_ubRetryNumber = 0;
 
-	pa_tvSendWhen = CTimerValue(0.0f);
-	if(pa_lnListNode.IsLinked()) pa_lnListNode.Remove();
+  pa_adrAddress.Clear();
 
+  if (_pTimer!=NULL) {
+	  pa_tvSendWhen = CTimerValue(0.0f);
+  }
+	if(pa_lnListNode.IsLinked()) pa_lnListNode.Remove();
+};
+
+void CPacket::operator delete(void *p)
+{
+  // delete must be called from DeletePacket function
+  if(!_rcPacketContainer.rc_bNowDeleting) {
+    ASSERTALWAYS("Packet must be deleted with DeletePacket function");
+    // Halt release version if not this isn't final version
+    extern INDEX dbg_bAtHome;
+    if(dbg_bAtHome) {
+      _asm int 3;
+    }
+  }
+//안태훈 수정 시작	//(DevPartner Bug Fix)(2005-01-13)
+  ::operator delete(p);
+//안태훈 수정 끝	//(DevPartner Bug Fix)(2005-01-13)
 };
 
 void CPacket::operator=(const CPacket &paOriginal)
@@ -77,7 +111,7 @@ void CPacket::operator=(const CPacket &paOriginal)
   pa_slTransferSize = paOriginal.pa_slTransferSize;
 
 	pa_ulSequence = paOriginal.pa_ulSequence;
-	pa_ubReliable = paOriginal.pa_ubReliable;
+	pa_uwReliable = paOriginal.pa_uwReliable;
 	pa_tvSendWhen = paOriginal.pa_tvSendWhen;
 	pa_ubRetryNumber = paOriginal.pa_ubRetryNumber;
 	pa_adrAddress.adr_ulAddress = paOriginal.pa_adrAddress.adr_ulAddress;
@@ -90,25 +124,25 @@ void CPacket::operator=(const CPacket &paOriginal)
 
 
 // Takes data from a pointer, adds the packet header and copies the data to the packet
-BOOL CPacket::WriteToPacket(void* pv,SLONG slSize,UBYTE ubReliable,ULONG ulSequence,UWORD uwClientID,SLONG slTransferSize) 
+BOOL CPacket::WriteToPacket(void* pv,SLONG slSize,UWORD uwReliable,ULONG ulSequence,UWORD uwClientID,SLONG slTransferSize) 
 {
 	UBYTE* pubData;
 
-	ASSERT(slSize <= MAX_UDP_BLOCK_SIZE && slSize > 0);
+	ASSERT(slSize <= net_iUDPBlockSize && slSize > 0);
 	ASSERT(pv != NULL);
   ASSERT(slTransferSize >= slSize);
 
 	// set packet properties to values received as parameters
-	pa_ubReliable = ubReliable;
+	pa_uwReliable = uwReliable;
 	pa_adrAddress.adr_uwID = uwClientID;
 	pa_ulSequence = ulSequence;
 	pa_slSize = slSize + MAX_HEADER_SIZE;
-  pa_slTransferSize = slTransferSize;
+	pa_slTransferSize = slTransferSize;
 
 	// insert packet header to the beginning of the packet data
 	pubData = pa_pubPacketData;
-	*pubData = pa_ubReliable;
-	pubData++;
+	*(UWORD*)pubData = pa_uwReliable;
+	pubData+=sizeof(pa_uwReliable);
 
 	*(ULONG*)pubData = pa_ulSequence;
 	pubData+=sizeof(pa_ulSequence);
@@ -116,7 +150,8 @@ BOOL CPacket::WriteToPacket(void* pv,SLONG slSize,UBYTE ubReliable,ULONG ulSeque
 	*(UWORD*)pubData = pa_adrAddress.adr_uwID;
 	pubData+=sizeof(pa_adrAddress.adr_uwID);
   
-  *(SLONG*)pubData = pa_slTransferSize;
+	//0524 kwon
+  *(SLONG*)pubData = htonl(pa_slTransferSize);
 	pubData+=sizeof(pa_slTransferSize);
 
 	// copy the data the packet is to contain
@@ -135,18 +170,25 @@ BOOL CPacket::WriteToPacketRaw(void* pv,SLONG slSize)
 	UBYTE* pubData;
 
 	ASSERT(slSize <= MAX_PACKET_SIZE && slSize > 0);
+	if(slSize > MAX_PACKET_SIZE || slSize <= 0) return FALSE;
 	ASSERT(pv != NULL);
+	if(pv == NULL) return FALSE;
 
 	// get the packet properties from the pointer, and set the values
 	pubData = (UBYTE*)pv;
-	pa_ubReliable = *pubData;
-	pubData++;
+	pa_uwReliable = *(UWORD*)pubData;
+	pubData+=sizeof(pa_uwReliable);
 	pa_ulSequence = *(ULONG*)pubData;
 	pubData+=sizeof(pa_ulSequence);
-  pa_adrAddress.adr_uwID = *(UWORD*)pubData;
+	pa_adrAddress.adr_uwID = *(UWORD*)pubData;
 	pubData+=sizeof(pa_adrAddress.adr_uwID);
-  pa_slTransferSize = *(SLONG*)pubData;
+	pa_slTransferSize = *(SLONG*)pubData;
 	pubData+=sizeof(pa_slTransferSize);
+	
+	NTOHS(pa_uwReliable);
+	NTOHL(pa_ulSequence);
+	NTOHS(pa_adrAddress.adr_uwID);
+	NTOHL(pa_slTransferSize);
 
 	pa_slSize = slSize;
 
@@ -176,7 +218,7 @@ BOOL CPacket::ReadFromPacket(void* pv,SLONG &slExpectedSize)
 	slExpectedSize = pa_slSize - MAX_HEADER_SIZE;
 
 	// skip the header data
-	pubData = pa_pubPacketData + sizeof(pa_ubReliable) + sizeof(pa_ulSequence) + sizeof(pa_adrAddress.adr_uwID) + sizeof(pa_slTransferSize);
+	pubData = pa_pubPacketData + sizeof(pa_uwReliable) + sizeof(pa_ulSequence) + sizeof(pa_adrAddress.adr_uwID) + sizeof(pa_slTransferSize);
 	
 	memcpy(pv,pubData,slExpectedSize);
 
@@ -187,38 +229,56 @@ BOOL CPacket::ReadFromPacket(void* pv,SLONG &slExpectedSize)
 // is the packet reliable?
 BOOL CPacket::IsReliable() 
 {
-	return pa_ubReliable;
+	return ((pa_uwReliable & UDP_PACKET_RELIABLE) != 0);
 };
 
 // is the packet a head of a reliable stream
 BOOL CPacket::IsReliableHead() 
 {
-	return pa_ubReliable & UDP_PACKET_RELIABLE_HEAD;
+	return pa_uwReliable & UDP_PACKET_RELIABLE_HEAD;
 };
 
 // is the packet a tail of a reliable stream
 BOOL CPacket::IsReliableTail() 
 {
-	return pa_ubReliable & UDP_PACKET_RELIABLE_TAIL;
+	return pa_uwReliable & UDP_PACKET_RELIABLE_TAIL;
+};
+
+// is the packet reliable?
+BOOL CPacket::IsUnreliable() 
+{
+	return ((pa_uwReliable & UDP_PACKET_UNRELIABLE) != 0);
+};
+
+// is the packet a head of a reliable stream
+BOOL CPacket::IsUnreliableHead() 
+{
+	return ((pa_uwReliable & UDP_PACKET_UNRELIABLE_HEAD) != 0);
+};
+
+// is the packet a tail of a reliable stream
+BOOL CPacket::IsUnreliableTail() 
+{
+	return ((pa_uwReliable & UDP_PACKET_UNRELIABLE_TAIL) != 0);
 };
 
 // return the sequence of a packet
 ULONG CPacket::GetSequence()
 {
-	ASSERT(pa_ubReliable);
+	ASSERT(pa_uwReliable);
 	return pa_ulSequence;
 };
 
 // return the retry status of a packet - can retry now, later or not at all 
 UBYTE CPacket::CanRetry()
 {
-
+    //! 이 패킷의 전송 재시도가 최대치를 넘었다면, 보내지 말아야지.
 	if (pa_ubRetryNumber >= net_iMaxSendRetries) {
 		return RS_NOTATALL;
 	}
 
 	CTimerValue tvNow = _pTimer->GetHighPrecisionTimer();
-
+    //! 시간이 안되었으니 아직 보내면 안된다.
 	if (tvNow < (pa_tvSendWhen + CTimerValue(net_fSendRetryWait * (pa_ubRetryNumber + 1)))) {
 		return RS_NOTNOW;
 	}
@@ -316,6 +376,11 @@ CTimerValue CPacketBufferStats::GetPacketSendTime(SLONG slSize)
 void CPacketBuffer::Clear() 
 {
 
+  FORDELETELIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
+    CPacket* ppaPacket = litPacketIter;
+    DeletePacket(ppaPacket);
+  }
+
 	pb_lhPacketStorage.Clear();
 	
 	pb_ulNumOfPackets = 0;
@@ -339,30 +404,43 @@ BOOL CPacketBuffer::IsEmpty()
 	return TRUE;
 };
 
+// Get the size of all packets in the buffer, including headers
+ULONG CPacketBuffer::GetTotalDataSize()
+{
+  return pb_ulTotalSize + pb_ulNumOfPackets*MAX_HEADER_SIZE;
+};
+
 
 // Calculate when the packet can be output from the buffer
 CTimerValue CPacketBuffer::GetPacketSendTime(SLONG slSize) {
 	CTimerValue tvSendTime;
+  CTimerValue tvBufferSendTime,tvClientSendTime,tvNewSendTime;
 	
-	// if traffic emulation is in use, use the time with the lower bandwidth limit
+  tvSendTime = pb_pbsLimits.pbs_tvTimeNextPacketStart;
+
+  	// if traffic emulation is in use, use the greater time
 	if (pb_ppbsStats != NULL) {
-		if (pb_ppbsStats->pbs_fBandwidthLimit > 0.0f && pb_ppbsStats->pbs_fBandwidthLimit < pb_pbsLimits.pbs_fBandwidthLimit) {
-			tvSendTime = pb_ppbsStats->GetPacketSendTime(slSize);
-			pb_pbsLimits.pbs_tvTimeNextPacketStart = tvSendTime;
-		} else {
-			tvSendTime = pb_pbsLimits.GetPacketSendTime(slSize);
-			pb_ppbsStats->pbs_tvTimeNextPacketStart = tvSendTime;
-		}
+    tvBufferSendTime = pb_ppbsStats->GetPacketSendTime(slSize);
+    tvClientSendTime = pb_pbsLimits.GetPacketSendTime(slSize);
+    if (tvBufferSendTime < tvClientSendTime) {
+      tvNewSendTime = tvClientSendTime;
+    } else {
+      tvNewSendTime = tvBufferSendTime;
+    }
+		pb_pbsLimits.pbs_tvTimeNextPacketStart = tvNewSendTime;
+		pb_ppbsStats->pbs_tvTimeNextPacketStart = tvNewSendTime;
 	// else just use the MaxBPS control
 	} else {
-		tvSendTime = pb_pbsLimits.GetPacketSendTime(slSize);
+		pb_pbsLimits.GetPacketSendTime(slSize);
 	}
 
 	return tvSendTime;
 };
 
 // Adds the packet to the end of the list
-BOOL CPacketBuffer::AppendPacket(CPacket &paPacket,BOOL bDelay) 
+// bFullCheck is not set for internal and outgoing buffers, it should only
+// be used for incoming buffers
+BOOL CPacketBuffer::AppendPacket(CPacket &paPacket,BOOL bDelay,BOOL bFullCheck) 
 {
 
 	// bDelay regulates if the packet should be delayed because of the bandwidth limits or not
@@ -373,12 +451,62 @@ BOOL CPacketBuffer::AppendPacket(CPacket &paPacket,BOOL bDelay)
 		paPacket.pa_tvSendWhen = _pTimer->GetHighPrecisionTimer();
 	}
 
+  if (bFullCheck) {
+    // if unreliable body or tail packet
+    if (paPacket.IsUnreliable() && !paPacket.IsUnreliableHead()) {
+      // if the buffer is empty, drop the packet
+      if (pb_lhPacketStorage.Count() == 0) {
+        if (net_bReportPackets) {
+          CPrintF(TRANS("Unreliable packet out of order - packet rejected.\n"));
+        }
+        return FALSE;
+      }
+
+      // if it is not a direct successor of the last packet in the buffer (by sequence), drop it
+      FOREACHINLIST_R(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {      
+        CPacket* ppaPacket = litPacketIter;
+        if ((paPacket.pa_ulSequence - ppaPacket->pa_ulSequence) != 1) {
+          if (net_bReportPackets) {
+            CPrintF(TRANS("Unreliable packet out of order - packet rejected.\n"));
+          }
+          return FALSE;
+        }
+        break;
+      }
+      // if it is anything else
+    } else {
+      if (!pb_lhPacketStorage.IsEmpty()) {
+        // drop any unreliable body and head messages at the end of the buffer
+        FORDELETELIST_R(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
+          CPacket* ppaPacket = litPacketIter;
+          if (ppaPacket->IsUnreliable() && !ppaPacket->IsUnreliableTail()) {
+            ppaPacket->pa_lnListNode.Remove();
+
+            // update the packet count and total size of messages stored in the buffer
+            pb_ulNumOfPackets--;
+            if (litPacketIter->pa_uwReliable & UDP_PACKET_RELIABLE) {
+              pb_ulNumOfReliablePackets--;
+            }
+            // update the total size of data stored in the buffer
+            pb_ulTotalSize -= (litPacketIter->pa_slSize - MAX_HEADER_SIZE);
+            if (net_bReportPackets) {
+              CPrintF(TRANS("Packets received out of order - deleting uncompleted unreliable stream from buffer.\n"));
+            }
+            DeletePacket(ppaPacket);
+          } else {
+            break;
+          }
+        }
+      }
+    }
+  }
+
 	// Add the packet to the end of the list
 	pb_lhPacketStorage.AddTail(paPacket.pa_lnListNode);
 	pb_ulNumOfPackets++;
 
 	// if the packet is reliable, bump up the number of reliable packets
-	if (paPacket.pa_ubReliable & UDP_PACKET_RELIABLE) {
+	if (paPacket.pa_uwReliable & UDP_PACKET_RELIABLE) {
 		pb_ulNumOfReliablePackets++;
 	}
 
@@ -391,7 +519,6 @@ BOOL CPacketBuffer::AppendPacket(CPacket &paPacket,BOOL bDelay)
 // Inserts the packet in the buffer, according to it's sequence number
 BOOL CPacketBuffer::InsertPacket(CPacket &paPacket,BOOL bDelay) 
 {
-	
 	// find the right place to insert this packet (this is if this packet is out of sequence)
 	FOREACHINLIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
 		// if there is a packet in the buffer with greater sequence number, insert this one before it
@@ -409,7 +536,7 @@ BOOL CPacketBuffer::InsertPacket(CPacket &paPacket,BOOL bDelay)
 			pb_ulNumOfPackets++;
 
 			// if the packet is reliable, bump up the number of reliable packets
-			if (paPacket.pa_ubReliable & UDP_PACKET_RELIABLE) {
+			if (paPacket.pa_uwReliable & UDP_PACKET_RELIABLE) {
 				pb_ulNumOfReliablePackets++;
 			}
 
@@ -431,7 +558,7 @@ BOOL CPacketBuffer::InsertPacket(CPacket &paPacket,BOOL bDelay)
 
   
 	// if the packet is reliable, bump up the number of reliable packets
-	if (paPacket.pa_ubReliable & UDP_PACKET_RELIABLE) {
+	if (paPacket.pa_uwReliable & UDP_PACKET_RELIABLE) {
 		pb_ulNumOfReliablePackets++;
 	}
 
@@ -447,11 +574,11 @@ BOOL CPacketBuffer::Retry(CPacket &paPacket)
 {
 	paPacket.pa_ubRetryNumber++;
 
-	if (net_bReportPackets == TRUE)	{
-		CPrintF("Retrying sequence: %d, reliable flag: %d\n",paPacket.pa_ulSequence,paPacket.pa_ubReliable);
+	if (net_bReportPackets)	{
+		CPrintF("Retrying sequence: %d, reliable flag: 0x%X\n",paPacket.pa_ulSequence,paPacket.pa_uwReliable);
 	}
 
-	return AppendPacket(paPacket,TRUE);
+	return AppendPacket(paPacket,TRUE,FALSE);
 };
 
 // Reads the data from the first packet in the bufffer, but does not remove it
@@ -471,7 +598,7 @@ CPacket* CPacketBuffer::GetFirstPacket()
 	// remove the first packet from the start of the list
 	pb_lhPacketStorage.RemHead();
 	pb_ulNumOfPackets--;
-	if (ppaHead->pa_ubReliable & UDP_PACKET_RELIABLE) {
+	if (ppaHead->pa_uwReliable & UDP_PACKET_RELIABLE) {
 		pb_ulNumOfReliablePackets--;
 	}
 
@@ -507,7 +634,7 @@ CPacket* CPacketBuffer::GetPacket(ULONG ulSequence)
 			litPacketIter->pa_lnListNode.Remove();
 
 			pb_ulNumOfPackets--;
-			if (litPacketIter->pa_ubReliable & UDP_PACKET_RELIABLE) {
+			if (litPacketIter->pa_uwReliable & UDP_PACKET_RELIABLE) {
 				pb_ulNumOfReliablePackets--;
 			}
 
@@ -523,7 +650,7 @@ CPacket* CPacketBuffer::GetPacket(ULONG ulSequence)
 // Reads the first connection request packet from the buffer
 CPacket* CPacketBuffer::GetConnectRequestPacket() {
 		FOREACHINLIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
-		if (litPacketIter->pa_ubReliable & UDP_PACKET_CONNECT_REQUEST) {
+		if (litPacketIter->pa_uwReliable & UDP_PACKET_CONNECT_REQUEST) {
 			litPacketIter->pa_lnListNode.Remove();
 
 			pb_ulNumOfPackets--;
@@ -545,7 +672,7 @@ BOOL CPacketBuffer::RemoveFirstPacket(BOOL bDelete) {
 	CPacket *lnHead = LIST_HEAD(pb_lhPacketStorage,CPacket,pa_lnListNode);
 
 	pb_ulNumOfPackets--;
-	if (lnHead->pa_ubReliable & UDP_PACKET_RELIABLE) {
+	if (lnHead->pa_uwReliable & UDP_PACKET_RELIABLE) {
 		pb_ulNumOfReliablePackets--;
 	}
 
@@ -558,7 +685,7 @@ BOOL CPacketBuffer::RemoveFirstPacket(BOOL bDelete) {
 
 	pb_lhPacketStorage.RemHead();
 	if (bDelete) {
-		delete lnHead;
+		DeletePacket(lnHead);
 	}
 	return TRUE;
 };
@@ -572,7 +699,7 @@ BOOL CPacketBuffer::RemovePacket(ULONG ulSequence,BOOL bDelete)
 			litPacketIter->pa_lnListNode.Remove();
 			
 			pb_ulNumOfPackets--;
-			if (litPacketIter->pa_ubReliable & UDP_PACKET_RELIABLE) {
+			if (litPacketIter->pa_uwReliable & UDP_PACKET_RELIABLE) {
 				pb_ulNumOfReliablePackets--;
 			}
 
@@ -580,7 +707,7 @@ BOOL CPacketBuffer::RemovePacket(ULONG ulSequence,BOOL bDelete)
 			pb_ulTotalSize -= (litPacketIter->pa_slSize - MAX_HEADER_SIZE);
 
 			if (bDelete) {
-				delete litPacketIter;
+				DeletePacket(litPacketIter);
 			}
 		}
 	}
@@ -590,7 +717,7 @@ BOOL CPacketBuffer::RemovePacket(ULONG ulSequence,BOOL bDelete)
 // Remove connect response packets from the buffer
 BOOL CPacketBuffer::RemoveConnectResponsePackets() {
 		FORDELETELIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
-		if (litPacketIter->pa_ubReliable & UDP_PACKET_CONNECT_RESPONSE) {
+		if (litPacketIter->pa_uwReliable & UDP_PACKET_CONNECT_RESPONSE) {
 			litPacketIter->pa_lnListNode.Remove();
 
 			pb_ulNumOfPackets--;
@@ -601,12 +728,24 @@ BOOL CPacketBuffer::RemoveConnectResponsePackets() {
 			// update the total size of data stored in the buffer
 			pb_ulTotalSize -= (litPacketIter->pa_slSize - MAX_HEADER_SIZE);
 
-			delete litPacketIter;
+			DeletePacket(litPacketIter);
 		}
 	}
 	return NULL;
 };
 
+
+// Gets the number of packets in the buffer with a given sequence number
+ULONG CPacketBuffer::GetSequenceRepeat(ULONG ulSequence)
+{
+  ULONG ulCount = 0;
+	FOREACHINLIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
+		if (litPacketIter->pa_ulSequence == ulSequence) {
+			ulCount++;
+		}
+	}
+  return ulCount;
+};
 
 // Gets the sequence number of the first packet in the buffer
 ULONG CPacketBuffer::GetFirstSequence()
@@ -637,13 +776,25 @@ BOOL CPacketBuffer::IsSequenceInBuffer(ULONG ulSequence)
 	return FALSE;
 };
 
-
+//! 버퍼의 시작점에서 이 버퍼에 완전한 시퀀스의  (릴라이어블)패킷이 담겨있는지 체크한다.
+//! 버퍼 시작점에 (릴라이어블) 패킷의 헤더가 있다면, 바디와 테일이 꼭 존재해야 한다.
 // Check if the buffer contains a complete sequence of reliable packets	at the start of the buffer
-BOOL CPacketBuffer::CheckSequence(SLONG &slSize)
+BOOL CPacketBuffer::CheckSequence(SLONG &slSize,BOOL bReliable)
 {
 
 	CPacket* paPacket;
 	ULONG ulSequence;
+  ULONG ulHead,ulBody,ulTail;
+
+  if (bReliable) {
+    ulHead = UDP_PACKET_RELIABLE_HEAD;
+    ulBody = UDP_PACKET_RELIABLE;
+    ulTail = UDP_PACKET_RELIABLE_TAIL;
+  } else {
+    ulHead = UDP_PACKET_UNRELIABLE_HEAD;
+    ulBody = UDP_PACKET_UNRELIABLE;
+    ulTail = UDP_PACKET_UNRELIABLE_TAIL;
+  }
 
   slSize=0;
 
@@ -652,26 +803,35 @@ BOOL CPacketBuffer::CheckSequence(SLONG &slSize)
 	}
 
 	paPacket = LIST_HEAD(pb_lhPacketStorage,CPacket,pa_lnListNode);
-
+	//! 첫 패킷이 패킷 헤더가 아니라면 FALSE 리턴.
 	// if the first packet is not the head of the reliable packet transfer
-	if (!(paPacket->pa_ubReliable & UDP_PACKET_RELIABLE_HEAD)) {
+	if (!(paPacket->pa_uwReliable & ulHead)) {
 		return FALSE;
 	}
 
 	ulSequence = paPacket->pa_ulSequence;
-
+	//!헤더는 찾았으니 나머지를 버퍼안에서 찾아보자.
+	//! head,body,tail의 시퀀스는 서로 연결되어있다.
 	// for each packet in the buffer
 	FOREACHINLIST(CPacket,pa_lnListNode,pb_lhPacketStorage,litPacketIter) {
 		// if it's out of order (there is a gap in the reliable sequence), the message is not complete
+		//! 첫패킷의 시퀀스가 다르다면 False.
 		if (litPacketIter->pa_ulSequence != ulSequence) {
 			return FALSE;
 		}
+		//! 잘못된 타입이라면,(바디가 아니라면) FALSE 리턴.
+		// if it's of a wrong type (unreliable/reliable)
+		if (!(litPacketIter->pa_uwReliable & ulBody)) {
+			return FALSE;
+		}
+		//! 테일이 존재한다면 TRUE 리턴 
 		// if it's a tail of the reliable sequence the message is complete (all packets so far
 		// have been in order)
-		if (litPacketIter->pa_ubReliable & UDP_PACKET_RELIABLE_TAIL) {
+		if (litPacketIter->pa_uwReliable & ulTail) {
 			return TRUE;
 		}
-    slSize += litPacketIter->pa_slSize - MAX_HEADER_SIZE;
+		slSize += litPacketIter->pa_slSize - MAX_HEADER_SIZE;
+		//! 시퀀스 증가.
 		ulSequence++;
 	}
 
@@ -680,5 +840,17 @@ BOOL CPacketBuffer::CheckSequence(SLONG &slSize)
 	return FALSE;
 };
 
+// Create new packet
+extern CPacket *CreatePacket(void)
+{
+  TRACKMEM(Mem,"Network");
+  return _rcPacketContainer.CreateObject();
+}
 
-
+// Delete packet
+extern void DeletePacket(CPacket *ppaPacket)
+{
+  TRACKMEM(Mem,"Network");
+  CObjectRestore<BOOL> or(_rcPacketContainer.rc_bNowDeleting,TRUE);
+  _rcPacketContainer.DeleteObject(ppaPacket);
+}

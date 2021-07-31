@@ -1,7 +1,7 @@
 #include "stdh.h"
 
 #include <Engine/Base/Console.h>
-#include <Engine/Network/Network.h>
+#include <Engine/Network/CNetwork.h>
 #include <Engine/Network/PlayerTarget.h>
 #include <Engine/Base/Stream.h>
 #include <Engine/Entities/InternalClasses.h>
@@ -17,7 +17,9 @@ CPlayerTarget::CPlayerTarget(void) {
   plt_csAction.cs_iIndex = -1;
   plt_paLastAction.Clear();
   plt_paPreLastAction.Clear();
-  plt_abPrediction.Clear();
+  plt_abReceived.Clear();
+  plt_iClient = -1;
+
 }
 
 /*
@@ -26,29 +28,34 @@ CPlayerTarget::CPlayerTarget(void) {
 CPlayerTarget::~CPlayerTarget(void) {
 }
 
+//! 스트림으로부터 플레이어 정보를 읽는다.
 /*
  * Read player information from a stream.
  */
 void CPlayerTarget::Read_t(CTStream *pstr) // throw char *
 {
-  INDEX iEntity;
+  ULONG ulEntityID;
   ULONG bActive;
   // synchronize access to actions
   CTSingleLock slActions(&plt_csAction, TRUE);
 
   // read activity flag
-  (*pstr)>>bActive;
+  (*pstr) >> bActive;
+  (*pstr) >> plt_Index >> plt_iClient;
+
+  //! 이 클라이언트가 활성화 되어있다면,
   // if client is active
   if (bActive) {
     // set it up
-    Activate();
+    Activate(plt_iClient);
+	//! 엔티티 id, 마지막 액션,이전 마지막 액션을 읽어오고, id로 플레이어 엔티티를 찾아서 설정.
     // read data
-    (*pstr)>>iEntity>>plt_paLastAction>>plt_paPreLastAction;
-    CPlayerEntity *penPlayer = (CPlayerEntity *)&_pNetwork->ga_World.wo_cenAllEntities[iEntity];
+    (*pstr)>>ulEntityID>>plt_paLastAction>>plt_paPreLastAction;
+    CPlayerEntity *penPlayer = (CPlayerEntity *)_pNetwork->ga_World.EntityFromID(ulEntityID);
+
     ASSERT(penPlayer != NULL);
     AttachEntity(penPlayer);
   }
-  plt_abPrediction.Clear();
 }
 
 /*
@@ -56,32 +63,36 @@ void CPlayerTarget::Read_t(CTStream *pstr) // throw char *
  */
 void CPlayerTarget::Write_t(CTStream *pstr) // throw char *
 {
-  INDEX iEntity;
+  ULONG ulEntityID;
   ULONG bActive = plt_bActive;
   // synchronize access to actions
   CTSingleLock slActions(&plt_csAction, TRUE);
 
   // write activity flag
-  (*pstr)<<bActive;
+  (*pstr) << bActive;
+  (*pstr) << plt_Index << plt_iClient;
+
   // if client is active
   if (bActive) {
     // prepare its data
-    iEntity = _pNetwork->ga_World.wo_cenAllEntities.Index(plt_penPlayerEntity);
+    ulEntityID = plt_penPlayerEntity->en_ulID;
     // write data
-    (*pstr)<<iEntity<<plt_paLastAction<<plt_paPreLastAction;
+    (*pstr)<<ulEntityID<<plt_paLastAction<<plt_paPreLastAction;
   }
 }
 
 /*
  * Activate client data for a new client.
  */
-void CPlayerTarget::Activate(void)
+void CPlayerTarget::Activate(INDEX iClient)
 {
   ASSERT(!plt_bActive);
   plt_bActive = TRUE;
-  plt_abPrediction.Clear();
   plt_paPreLastAction.Clear();
   plt_paLastAction.Clear();
+  plt_iClient = iClient;
+  // make packets dummy before receiving something
+  plt_abReceived.Clear();
 
 }
 
@@ -93,9 +104,9 @@ void CPlayerTarget::Deactivate(void)
   ASSERT(plt_bActive);
   plt_bActive = FALSE;
   plt_penPlayerEntity = NULL;
-  plt_abPrediction.Clear();
   plt_paPreLastAction.Clear();
   plt_paLastAction.Clear();
+  plt_iClient = -1;
 }
 
 /*
@@ -107,122 +118,99 @@ void CPlayerTarget::AttachEntity(CPlayerEntity *penClientEntity)
   plt_penPlayerEntity = penClientEntity;
 }
 
+/* 
+ * Are there any actions buffered for this player 
+ */
+BOOL CPlayerTarget::HasBufferedActions() {
+  return (plt_abReceived.GetCount()>0);
+}
+
+
 /*
  * Apply action packet to current actions.
  */
-void CPlayerTarget::ApplyActionPacket(const CPlayerAction &paDelta)
+void CPlayerTarget::ApplyActionPacket(const CPlayerAction &paAction)
 {
   ASSERT(plt_bActive);
   ASSERT(plt_penPlayerEntity != NULL);
   // synchronize access to actions
   CTSingleLock slActions(&plt_csAction, TRUE);
 
-  // create a new action packet from last received packet and given delta
-  plt_paPreLastAction = plt_paLastAction;
-  __int64 llTag = plt_paLastAction.pa_llCreated += paDelta.pa_llCreated;
-  for (INDEX i=0; i<sizeof(CPlayerAction); i++) {
-    ((UBYTE*)&plt_paLastAction)[i] ^= ((UBYTE*)&paDelta)[i];
-  }
-  plt_paLastAction.pa_llCreated = llTag;
-
+  plt_paLastAction = paAction;
+   
   FLOAT fLatency = 0.0f;
   // if the player is local
   if (_pNetwork->IsPlayerLocal(plt_penPlayerEntity)) {
     // calculate latency
-    __int64 llmsNow = _pTimer->GetHighPrecisionTimer().GetMilliseconds();
-    __int64 llmsCreated = plt_paLastAction.pa_llCreated;
-    fLatency = FLOAT(DOUBLE(llmsNow-llmsCreated)/1000.0f);
-    if (plt_paLastAction.pa_llCreated==plt_paPreLastAction.pa_llCreated) {
+    ULONG ulmsNow = (ULONG)_pTimer->GetHighPrecisionTimer().GetMilliseconds();
+    ULONG ulmsCreated = plt_paLastAction.pa_ulCreated;
+    fLatency = FLOAT(DOUBLE(ulmsNow-ulmsCreated)/1000.0f);
+    if (plt_paLastAction.pa_ulCreated==plt_paPreLastAction.pa_ulCreated) {
       _pNetwork->AddNetGraphValue(NGET_REPLICATEDACTION, fLatency);
     } else {
-      CPlayerAction *ppaOlder = plt_abPrediction.GetLastOlderThan(plt_paLastAction.pa_llCreated);
-      if (ppaOlder!=NULL && ppaOlder->pa_llCreated!=plt_paPreLastAction.pa_llCreated) {
-        _pNetwork->AddNetGraphValue(NGET_SKIPPEDACTION, 1.0f);
-      }
-      extern FLOAT net_tmLatency;
-      net_tmLatency = fLatency;
       _pNetwork->AddNetGraphValue(NGET_ACTION, fLatency);
     }
   }
 
-  // if the entity is not deleted
-  if (!(plt_penPlayerEntity->en_ulFlags&ENF_DELETED)) {
+  // if the entity is not deleted and this is the server
+  if (!(plt_penPlayerEntity->en_ulFlags&ENF_DELETED) && _pNetwork->IsServer()) {
     // call the player DLL class to apply the new action to the entity
     plt_penPlayerEntity->ApplyAction(plt_paLastAction, fLatency);
   }
 
-  extern INDEX cli_iPredictionFlushing;
-  if (cli_iPredictionFlushing==2 || cli_iPredictionFlushing==3) {
-    plt_abPrediction.RemoveOldest();
-  }
 }
 
-/* Remember prediction action. */
-void CPlayerTarget::PrebufferActionPacket(const CPlayerAction &paPrediction)
+
+/*
+ * Receive action packet from player source.
+ */
+void CPlayerTarget::ReceiveActionPacket(CNetworkMessage *pnm, INDEX iMaxBuffer)
 {
   ASSERT(plt_bActive);
-  // synchronize access to actions
-  CTSingleLock slActions(&plt_csAction, TRUE);
-
-  // buffer the action
-  plt_abPrediction.AddAction(paPrediction);
-}
-
-// flush prediction actions that were already processed
-void CPlayerTarget::FlushProcessedPredictions(void)
-{
-  CTSingleLock slActions(&plt_csAction, TRUE);
-  extern INDEX cli_iPredictionFlushing;
-  if (cli_iPredictionFlushing==1) {
-    // flush all actions that were already processed
-    plt_abPrediction.FlushUntilTime(plt_paLastAction.pa_llCreated);
-  } else if (cli_iPredictionFlushing==3) {
-    // flush older actions that were already processed
-    plt_abPrediction.FlushUntilTime(plt_paPreLastAction.pa_llCreated);
-  }
-}
-
-// get maximum number of actions that can be predicted
-INDEX CPlayerTarget::GetNumberOfPredictions(void)
-{
-  CTSingleLock slActions(&plt_csAction, TRUE);
-  // return current count
-  return plt_abPrediction.GetCount();
-}
-  
-/* Apply predicted action with given index. */
-void CPlayerTarget::ApplyPredictedAction(INDEX iAction, FLOAT fFactor)
-{
-  // synchronize access to actions
-  CTSingleLock slActions(&plt_csAction, TRUE);
-
+  // receive new action
   CPlayerAction pa;
+  (*pnm)>>pa;
+  
+  // buffer it
+  plt_abReceived.AddAction(pa);
 
-  // if the player is local
-  if (_pNetwork->IsPlayerLocal(plt_penPlayerEntity)) {
-    // get the action from buffer
-    plt_abPrediction.GetActionByIndex(iAction, pa);
+  // read sendbehind 
+  INDEX iSendBehind = 0;
+  pnm->ReadBits(&iSendBehind, 2);
+  // foreach resent action
+  for(INDEX i=0; i<iSendBehind; i++) {
+    CPlayerAction paOld;
+    (*pnm)>>paOld;
 
-  // if the player is not local
-  } else {
-    // reuse last action
-    if (cli_bLerpActions) {
-      pa.Lerp(plt_paPreLastAction, plt_paLastAction, fFactor);
-    } else {
-      pa = plt_paLastAction;
+    // if not already sent out back to the client
+    if (paOld.pa_ulCreated>plt_paLastAction.pa_ulCreated) {
+      // buffer it
+      plt_abReceived.AddAction(paOld);
     }
   }
 
-  // get the player's predictor
-  if (!plt_penPlayerEntity->IsPredicted()) {
-    return;
+  // while there are too many actions buffered
+  while(plt_abReceived.GetCount()>iMaxBuffer) {
+    // purge the oldest one
+    plt_abReceived.RemoveOldest();
   }
-
-  CEntity *penPredictor = plt_penPlayerEntity->GetPredictor();
-  if (penPredictor==NULL || penPredictor==plt_penPlayerEntity) {
-    return;
-  }
-
-  // apply a prediction action packet to the entity's predictor
-  ((CPlayerEntity*)penPredictor)->ApplyAction(pa, 0.0f);
 }
+
+/* 
+ * Get the next acion packet that needs to be executed. 
+ */
+void CPlayerTarget::GetActionPacket(CPlayerAction &paAction) {
+  // there must be at least one action in the buffer
+  ASSERT (plt_abReceived.GetCount()>0);
+
+  // retrieve the oldest one
+  plt_abReceived.GetActionByIndex(0, paAction);
+
+  // remember the last sent action
+  plt_paLastAction = paAction;
+
+  // remove sent action from the buffer
+  plt_abReceived.RemoveOldest();
+}
+
+

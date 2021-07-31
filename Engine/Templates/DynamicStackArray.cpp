@@ -13,7 +13,7 @@
 template<class Type>
 inline CDynamicStackArray<Type>::CDynamicStackArray(void) : CDynamicArray<Type>() {
   da_ctUsed=0;
-  da_ctAllocationStep = 256;
+  da_ctAllocationStep = 16;
   // lock the array on construction
   CDynamicArray<Type>::Lock();
 }
@@ -89,7 +89,7 @@ inline void CDynamicStackArray<Type>::PopAll(void) {
     // free all memory
     CDynamicArray<Type>::Clear();
     // allocate one big block
-    CDynamicArray<Type>::New(ctUsedBefore);
+    //CDynamicArray<Type>::New(ctUsedBefore);
     da_ctUsed = 0;
   }
 }

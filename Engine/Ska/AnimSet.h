@@ -8,7 +8,7 @@
 #include <Engine/Math/Vector.h>
 #include <Engine/Math/Quaternion.h>
 
-#define ANG_COMPRESIONMUL 182.041666666666666666666666666667f;
+#define ANG_COMPRESIONMUL 182.0416666666667f
 
 #define AN_LOOPING              (1UL<<0) // looping animation
 #define AN_NORESTART            (1UL<<1) // dont restart anim
@@ -16,74 +16,91 @@
 #define AN_CLEAR                (1UL<<3) // do new clear state before adding animation
 #define AN_CLONE                (1UL<<4) // do new cloned state before adding animation
 #define AN_NOGROUP_SORT         (1UL<<5) // dont sort animations by groups
+#define AN_FREEZE_ON_BLEND      (1UL<<6) // freeze animations when blending 
+#define AN_REMOVE_ON_END        (1UL<<7) // when animation is over disable it in queue
+#define AN_FADEOUT              (1UL<<8) // flag is set after anim with AN_REMOVE_ON_END is finished (internal)
 
-#define CLEAR_STATE_LENGTH  0.2f
-#define CLONED_STATE_LENGTH  0.2f
+#define CLEAR_STATE_LENGTH   0.2f // default clear state length 
+#define CLONED_STATE_LENGTH  0.2f // default clone state length
 
 struct AnimPos
 {
-  UWORD ap_iFrameNum;  //frame number
-  FLOAT3D ap_vPos;     //bone pos
+  UWORD ap_iFrameNum;    // Frame number
+  FLOAT3D ap_vPos;       // Bone position
 };
 
 struct AnimRotOpt
 {
-  UWORD aro_iFrameNum;  //frame number
-  UWORD aro_ubH,aro_ubP;
-  ANGLE aro_aAngle;
+  UWORD aro_iFrameNum;   // Frame number
+  UWORD aro_ubH,aro_ubP; // Bone rotation
+  ANGLE aro_aAngle;      // Bone rotation
 };
 
 struct AnimRot
 {
-  UWORD ar_iFrameNum;  //frame number
-  FLOATquat3D ar_qRot; //bone rot
-};
-
-struct Animation
-{
-  int an_iID;
-  INDEX an_iFrames;
-  FLOAT an_fSecPerFrame;
-  FLOAT an_fTreshold;
-  BOOL an_bCompresed;// are quaternions in animation compresed
-  CStaticArray<struct MorphEnvelope> an_ameMorphs;
-  CStaticArray<struct BoneEnvelope> an_abeBones;
-  CTString an_fnSourceFile;// name of ascii aa file, used in Ska studio
-  BOOL an_bCustomSpeed; // animation has custom speed set in animset list file, witch override speed from anim file
+  UWORD ar_iFrameNum;    // Frame number
+  FLOATquat3D ar_qRot;   // Bone rotation
 };
 
 struct MorphEnvelope
 {
-  int me_iMorphMapID;
-  CStaticArray<FLOAT> me_aFactors;
+  INDEX me_iMorphMapID;            // Morph set id that this envelope animates
+  CStaticArray<FLOAT> me_aFactors; // Array of morph factors for morph set
 };
 
 struct BoneEnvelope
 {
-  int be_iBoneID;
-  Matrix12 be_mDefaultPos; // default pos
-  CStaticArray<struct AnimPos> be_apPos;// array of compresed bone positions
-  CStaticArray<struct AnimRot> be_arRot;// array if compresed bone rotations
-  CStaticArray<struct AnimRotOpt> be_arRotOpt;// array if optimized compresed bone rotations
-  FLOAT be_OffSetLen;
+  INDEX be_iBoneID;          // Bone id that this envelope animates
+  UWORD be_uwLastFramePos;   // Index of frame stored in last member of AnimPos array (precached)
+  UWORD be_uwLastFrameRot;   // Index of frame stored in last member of AnimRot array (precached)
+  FLOAT be_fInvFrameStepPos; // be_apPos.Count()-1 / be_uwLastFramePos (precached)
+  FLOAT be_fInvFrameStepRot; // be_arRot.Count()-1 / be_uwLastFrameRot (precached)
+  FLOAT be_OffSetLen;        // Length of bone position from parent bone position
+  CStaticArray<struct AnimPos> be_apPos;       // Array of compresed bone positions
+  CStaticArray<struct AnimRot> be_arRot;       // Array of compresed bone rotations
+  CStaticArray<struct AnimRotOpt> be_arRotOpt; // Array of optimized compresed bone rotations
+};
+
+struct Animation
+{
+  INDEX an_iID;          // Animation id
+  INDEX an_iFrames;      // Frames count
+  FLOAT an_fSecPerFrame; // Animation speed
+  FLOAT an_fThreshold;   // Optimization threshold
+  BOOL  an_bCompresed;   // Are quaternions in animation compresed
+  BOOL  an_bCustomSpeed; // Animation has custom speed set in animset list file, witch override speed from anim file
+  CStaticArray<struct MorphEnvelope> an_ameMorphs; // Array of morph envelopes
+  CStaticArray<struct BoneEnvelope> an_abeBones;   // Array of bone envelopes
+  CTString an_fnSourceFile; // Name of ascii aa file, used in Ska studio
 };
 
 class ENGINE_API CAnimSet : public CSerial
 {
 public:
-  CAnimSet();
-  ~CAnimSet();
-  void Optimize();
+  // Constructor
+  CAnimSet(void);
+  // Destructor
+  ~CAnimSet(void);
+  // Animation optimization
+  void Optimize(void);
   void OptimizeAnimation(Animation &an, FLOAT fTreshold);
+  // Add new animation to anim set
   void AddAnimation(Animation *pan);
+  // Remove animation from animset
   void RemoveAnimation(Animation *pan);
-    
-  void Read_t( CTStream *istrFile); // throw char *
-  void Write_t( CTStream *ostrFile); // throw char *
+  // Read binary animset
+  void Read_t( CTStream *istrFile); // throw char*
+  // Write binary animset
+  void Write_t( CTStream *ostrFile); // throw char*
+  // Clear animset
   void Clear(void);
+  // Get memory used by animset
   SLONG GetUsedMemory(void);
+  // Get the description of this object.
+  CTString GetDescription(void);
 
-  CStaticArray<struct Animation> as_Anims;
+public:
+  CStaticArray<struct Animation> as_Anims; // Array of animations
 };
 
 // if rotations are compresed does loader also fills array of uncompresed rotations

@@ -24,8 +24,12 @@ public:
   INDEX nt_ctSlotsPerCompStep;    // allocation step for number of slots in one compartment
   CStaticArray<CNameTableSlot_TYPE > nt_antsSlots;  // all slots are here
 
-  // internal finding
+  // internal finding, returns pointer to the the item
   CNameTableSlot_TYPE *FindSlot(ULONG ulKey, const CTString &strName);
+  // internal finding, returns the index of the item in the nametable
+  INDEX FindSlotIndex(ULONG ulKey, const CTString &strName);
+  // get the name stored in the nametable by it's index
+  const CTString GetNameFromIndex(INDEX iIndex);
   // expand the name table to next step
   void Expand(void);
 
@@ -42,8 +46,10 @@ public:
   void SetAllocationParameters(
     INDEX ctCompartments, INDEX ctSlotsPerComp, INDEX ctSlotsPerCompStep);
 
-  // find an object by name
+  // find an object by name, return a pointer to it
   TYPE *Find(const CTString &strName);
+  // find an object by name, return it's index
+  INDEX FindIndex(const CTString &strName);
   // add a new object
   void Add(TYPE *ptNew);
   // remove an object

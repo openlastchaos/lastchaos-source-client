@@ -28,6 +28,8 @@ public:
   inline void Delete(void);
   /* Destroy all objects, and reset the array to initial (empty) state. */
   inline void Clear(void);
+  /* Preallocate to fixate memory usage. */
+  void PreAllocate(INDEX ctCount);
 
   /* Alocate a new object. */
   inline INDEX Allocate(void);

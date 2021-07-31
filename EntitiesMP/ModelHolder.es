@@ -9,8 +9,8 @@ thumbnail "";
 features "HasName", "HasDescription";
 
 properties:
-  1 CTFileName m_fnModel    "Model" 'M' =CTFILENAME("Models\\Editor\\Axis.mdl"),
-  2 CTFileName m_fnTexture  "Texture" 'T' =CTFILENAME("Models\\Editor\\Vector.tex"),
+  1 CTFileName m_fnModel    "Model" 'M' =CTFILENAME("Data\\Models\\Editor\\Axis.mdl"),
+  2 CTFileName m_fnTexture  "Texture" 'T' =CTFILENAME("Data\\Models\\Editor\\Vector.tex"),
   3 FLOAT m_fStretchAll     "StretchAll" 'S' = 1.0f,
   4 FLOAT m_fStretchX       "StretchX"   'X' = 1.0f,
   5 FLOAT m_fStretchY       "StretchY"   'Y' = 1.0f,

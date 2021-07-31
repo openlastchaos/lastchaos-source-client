@@ -8,6 +8,23 @@
 #include <Engine/Entities/Entity.h>
 #include <Engine/Entities/EntityProperties.h> /* rcg10042001 */
 
+
+// this struct holds entity class information to be stored in the container
+struct EntityClassEntry {
+  INDEX ece_iClassID;
+  CTFileName ece_fnmEntityClass;
+
+  EntityClassEntry() {
+    ece_iClassID = -1;
+  };
+};
+// this container is filled with all used entity classes as they are used in the world
+extern CDynamicContainer<EntityClassEntry> _cEntityClassContainer;
+
+// class container manpulation functions
+void ClearEntityClassContainer();
+EntityClassEntry* FindClassInContainer(INDEX iID);
+
 /*
  *  General structure of an entity class.
  */
@@ -65,6 +82,19 @@ public:
   // gather the CRC of the file
   void AddToCRCTable(void);
 };
+
+// check if entity is of given class
+BOOL ENGINE_API IsOfClass( CEntity *pen, const char *pstrClassName);
+
+inline BOOL ENGINE_API IsOfClass(CEntity *pen, class CDLLEntityClass *pdec)
+{
+  return pen!=NULL && pen->en_pecClass->ec_pdecDLLClass==pdec;
+};
+
+BOOL ENGINE_API IsOfSameClass(CEntity *pen1, CEntity *pen2);
+// check if entity is of given class or derived from
+BOOL ENGINE_API IsDerivedFromClass( CEntity *pen, const char *pstrClassName);
+BOOL ENGINE_API IsDerivedFromClass( CEntity *pen, class CDLLEntityClass *pdec);
 
 
 #endif  /* include-once check. */

@@ -1,6 +1,7 @@
 215
 %{
 #include "StdH.h"
+ENGINE_API extern FLOAT ter_fLODMul;
 %}
 
 uses "EntitiesMP/Marker";
@@ -47,8 +48,8 @@ properties:
  24 COLOR m_colColor     "Color" 'C' = (C_WHITE|CT_OPAQUE),
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\Fog.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\Fog.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Fog.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Fog.tex"
 
 functions:
 
@@ -74,7 +75,7 @@ functions:
     fpFog.fp_fH1 = fPos-m_fDepth;
     fpFog.fp_fH2 = fPos;
     fpFog.fp_fH3 = fPos+m_fAbove;
-    fpFog.fp_fFar = m_fFar;
+    fpFog.fp_fFar = m_fFar * ter_fLODMul;
     fpFog.fp_iSizeH = m_iSizeH;
     fpFog.fp_iSizeL = m_iSizeL;
   }

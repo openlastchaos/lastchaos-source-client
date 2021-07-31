@@ -26,7 +26,7 @@ void Initialize(const CTFileName &fnGameSettings)
     #endif
     CTFileName fnmExpanded;
     ExpandFilePath(EFP_READ, CTString(GAMEDLL), fnmExpanded);
-    HMODULE hGame = LoadLibraryA(fnmExpanded);
+    HMODULE hGame = LoadLibrary(fnmExpanded);
     if (hGame==NULL) {
       ThrowF_t("%s", GetWindowsError(GetLastError()));
     }
@@ -103,22 +103,22 @@ static int iDialogResult;
 
 #define CALL_DIALOG( class_name, dlg_name)                        \
   try {                                                           \
-    _pGame->Load_t();                                             \
+    _pGame->Load_t();                                               \
   }                                                               \
   catch( char *pError) {                                          \
     (void) pError;                                                \
   }                                                               \
   HANDLE hOldResource = AfxGetResourceHandle();                   \
   class_name dlg_name;                                            \
-  AfxSetResourceHandle( GetModuleHandleA(GAMEGUI_DLL_NAME) );     \
+  AfxSetResourceHandle( GetModuleHandle(GAMEGUI_DLL_NAME) );      \
   iDialogResult = dlg_name.DoModal();                             \
   AfxSetResourceHandle( (HINSTANCE) hOldResource);                \
   if( iDialogResult == IDOK)                                      \
   try {                                                           \
-    _pGame->Save_t();                                             \
+    _pGame->Save_t();                                               \
   }                                                               \
   catch( char *pError) {                                          \
-    AfxMessageBox( CString(pError));                              \
+    AfxMessageBox( pError);                                       \
     iDialogResult = IDCANCEL;                                     \
   }
 

@@ -1,7 +1,11 @@
 231
 %{
 #include "StdH.h"
+#include "EntitiesMP\Player.h"
 extern INDEX ent_bReportBrokenChains;
+
+// NOTE: GENDER_MALE has to be the same as the one in Player.es!!!!!!!!!!!!
+#define GENDER_MALE 0
 %}
 
 class CVoiceHolder : CRationalEntity {
@@ -20,8 +24,8 @@ properties:
     CAutoPrecacheSound m_aps;
   }
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\VoiceHolder.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\VoiceHolder.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\VoiceHolder.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\VoiceHolder.tex"
 
 functions:
   void Precache(void)
@@ -49,6 +53,14 @@ procedures:
           resume;
         }
         CEntity *penCaused = FixupCausedToPlayer(this, eTrigger.penCaused);
+        ASSERT( IsOfClass( penCaused, &CPlayer_DLLClass));
+        if( IsOfClass( penCaused, &CPlayer_DLLClass)) {
+          CPlayer *penPlayer = (CPlayer*)penCaused;
+          // NOTE: GENDER_MALE has to be the same as the one in Player.es !
+          if (penPlayer->m_iGender!=GENDER_MALE) {
+            resume;
+          }
+        }
         EVoiceMessage eMsg;
         eMsg.fnmMessage = m_fnmMessage;
         penCaused->SendEvent(eMsg);

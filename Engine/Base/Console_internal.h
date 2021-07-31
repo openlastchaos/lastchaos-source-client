@@ -28,8 +28,6 @@ public:
   void ClearLine(INDEX iLine);
   // scroll buffer up, discarding lines at the start
   void ScrollBufferUp(INDEX ctBytesToFree);
-  // Move last line times one place back and add new time
-  void NewLastTime(TIME tmNew);
 
 // interface:
 
@@ -40,6 +38,8 @@ public:
 
   // Initialize the console.
   void Initialize(const CTFileName &fnmLog, INDEX ctCharsPerLine, INDEX ctLines);
+  // Create log for console if not allready created
+  void CreateLogFile(const CTFileName &fnmLog);
 
   // Get current console buffer.
   ENGINE_API const char *GetBuffer(void);

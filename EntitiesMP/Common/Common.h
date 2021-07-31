@@ -1,6 +1,14 @@
 // common headers for flesh entity classes
 
 
+// yjpark |<--
+#define LC_SURFACE_MARBLE_IN			0
+#define LC_SURFACE_BLOCK_OUT			1
+#define LC_SURFACE_WOOD_OUT				2
+#define LC_SURFACE_SAND_IN				3
+#define LC_SURFACE_WATER_SHALLOW_IN		4
+// yjpark     -->|
+
 #define SURFACE_SAND 9
 #define SURFACE_WATER 12
 #define SURFACE_RED_SAND 13
@@ -19,7 +27,7 @@
 #define MAX_ELECTRICITY INDEX(400)
 #define MAX_IRONBALLS INDEX(30)
 //#define MAX_NUKEBALLS INDEX(3)
-#define MAX_SNIPERBULLETS INDEX(50)
+//#define MAX_SNIPERBULLETS INDEX(50)
 
 // Bit shifters for ammo
 #define AMMO_BULLETS       0
@@ -30,7 +38,7 @@
 #define AMMO_ELECTRICITY   5
 //#define AMMO_NUKEBALLS   6
 #define AMMO_IRONBALLS     7
-#define AMMO_SNIPERBULLETS 8
+//#define AMMO_SNIPERBULLETS 8
 
 #define BLOOD_SPILL_RED RGBAToColor(250,20,20,255)
 #define BLOOD_SPILL_GREEN RGBAToColor(0,250,0,255)
@@ -44,13 +52,14 @@
 #define AV_IRONBALLS      INDEX(700)
 //#define AV_NUKEBALLS      INDEX(1800)
 #define AV_NAPALM         INDEX(200)
-#define AV_SNIPERBULLETS  INDEX(200)
+//#define AV_SNIPERBULLETS  INDEX(200)
 
 // used for invisibility powerup
 #define INVISIBILITY_ALPHA_LOCAL  0x55
 #define INVISIBILITY_ALPHA_REMOTE 0x11
 
 enum EmptyShellType {
+  ESL_NONE = -1,
   ESL_BULLET = 0,
   ESL_SHOTGUN = 1,
   ESL_BUBBLE = 2,
@@ -119,23 +128,60 @@ struct EntityStats {
   INDEX es_ctCount;
   INDEX es_ctAmmount;
   FLOAT es_fValue;
-  INDEX es_iScore;
+  //INDEX es_iScore;
 };
+
+extern INDEX dbg_bEnemyKillTest;
+class EnemyKillData {
+public:
+  BOOL ekd_bKilled;
+  BOOL ekd_bSpawner;
+  INDEX ekd_ctToSpawn;
+  SLONG ekd_ID;
+  CTString ekd_strClass;
+  CTString ekd_strSpawnClass;
+  CTString ekd_strSpawnName;
+  CTString ekd_strName;
+
+  SLONG ekd_IDSpawner;
+  CTString ekd_strNameSpawner;
+  
+  EnemyKillData(void)
+  {
+    ekd_bSpawner=FALSE;
+    ekd_bKilled=FALSE;
+    ekd_ID=-1;
+    ekd_strClass="";
+    ekd_strName="";
+    ekd_IDSpawner=-1;
+    ekd_strNameSpawner="Not spawned";
+  }
+};
+
+void AddEnemyKillData(class CEnemyBase *penEnemy, class CEnemySpawner *penSpawner);
+void AddSpawnerKillData(class CEnemySpawner *penSpawner, INDEX ctEnemies);
+void MarkEnemyDead(class CEnemyBase *penEnemy);
+void MarkEnemyDead(class CCharacterBase *penEnemy);
+void MarkEnemyDead(class CPetBase *penEnemy);
+void MarkEnemyDead(class CSlaveBase *penEnemy);
+void MarkEnemyDead(class CWildPetBase *penEnemy);
+void MarkSpawnerSpawned(class CEnemySpawner *penSpawner);
+void DumpKillData(void);
 
 // statistics data for player stats management
 struct DECL_DLL PlayerStats {
-  INDEX ps_iScore;
+  //INDEX ps_iScore;
   INDEX ps_iKills;
   INDEX ps_iDeaths;
-  INDEX ps_iSecrets;
+  //INDEX ps_iSecrets;
   TIME  ps_tmTime;
 
   PlayerStats(void)
   {
-    ps_iScore = 0;
+    //ps_iScore = 0;
     ps_iKills = 0;
     ps_iDeaths = 0;
-    ps_iSecrets = 0;
+//    ps_iSecrets = 0;
     ps_tmTime = 0.0f;
   }
 };
@@ -169,6 +215,9 @@ DECL_DLL void RemoveAttachmentFromModel(CModelObject &mo, INDEX iAttachment);
 // Kick entity
 DECL_DLL void KickEntity(CEntity *penTarget, FLOAT3D vSpeed);
 
+DECL_DLL void LoadSkaModel(CModelInstance &m_miModel, CEntity *penThis, INDEX iSkaModelComponentID);
+DECL_DLL void StartSkaAnim(CEntity *pen, INDEX iAnimID, DWORD dwFlags, INDEX iGroupID, FLOAT fFadeTime);
+DECL_DLL void StartSkaAnimStr(CModelInstance *m_miModel, CTString strAnimName, DWORD dwFlags, INDEX iGroupID, FLOAT fFadeTime);
 
 // lens flare variables
 extern CLensFlareType _lftStandard;
@@ -184,20 +233,23 @@ extern CLensFlareType _lftBlueStarBlueReflections;
 extern CLensFlareType _lftProjectileStarGlow;
 extern CLensFlareType _lftProjectileWhiteBubbleGlow;
 extern CLensFlareType _lftProjectileYellowBubbleGlow;
-extern CLensFlareType _lftPVSpaceShipWindowFlare;
-extern CLensFlareType _lftCatmanFireGlow;
+//extern CLensFlareType _lftPVSpaceShipWindowFlare;
+//extern CLensFlareType _lftCatmanFireGlow;
 extern CLensFlareType _lftWhiteGlowFar;
 // init lens flare effects
 void InitLensFlares(void);
 // close lens flares effects
 void CloseLensFlares(void);
 
-DECL_DLL BOOL SetPlayerAppearanceCfunc(void* pArgs);
 DECL_DLL BOOL SetPlayerAppearance(CModelObject *mo, CPlayerCharacter *ppc, CTString &strName, BOOL bPreview);
-
+//0105
+//SKA
+DECL_DLL BOOL SetPlayerAppearanceSka(CModelInstance *pmiModel, CPlayerCharacter *ppc, CTString &strName, BOOL bPreview, ULONG type = 0);
+//..
 // debugging functions
 DECL_DLL const char *PrintConsole(void);
 DECL_DLL const char *PrintStack(CEntity *pen);
+DECL_DLL void StartDebugTrigger(CEntity *penCaused);
 
 // debris spawning
 DECL_DLL void Debris_Begin(
@@ -209,7 +261,9 @@ DECL_DLL void Debris_Begin(
   const FLOAT3D &vSpawnerSpeed,  // how fast was the entity moving
   const FLOAT fConeSize,         // size multiplier for debris cone
   const FLOAT fSpeedUp,          // size multiplier for debris catapulting up (0-no multiply)
-  const COLOR colDebris=C_WHITE  // multiply color
+  const COLOR colDebris = C_WHITE, // multiply color
+  const BOOL bCollision	= FALSE,
+  const BOOL bFade	= TRUE
 );
 DECL_DLL CEntityPointer Debris_Spawn(
   CEntity *penSpawner,
@@ -250,6 +304,75 @@ DECL_DLL CEntityPointer Debris_Spawn_Template(
   BOOL bDebrisImmaterialASAP,
   FLOAT fDustStretch,
   COLOR colBurning);
+// spawn a ModelHolder2 based debris from a ModelHolder2 parent
+DECL_DLL CEntityPointer Debris_Spawn_MH2Template_FromMH2(
+  EntityInfoBodyType eibt,
+  enum DebrisParticlesType dptParticles,
+  enum BasicEffectType betStain,
+  class CModelHolder2 *penmhDestroyed,
+  CEntity *penComponents,
+  class CModelHolder2 *penmh2,
+  FLOAT3D vStretch,
+  FLOAT fSize,
+  CPlacement3D plAbsolutePlacement,
+  FLOAT3D vLaunchSpeed,
+  ANGLE3D aRotSpeed,
+  BOOL bDebrisImmaterialASAP,
+  FLOAT fDustStretch,
+  COLOR colBurning);
+// spawn a ModelHolder2 based debris from a ModelHolder3 parent
+DECL_DLL CEntityPointer Debris_Spawn_MH2Template_FromMH3(
+  EntityInfoBodyType eibt,
+  enum DebrisParticlesType dptParticles,
+  enum BasicEffectType betStain,
+  class CModelHolder3 *penmhDestroyed,
+  CEntity *penComponents,
+  class CModelHolder2 *penmh2,
+  FLOAT3D vStretch,
+  FLOAT fSize,
+  CPlacement3D plAbsolutePlacement,
+  FLOAT3D vLaunchSpeed,
+  ANGLE3D aRotSpeed,
+  BOOL bDebrisImmaterialASAP,
+  FLOAT fDustStretch,
+  COLOR colBurning);
+// spawn a ModelHolder3 based debris from a ModelHolder2 parent
+DECL_DLL CEntityPointer Debris_Spawn_MH3Template_FromMH2(
+  EntityInfoBodyType eibt,
+  enum DebrisParticlesType dptParticles,
+  enum BasicEffectType betStain,
+  class CModelHolder2 *penmhDestroyed,
+  CEntity *penComponents,
+  class CModelHolder3 *penmh3,
+  FLOAT3D vStretch,
+  FLOAT fSize,
+  CPlacement3D plAbsolutePlacement,
+  FLOAT3D vLaunchSpeed,
+  ANGLE3D aRotSpeed,
+  BOOL bDebrisImmaterialASAP,
+  FLOAT fDustStretch,
+  COLOR colBurning);
+// spawn a ModelHolder3 based debris from a ModelHolder3 parent
+DECL_DLL CEntityPointer Debris_Spawn_MH3Template_FromMH3(
+  EntityInfoBodyType eibt,
+  enum DebrisParticlesType dptParticles,
+  enum BasicEffectType betStain,
+  class CModelHolder3 *penmhDestroyed,
+  CEntity *penComponents,
+  class CModelHolder3 *penmh3,
+  FLOAT3D vStretch,
+  FLOAT fSize,
+  CPlacement3D plAbsolutePlacement,
+  FLOAT3D vLaunchSpeed,
+  ANGLE3D aRotSpeed,
+  BOOL bDebrisImmaterialASAP,
+  FLOAT fDustStretch,
+  COLOR colBurning);
+
+DECL_DLL CEntityPointer DebrisSka_Spawn(CEntity *penSpawner,  INDEX iSkaModelComponentID,  
+              FLOAT fSize, const FLOAT3D &vPosRatio);
+DECL_DLL CEntityPointer DebrisSka_Spawn_Independent( CEntity *penSpawner, INDEX iSkaModelComponentID,
+              FLOAT fSize, CPlacement3D plAbsolute, FLOAT3D vTranslation, ANGLE3D aRotation);
 
 // get default entity info for given body type
 DECL_DLL EntityInfo *GetStdEntityInfo(EntityInfoBodyType eibt);
@@ -257,11 +380,11 @@ DECL_DLL EntityInfo *GetStdEntityInfo(EntityInfoBodyType eibt);
 DECL_DLL FLOAT DamageStrength(EntityInfoBodyType eibtBody, enum DamageType dtDamage);
 
 // Print center screen message
-DECL_DLL void PrintCenterMessage(CEntity *penThis, CEntity *penTarget, 
-  const CTString &strMessage, TIME tmLength, enum MessageSound mssSound);
+//DECL_DLL void PrintCenterMessage(CEntity *penThis, CEntity *penTarget, 
+//  const CTString &strMessage, TIME tmLength, enum MessageSound mssSound);
 
 // get name of a key item
-DECL_DLL const char *GetKeyName(enum KeyItemType kit);
+//DECL_DLL const char *GetKeyName(enum KeyItemType kit);
 
 // get session properties
 DECL_DLL inline const CSessionProperties *GetSP(void)
@@ -302,3 +425,91 @@ void SpawnHitTypeEffect(CEntity *pen, enum BulletHitType bhtType, BOOL bSound, F
   FLOAT3D vIncommingBulletDir, FLOAT3D vDistance);
 
 #define FRndIn(a, b) (a + FRnd()*(b - a))
+
+
+DECL_DLL inline FLOAT AngleBetweenNormVectors(FLOAT3D v1, FLOAT3D v2, INDEX iMaskH, INDEX iMaskP, INDEX iMaskB) {
+  
+  ASSERT(iMaskH || iMaskP || iMaskB);
+
+  if (!iMaskH) {
+    v1(1) = 0.0f;
+    v2(1) = 0.0f;
+  }
+  if (!iMaskP) {
+    v1(2) = 0.0f;
+    v2(2) = 0.0f;
+  }
+  if (!iMaskB) {
+    v1(3) = 0.0f;
+    v2(3) = 0.0f;
+  }
+  if (!iMaskH || !iMaskP || !iMaskB) {
+    v1.Normalize();
+    v2.Normalize();
+  }
+
+  return (v1%v2);
+}
+
+DECL_DLL inline FLOAT AngleBetweenNormVectors(FLOAT3D v1, FLOAT3D v2) {  
+  return (v1%v2);
+}
+
+DECL_DLL inline FLOAT AngleBetweenVectors(FLOAT3D v1, FLOAT3D v2, INDEX iMaskH, INDEX iMaskP, INDEX iMaskB) {
+  
+  if (iMaskH && iMaskP && iMaskB) {
+    v1.Normalize();
+    v2.Normalize();
+  }
+
+  return (AngleBetweenNormVectors(v1, v2, iMaskH, iMaskP, iMaskB));
+}
+
+DECL_DLL inline FLOAT AngleBetweenVectors(FLOAT3D v1, FLOAT3D v2) {
+ 
+  v1.Normalize();
+  v2.Normalize();
+ 
+  return (AngleBetweenNormVectors(v1, v2));
+}
+
+//void SendScoreToEntity(CEntity *penTarget, INDEX iScore);
+
+//INDEX ska_CreateAnimIDFromString(CModelInstance *pmi, CTString strAnimName, BOOL bRecursive = FALSE);
+//INDEX ska_CreateBoneIDFromString(CModelInstance *pmi, CTString strBoneName);
+//INDEX ska_CreateCollisionIDFromString(CModelInstance *pmi, CTString strCollisionName);
+//INDEX ska_CreateChildIDFromString(CModelInstance *pmi, CTString strChildName, BOOL bRecursive = FALSE);
+void ska_CreateAnimIDFromString(INDEX *piID, CModelInstance *pmi, CTString strAnimName, BOOL bRecursive = FALSE);
+void ska_CreateBoneIDFromString(INDEX *piID, CModelInstance *pmi, CTString strBoneName);
+void ska_CreateCollisionIDFromString(INDEX *piID, CModelInstance *pmi, CTString strCollisionName);
+void ska_CreateChildIDFromString(INDEX *piID, CModelInstance *pmi, CTString strChildName, BOOL bRecursive = FALSE);
+
+#define FADE_VERYSHORT 0.10f
+#define FADE_SHORT  0.20f
+#define FADE_MEDIUM 0.35f
+#define FADE_LONG   0.50f
+
+INDEX CollisionBoxIndexFromID(CModelInstance *pmi, INDEX ID);
+
+// call these only during AdjustBones() entity function !!!!!
+BOOL RotateBone(INDEX idBone, ANGLE3D a);
+BOOL OffsetBone(INDEX idBone, FLOAT3D v);
+
+INDEX AddSkaChild(CEntity *penThis, CEntity *penParent, INDEX iSkaModelComponentID,
+                  const CTString &strChildName, INDEX iParentBoneID);
+INDEX AddSkaChild(CEntity *penThis, CModelInstance *pmiParent, INDEX iSkaModelComponentID,
+                  const CTString &strChildName, INDEX iParentBoneID);
+void  AddSkaChildFromMI(CModelInstance *pmiParent, CModelInstance *pmi,
+                  const CTString &strChildName, INDEX iParentBoneID);
+void  RemoveSkaChildren(CModelInstance *pmi);
+BOOL  RemoveSkaChild(CEntity *penParent, INDEX iChildID);
+BOOL  RemoveSkaChild(CEntity *penParent, CTString strChildName);
+FLOAT MipFactor_LogToMetric(FLOAT fMipLog);
+FLOAT MipFactor_MetricToLog(FLOAT fMipMetric);
+void  AddToAutoAimables(CEntity *pen);
+void  RemoveFromAutoAimables(CEntity *pen);
+void  ScaleEntityInfo(EntityInfo *eiInfo, FLOAT fScale);
+
+BOOL RotateSkaChild(CEntity *penParent, CTString strChildName);
+
+extern BOOL plr_bSamForSequences;

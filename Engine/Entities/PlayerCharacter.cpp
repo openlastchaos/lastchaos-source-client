@@ -15,7 +15,7 @@ static void GetGUID(UBYTE aub[16])
 
   try {
     // load ole32
-    hOle32Lib = ::LoadLibraryA( "ole32.dll");
+    hOle32Lib = ::LoadLibrary( "ole32.dll");
     if( hOle32Lib == NULL) {
       ThrowF_t(TRANS("Cannot load ole32.dll."));
     }
@@ -46,17 +46,18 @@ static void GetGUID(UBYTE aub[16])
  * Default constructor -- no character.
  */
 CPlayerCharacter::CPlayerCharacter(void)
-  : pc_strName("<invalid player>"), pc_strTeam("")
+  : pc_strName("<invalid player>")
 {
   memset(pc_aubGUID, 0, PLAYERGUIDSIZE);
   memset(pc_aubAppearance, 0, MAX_PLAYERAPPEARANCE);
+  pc_iPlayerIndex = -1;
 }
 
 /*
  * Create a new character with its name.
  */
 CPlayerCharacter::CPlayerCharacter(const CTString &strName)
-  : pc_strName(strName), pc_strTeam("")
+  : pc_strName(strName)
 {
   // if the name passed to constructor is empty string
   if (strName=="") {
@@ -66,6 +67,9 @@ CPlayerCharacter::CPlayerCharacter(const CTString &strName)
   // create the guid
   GetGUID(pc_aubGUID);
   memset(pc_aubAppearance, 0, MAX_PLAYERAPPEARANCE);
+  pc_iPlayerIndex = -1;
+//0217 캐릭터 종류
+  pc_iPlayerType = -1;
 }
 
 void CPlayerCharacter::Load_t( const CTFileName &fnFile) // throw char *
@@ -90,9 +94,14 @@ void CPlayerCharacter::Save_t( const CTFileName &fnFile) // throw char *
 void CPlayerCharacter::Read_t(CTStream *pstr) // throw char *
 {
   pstr->ExpectID_t("PLC4");
-  (*pstr)>>pc_strName>>pc_strTeam;
+  CTString strTemp;
+  (*pstr)>>pc_strName>>strTemp;
   pstr->Read_t(pc_aubGUID, sizeof(pc_aubGUID));
   pstr->Read_t(pc_aubAppearance, sizeof(pc_aubAppearance));
+  (*pstr)>>pc_iPlayerIndex;
+  //0217
+  (*pstr)>>pc_iPlayerType;
+
 }
 
 /*
@@ -101,9 +110,13 @@ void CPlayerCharacter::Read_t(CTStream *pstr) // throw char *
 void CPlayerCharacter::Write_t(CTStream *pstr) // throw char *
 {
   pstr->WriteID_t("PLC4");
-  (*pstr)<<pc_strName<<pc_strTeam;
+  CTString strTemp;
+  (*pstr)<<pc_strName<<strTemp;
   pstr->Write_t(pc_aubGUID, sizeof(pc_aubGUID));
   pstr->Write_t(pc_aubAppearance, sizeof(pc_aubAppearance));
+  (*pstr)<<pc_iPlayerIndex;
+  //0217
+  (*pstr)<<pc_iPlayerType;
 }
 
 /* Get character name. */
@@ -113,11 +126,7 @@ const CTString &CPlayerCharacter::GetName(void) const
 };
 const CTString CPlayerCharacter::GetNameForPrinting(void) const
 {
-  CTString strName(pc_strName);
-  // get rid of newlines in the name
-  strName.ReplaceSubstr("\n", "");
-  strName.ReplaceSubstr("\r", "");
-  return "^o"+pc_strName+"^r";
+  return "^o"+pc_strName+"^r"; 
 }
 /* Set character name. */
 void CPlayerCharacter::SetName(CTString strName) 
@@ -127,33 +136,16 @@ void CPlayerCharacter::SetName(CTString strName)
   pc_strName = strName; 
 };
 
-/* Get character team. */
-const CTString &CPlayerCharacter::GetTeam(void) const
-{
-  return pc_strTeam; 
-}
-
-const CTString CPlayerCharacter::GetTeamForPrinting(void) const
-{
-  return "^o"+pc_strTeam+"^r"; 
-}
-
-/* Set character team. */
-void CPlayerCharacter::SetTeam(CTString strTeam)
-{
-  // limit string length to 20 characters not including decorated text control codes
-  // strTeam.TrimRightNaked(20); !!!! needs checking
-  pc_strTeam = strTeam; 
-}
-
 /* Assignment operator. */
 CPlayerCharacter &CPlayerCharacter::operator=(const CPlayerCharacter &pcOther)
 {
   ASSERT(this!=NULL && &pcOther!=NULL);
-  pc_strName = pcOther.pc_strName;
-  pc_strTeam = pcOther.pc_strTeam;
+  pc_strName = pcOther.pc_strName;  
   memcpy(pc_aubGUID, pcOther.pc_aubGUID, PLAYERGUIDSIZE);
   memcpy(pc_aubAppearance, pcOther.pc_aubAppearance, MAX_PLAYERAPPEARANCE);
+  pc_iPlayerIndex = pcOther.pc_iPlayerIndex;
+//0217
+  pc_iPlayerType = pcOther.pc_iPlayerType;
   return *this;
 };
 
@@ -182,15 +174,21 @@ CTStream &operator>>(CTStream &strm, CPlayerCharacter &pc)
 // message operations
 CNetworkMessage &operator<<(CNetworkMessage &nm, CPlayerCharacter &pc)
 {
-  nm<<pc.pc_strName<<pc.pc_strTeam;
+  nm<<pc.pc_strName;
   nm.Write(pc.pc_aubGUID, PLAYERGUIDSIZE);
   nm.Write(pc.pc_aubAppearance, MAX_PLAYERAPPEARANCE);
+  nm<<pc.pc_iPlayerIndex;
+//0217
+  nm<<pc.pc_iPlayerType;
   return nm;
 };
 CNetworkMessage &operator>>(CNetworkMessage &nm, CPlayerCharacter &pc)
 {
-  nm>>pc.pc_strName>>pc.pc_strTeam;
+  nm>>pc.pc_strName;
   nm.Read(pc.pc_aubGUID, PLAYERGUIDSIZE);
   nm.Read(pc.pc_aubAppearance, MAX_PLAYERAPPEARANCE);
+  nm>>pc.pc_iPlayerIndex;
+//0217
+  nm>>pc.pc_iPlayerType;
   return nm;
 };

@@ -1,3 +1,8 @@
+/*
+Copyright (C) 2001-2002 Croteam, Ltd.
+See COPYING (GNU Library General Public License 2) for license
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -234,7 +239,7 @@ void MatchGoalOrientation(LWItemID objectID,float *frot,double time)
 
   parentID = _iti->parent(objectID);
   while (parentID != LWITEM_NULL) {
-    bGoalOrient	= _iti->flags(parentID) & LWITEMF_GOAL_ORIENT;
+    bGoalOrient = _iti->flags(parentID) & LWITEMF_GOAL_ORIENT;
     if (bGoalOrient) {
       MatchGoalOrientation(parentID,frot,time);
     } else {
@@ -451,7 +456,7 @@ Evaluate( BoneInfo *pii, const LWItemMotionAccess *access )
   
   LWItemID bone = access->item;
 
-  int bGoalOrient	= _iti->flags(bone) & LWITEMF_GOAL_ORIENT;
+  int bGoalOrient = _iti->flags(bone) & LWITEMF_GOAL_ORIENT;
 
   if(bRecordDefaultFrame)
   {

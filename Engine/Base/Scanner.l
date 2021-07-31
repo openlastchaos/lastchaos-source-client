@@ -15,8 +15,8 @@
 
 int yywrap(void)
 {
-  // no more bufers
-  return 1;
+	// no more bufers
+	return 1;
 };
 
 static int _iBlockDepth = 0;
@@ -27,30 +27,30 @@ static BOOL _bCmdParamCountErrorReported = FALSE;
 
 void TranscriptEsc(CTString &str)
 {
-  char *pchSrc = (char *)(const char *)str;
-  char *pchDst = (char *)(const char *)str;
-  // if quoted
-  if (pchDst[0] == '"') {
-    int len = strlen(pchDst);
-    pchDst[len-1] = 0;
-    memmove(pchDst, pchDst+1, len-1);
-  }
-  for (;;pchSrc++, pchDst++) {
-    if (*pchSrc==0) {
-      break;
-    }
-    if (*pchSrc!='\\') {
-      *pchDst = *pchSrc;
-      continue;
-    }
-    pchSrc++;
-    switch(*pchSrc) {
-    case 'n': *pchDst = 10; break;
-    case 'r': *pchDst = 13; break;
-    default: *pchDst = *pchSrc; break;
-    }
-  }
-  *pchDst=0;
+	char *pchSrc = (char *)(const char *)str;
+	char *pchDst = (char *)(const char *)str;
+	// if quoted
+	if (pchDst[0] == '"') {
+		int len = strlen(pchDst);
+		pchDst[len-1] = 0;
+		memmove(pchDst, pchDst+1, len-1);
+	}
+	for (;;pchSrc++, pchDst++) {
+		if (*pchSrc==0) {
+			break;
+		}
+		if (*pchSrc!='\\') {
+			*pchDst = *pchSrc;
+			continue;
+		}
+		pchSrc++;
+		switch(*pchSrc) {
+		case 'n': *pchDst = 10; break;
+		case 'r': *pchDst = 13; break;
+		default: *pchDst = *pchSrc; break;
+		}
+	}
+	*pchDst=0;
 }
 
 %}
@@ -58,6 +58,7 @@ void TranscriptEsc(CTString &str)
 %x COMMENT
 %x DUMMYBLOCK
 %x INCLUDE
+%x DECODE
 %x COMMAND
 
 DIGIT		[0-9]
@@ -81,64 +82,91 @@ PARAMCONTENT	([^\ \n\";]|(\\\ ))
 
 <INCLUDE>[ \t]*"\""    /* eat the whitespace until first quote */
 <INCLUDE>[^"\""]*"\""   { /* get the include file name until second quote */
-  if (ShellGetBufferStackDepth() >= SHELL_MAX_INCLUDE_LEVEL) {
-    _pShell->ErrorF("Script files nested too deeply");
-  }
-  char strFileName[256];
-  strcpy(strFileName, yytext);
-  strFileName[strlen(strFileName)-1] = 0;
+	if (ShellGetBufferStackDepth() >= SHELL_MAX_INCLUDE_LEVEL) {
+		_pShell->ErrorF("Script files nested too deeply");
+	}
+	char strFileName[256];
+	strcpy(strFileName, yytext);
+	strFileName[strlen(strFileName)-1] = 0;
 
-  CTString strIncludeFile;
-  try {
-    strIncludeFile.Load_t(CTString(strFileName));
-    ShellPushBuffer(strFileName, strIncludeFile, FALSE);
+	CTString strIncludeFile;
+	try {
+		strIncludeFile.Load_t(CTString(strFileName));
+		ShellPushBuffer(strFileName, strIncludeFile, FALSE);
 
-  } catch(char *strError) {
-    _pShell->ErrorF("Cannot load script file '%s': %s", yytext, strError);
-  }
-  BEGIN(INITIAL);
+	} catch(char *strError) {
+		_pShell->ErrorF("Cannot load script file '%s': %s", yytext, strError);
+	}
+	BEGIN(INITIAL);
 }
 <INCLUDE>.    {  /* something unrecognized inside include statement */
-  _pShell->ErrorF("Wrong syntax for include statement");
-  BEGIN(INITIAL);
+	_pShell->ErrorF("Wrong syntax for include statement");
+	BEGIN(INITIAL);
+}
+ 
+ /* Include Encoded file parsing. */
+"decode"       BEGIN(DECODE);
+
+<DECODE>[ \t]*"\""    /* eat the whitespace until first quote */
+<DECODE>[^"\""]*"\""   { /* get the include file name until second quote */
+	if (ShellGetBufferStackDepth() >= SHELL_MAX_INCLUDE_LEVEL) {
+		_pShell->ErrorF("Script files nested too deeply");
+	}
+	char strFileName[256];
+	strcpy(strFileName, yytext);
+	strFileName[strlen(strFileName)-1] = 0;
+
+	CTString strIncludeFile;
+	try {
+		extern CTString OpenPersistentSymbolFile(const CTFileName &fnmPS);
+		strIncludeFile = OpenPersistentSymbolFile(CTFileName(strFileName));
+		ShellPushBuffer(strFileName, strIncludeFile, FALSE);
+
+	} catch(char *strError) {
+		_pShell->ErrorF("Cannot load script file '%s': %s", yytext, strError);
+	}
+	BEGIN(INITIAL);
+}
+<DECODE>.    {  /* something unrecognized inside include statement */
+	_pShell->ErrorF("Wrong syntax for decode statement");
+	BEGIN(INITIAL);
 }
  
  /* command parsing */
 <COMMAND>{PARAMCONTENT}*|"\""{STRINGCONTENT}*"\"" { // for each parameter
-  _ctCmdParam++;
-  CTString strParam = yytext;
-  TranscriptEsc(strParam);
-  // insert the parameter in the command string
-  CTString strParamNo = CTString(1, "%%%d", _ctCmdParam);
-  if (strParam.FindSubstr(strParamNo)!=-1) {
-    _pShell->ErrorF("Parameter substitution recursion detected!");
-  } else {
-    INDEX ctFound=0;
-    for(;; ctFound++) {
-      if (!_strCmd.ReplaceSubstr(strParamNo, strParam)) {
-        break;
-      }
-    }
-    // if not found and parameter count error not reported yet
-    if (ctFound==0 && !_bCmdParamCountErrorReported) {
-      // report error
-      _bCmdParamCountErrorReported = TRUE;
-      _pShell->ErrorF("Too many parameters for command expansion");
-    }
-  }
+	_ctCmdParam++;
+	CTString strParam = yytext;
+	TranscriptEsc(strParam);
+	// insert the parameter in the command string
+	CTString strParamNo = CTString(1, "%%%d", _ctCmdParam);
+	if (strParam.FindSubstr(strParamNo)!=-1) {
+		_pShell->ErrorF("Parameter substitution recursion detected!");
+	} else {
+		for(INDEX ctFound=0;; ctFound++) {
+			if (!_strCmd.ReplaceSubstr(strParamNo, strParam)) {
+				break;
+			}
+		}
+		// if not found and parameter count error not reported yet
+		if (ctFound==0 && !_bCmdParamCountErrorReported) {
+			// report error
+			_bCmdParamCountErrorReported = TRUE;
+			_pShell->ErrorF("Too many parameters for command expansion");
+		}
+	}
 }
 <COMMAND>\n|; { 
-                  // at the end of the command
+									// at the end of the command
 
-  // switch to the new input buffer with that command
-  ShellPushBuffer(ShellGetBufferName(), _strCmd, FALSE);
-  BEGIN(INITIAL);
+	// switch to the new input buffer with that command
+	ShellPushBuffer(ShellGetBufferName(), _strCmd, FALSE);
+	BEGIN(INITIAL);
 }
 
 <<EOF>> {
-  if (ShellPopBuffer()) {
-    yyterminate();
-  }
+	if (ShellPopBuffer()) {
+		yyterminate();
+	}
 }
 
  /* special data types */
@@ -172,7 +200,7 @@ PARAMCONTENT	([^\ \n\";]|(\\\ ))
 
  /* single character operators and punctuations */
 ";"|"("|")"|"="|"+"|"-"|"<"|">"|"!"|"|"|"&"|"*"|"/"|"%"|"^"|"["|"]"|":"|","|"."|"?"|"~" {
-  return(yytext[0]);}
+	return(yytext[0]);}
 
  /* constants */
 {DIGIT}+                  { yylval.val.iIndex = atoi(yytext); return(c_int); }
@@ -180,74 +208,74 @@ PARAMCONTENT	([^\ \n\";]|(\\\ ))
 {NONEXP_FLT}("f"|"F")?    { yylval.val.fFloat = (float) atof(yytext); return(c_float); }
 {EXP_FLT}("f"|"F")?       { yylval.val.fFloat = (float) atof(yytext); return(c_float); }
 "\""{STRINGCONTENT}*"\""  { 
-  CTString &strNew = _shell_astrTempStrings.Push();
-  // remove double-quotes
-  strNew = yytext;
-  // parse escape symbols and remove double quotes
-  TranscriptEsc(strNew);
-  yylval.val.strString = (const char*)strNew;
-  return(c_string); 
+	CTString &strNew = _shell_astrTempStrings.Push();
+	// remove double-quotes
+	strNew = yytext;
+	// parse escape symbols and remove double quotes
+	TranscriptEsc(strNew);
+	yylval.val.strString = (const char*)strNew;
+	return(c_string); 
 }
 "'"{CHARCONTENT}"'"       { return(c_char); }
 
  /* identifier */
 {IDENTIFIERFIRST}{IDENTIFIEROTHER}* { 
-  // get the symbol
-  yylval.pssSymbol =  _pShell->GetSymbol(yytext, FALSE);
-  BOOL bCommand = FALSE;
-  // if it is string
-  if (_shell_ast[yylval.pssSymbol->ss_istType].st_sttType==STT_STRING) {
-    // get the value
-    CTString str = *(CTString*)yylval.pssSymbol->ss_pvValue;
-    // if the value tells that it is a command
-    if (str.RemovePrefix("!command ")) {
-      // parse the command
-      bCommand = TRUE;
-      _strCmd = str;
-      _ctCmdParam = 0;
-      _bCmdParamCountErrorReported = FALSE;
-      BEGIN(COMMAND);
-    }
-  }
-  // normally, just return the identifier
-  if (!bCommand) {
-    return(identifier);
-  }
+	// get the symbol
+	yylval.pssSymbol =  _pShell->GetSymbol(yytext, FALSE);
+	BOOL bCommand = FALSE;
+	// if it is string
+	if (_shell_ast[yylval.pssSymbol->ss_istType].st_sttType==STT_STRING) {
+		// get the value
+		CTString str = *(CTString*)yylval.pssSymbol->ss_pvValue;
+		// if the value tells that it is a command
+		if (str.RemovePrefix("!command ")) {
+			// parse the command
+			bCommand = TRUE;
+			_strCmd = str;
+			_ctCmdParam = 0;
+			_bCmdParamCountErrorReported = FALSE;
+			BEGIN(COMMAND);
+		}
+	}
+	// normally, just return the identifier
+	if (!bCommand) {
+		return(identifier);
+	}
 }
 ${IDENTIFIERFIRST}{IDENTIFIEROTHER}* { // special case of identifier, used to bypass command parsing
-  // get the symbol
-  yylval.pssSymbol =  _pShell->GetSymbol(yytext+1, FALSE);
-  return(identifier);
+	// get the symbol
+	yylval.pssSymbol =  _pShell->GetSymbol(yytext+1, FALSE);
+	return(identifier);
 }
 
  /* eat up or execute blocks */
 "{" { 
-  _iBlockDepth++;
-  if (!_bExecNextBlock) {
-    _iDummyDepth++;
-    BEGIN(DUMMYBLOCK); 
-  }
-  return block_beg;
+	_iBlockDepth++;
+	if (!_bExecNextBlock) {
+		_iDummyDepth++;
+		BEGIN(DUMMYBLOCK); 
+	}
+	return block_beg;
 }
 
 "}" { 
-  _iBlockDepth--;
-  if (_iBlockDepth<0) {
-   _pShell->ErrorF("Mismatched '}'");
-  }
-  return block_end;
+	_iBlockDepth--;
+	if (_iBlockDepth<0) {
+	 _pShell->ErrorF("Mismatched '}'");
+	}
+	return block_end;
 }
 <DUMMYBLOCK>"{" {
-  _iBlockDepth++;
-  _iDummyDepth++;
+	_iBlockDepth++;
+	_iDummyDepth++;
 }
 <DUMMYBLOCK>"}" { 
-  _iBlockDepth--;
-  _iDummyDepth--;
-  if (_iDummyDepth==0) {
-    BEGIN(INITIAL); 
-    return block_end;
-  } 
+	_iBlockDepth--;
+	_iDummyDepth--;
+	if (_iDummyDepth==0) {
+		BEGIN(INITIAL); 
+		return block_end;
+	} 
 }
 <DUMMYBLOCK>.    {}
 
@@ -263,13 +291,13 @@ ${IDENTIFIERFIRST}{IDENTIFIEROTHER}* { // special case of identifier, used to by
 }
  /* eat up linefeeds and count lines in all conditions */
 <*>\n	{
-  ShellCountOneLine();
+	ShellCountOneLine();
 }
 
  /* for all unrecognized characters */
 <INITIAL,COMMAND>. {
-  // report an error
-  _pShell->ErrorF("Unrecognized character '%c' (ASCII 0x%02x)", yytext[0], yytext[0] );
+	// report an error
+	_pShell->ErrorF("Unrecognized character '%c' (ASCII 0x%02x)", yytext[0], yytext[0] );
 }
 
 %%

@@ -21,9 +21,9 @@ void SkipModelObject_t(CTStream &strm);
 void WriteModelObject_t(CTStream &strm, CModelObject &mo);
 
 // read/write a ska model from a file
-void WriteModelInstance_t(CTStream &strm, CModelInstance &mi);
-void ReadModelInstance_t(CTStream &strm, CModelInstance &mi);
-void SkipModelInstance_t(CTStream &strm);
+ENGINE_API extern void WriteModelInstance_t(CTStream &strm, CModelInstance &mi, BOOL bFromStock=TRUE);
+ENGINE_API extern void ReadModelInstance_t(CTStream &strm, CModelInstance &mi, BOOL bMarkInStock=TRUE);
+ENGINE_API extern void SkipModelInstance_t(CTStream &strm);
 
 
 // read/write an anim object from a file
@@ -32,9 +32,9 @@ void SkipAnimObject_t(CTStream &strm);
 void WriteAnimObject_t(CTStream &strm, CAnimObject &mo);
 
 // read/write a sound object from a file
-void ReadSoundObject_t(CTStream &strm, CSoundObject &mo);
-void SkipSoundObject_t(CTStream &strm);
-void WriteSoundObject_t(CTStream &strm, CSoundObject &mo);
+void ReadSoundObject_t(CTStream &strm, CSoundObject &mo, BOOL bNetwork = FALSE);
+void SkipSoundObject_t(CTStream &strm, BOOL bNetwork = FALSE);
+void WriteSoundObject_t(CTStream &strm, CSoundObject &mo, BOOL bNetwork = FALSE);
 
 
 #endif  /* include-once check. */

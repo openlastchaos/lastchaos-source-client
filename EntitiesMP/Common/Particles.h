@@ -44,15 +44,15 @@ void DECL_DLL Particles_FlameThrower(const CPlacement3D &plLeader, const CPlacem
                             FLOAT fLeaderLiving, FLOAT fFollowerLiving,
                             INDEX iRndSeed, BOOL bFollowerIsPipe);
 void DECL_DLL Particles_FlameThrowerStart(const CPlacement3D &plPipe, FLOAT fStartTime, FLOAT fStopTime);
-void DECL_DLL Particles_Twister( CEntity *pen, FLOAT fStretch, FLOAT fStartTime, FLOAT fFadeOutStartTime, FLOAT fParticleStretch);
+//void DECL_DLL Particles_Twister( CEntity *pen, FLOAT fStretch, FLOAT fStartTime, FLOAT fFadeOutStartTime, FLOAT fParticleStretch);
 INDEX DECL_DLL Particles_FireBreath(CEntity *pen, FLOAT3D vSource, FLOAT3D vTarget, FLOAT tmStart, FLOAT tmStop);
 INDEX DECL_DLL Particles_Regeneration(CEntity *pen, FLOAT tmStart, FLOAT tmStop, FLOAT fYFactor, BOOL bDeath);
 
 void DECL_DLL Particles_Stardust(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles);
 void DECL_DLL Particles_Rising(CEntity *pen, FLOAT m_fActivateTime, FLOAT m_fDeactivateTime, FLOAT fStretchAll, FLOAT fStretchX, FLOAT fStretchY, FLOAT fStretchZ, FLOAT fSize,
                       enum ParticleTexture ptTexture, INDEX ctParticles);
-void DECL_DLL Particles_Spiral(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles);
-void DECL_DLL Particles_Emanate(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles, FLOAT fMipFactorDisappear);
+void DECL_DLL Particles_Spiral(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles, FLOAT fSpeed);
+void DECL_DLL Particles_Emanate(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles, FLOAT fMipFactorDisappear, COLOR cColor, FLOAT fDirection, FLOAT fSpeed, FLOAT fPSize );
 void DECL_DLL Particles_Fountain(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles);
 void DECL_DLL Particles_Atomic(CEntity *pen, FLOAT fSize, FLOAT fHeight, enum ParticleTexture ptTexture, INDEX ctParticles);
 void DECL_DLL Particles_PowerUpIndicator( CEntity *pen, enum ParticleTexture ptTexture, FLOAT fSize,
@@ -66,7 +66,7 @@ void DECL_DLL Particles_WaterfallFoam(CEntity *pen, FLOAT fSizeX, FLOAT fSizeY, 
                              FLOAT fParticleSize, FLOAT fSpeed, FLOAT fSpeedY, FLOAT fLife, INDEX ctParticles);
 void DECL_DLL Particles_ChimneySmoke(CEntity *pen, INDEX ctCount, FLOAT fStretchAll, FLOAT fMipDisappearDistance);
 void DECL_DLL Particles_Waterfall(CEntity *pen, INDEX ctCount, FLOAT fStretchAll, FLOAT fStretchX, FLOAT fStretchY,
-                                  FLOAT fStretchZ, FLOAT fSize, FLOAT fMipDisappearDistance, FLOAT fParam1);
+                                  FLOAT fStretchZ, FLOAT fSize, FLOAT fMipDisappearDistance, FLOAT fParam1, FLOAT fParam2, COLOR cColor);
 void DECL_DLL Particles_SandFlow(CEntity *pen, FLOAT fStretchAll, FLOAT fSize, FLOAT fHeight, FLOAT fBirthTime, FLOAT fDeathTime,
                         INDEX ctParticles);
 void DECL_DLL Particles_WaterFlow( CEntity *pen, FLOAT fStretchAll, FLOAT fSize, FLOAT fHeight, FLOAT fStartTime, FLOAT fStopTime,
@@ -79,12 +79,12 @@ void DECL_DLL Particles_ElectricitySparks( CEntity *pen, FLOAT fTimeAppear, FLOA
 void DECL_DLL Particles_LavaErupting(CEntity *pen, FLOAT fStretchAll, FLOAT fSize, 
                             FLOAT fStretchX, FLOAT fStretchY, FLOAT fStretchZ, 
                             FLOAT fActivateTime);
-void DECL_DLL Particles_BeastProjectileTrail_Prepare(CEntity *pen);
-void DECL_DLL Particles_BeastProjectileTrail( CEntity *pen, FLOAT fSize, FLOAT fHeight, INDEX ctParticles);
-void DECL_DLL Particles_BeastBigProjectileTrail_Prepare(CEntity *pen);
-void DECL_DLL Particles_BeastBigProjectileTrail( CEntity *pen, FLOAT fSize, FLOAT fZOffset, FLOAT fYOffset, INDEX ctParticles);
-void DECL_DLL Particles_BeastProjectileDebrisTrail_Prepare(CEntity *pen);
-void DECL_DLL Particles_BeastProjectileDebrisTrail(CEntity *pen, FLOAT fSizeMultiplier);
+//void DECL_DLL Particles_BeastProjectileTrail_Prepare(CEntity *pen);
+//void DECL_DLL Particles_BeastProjectileTrail( CEntity *pen, FLOAT fSize, FLOAT fHeight, INDEX ctParticles);
+//void DECL_DLL Particles_BeastBigProjectileTrail_Prepare(CEntity *pen);
+//void DECL_DLL Particles_BeastBigProjectileTrail( CEntity *pen, FLOAT fSize, FLOAT fZOffset, FLOAT fYOffset, INDEX ctParticles);
+//void DECL_DLL Particles_BeastProjectileDebrisTrail_Prepare(CEntity *pen);
+//void DECL_DLL Particles_BeastProjectileDebrisTrail(CEntity *pen, FLOAT fSizeMultiplier);
 void DECL_DLL Particles_AfterBurner(CEntity *pen, FLOAT m_tmSpawn, FLOAT fStretch, INDEX iGradientType=0);
 void DECL_DLL Particles_AfterBurner_Prepare(CEntity *pen);
 void DECL_DLL Particles_RocketMotorBurning(CEntity *pen, FLOAT tmSpawn, FLOAT3D vStretch, FLOAT fStretch, FLOAT ctCount);
@@ -113,9 +113,9 @@ public:
 
 void DECL_DLL Particles_Growth(CEntity *pen, CTextureData *ptdGrowthMap, FLOATaabbox3D &boxGrowthMap, CEntity *penEPH, INDEX iDrawPort);
 
-void DECL_DLL Particles_Rain( CEntity *pen, FLOAT fGridSize, INDEX ctGrids, FLOAT fFactor, 
+void DECL_DLL Particles_Rain( CEntity *pen, class CEnvironmentParticlesHolder* eph, FLOAT fGridSize, FLOAT fFactor, 
                     CTextureData *ptdRainMap, FLOATaabbox3D &boxRainMap);
-void DECL_DLL Particles_Snow( CEntity *pen, FLOAT fGridSize, INDEX ctGrids, FLOAT fPower,
+void DECL_DLL Particles_Snow( CEntity *pen, class CEnvironmentParticlesHolder* eph, FLOAT fGridSize, FLOAT fPower,
                     CTextureData *ptdRainMap, FLOATaabbox3D &boxRainMap, FLOAT fSnowStart);
 void DECL_DLL Particles_Lightning( FLOAT3D vSrc, FLOAT3D vDst, FLOAT fTimeStart);
 void DECL_DLL Particles_BulletSpray(INDEX iRndBase,  FLOAT3D vSource, FLOAT3D vGDir, enum EffectParticlesType eptType, FLOAT tmSpawn,
@@ -129,31 +129,33 @@ void DECL_DLL Particles_MetalParts( CEntity *pen, FLOAT tmStarted, FLOATaabbox3D
 void DECL_DLL Particles_DamageSmoke( CEntity *pen, FLOAT tmStarted, FLOATaabbox3D boxOwner, FLOAT fDamage);
 void DECL_DLL Particles_RunningDust_Prepare(CEntity *pen);
 void DECL_DLL Particles_RunningDust(CEntity *pen);
-void DECL_DLL Particles_ShooterFlame(const CPlacement3D &plEnd, const CPlacement3D &plStart,
-                            FLOAT fEndElapsed, FLOAT fStartElapsed);
-void DECL_DLL Particles_SummonerProjectileFly(CEntity *pen, FLOAT fSize, FLOAT fTimeAdjust);
-void DECL_DLL Particles_SummonerProjectileExplode(CEntity *pen, FLOAT fSize, FLOAT fBeginTime, FLOAT fDuration, FLOAT fTimeAdjust);
-void DECL_DLL Particles_SummonerExplode(CEntity *pen, FLOAT3D vCenter, FLOAT fArea, FLOAT fSize, FLOAT fBeginTime, FLOAT fDuration);
-void DECL_DLL Particles_ExotechLarvaLaser(CEntity *pen, FLOAT3D vSource, FLOAT3D vTarget);
+//void DECL_DLL Particles_ShooterFlame(const CPlacement3D &plEnd, const CPlacement3D &plStart,
+//                            FLOAT fEndElapsed, FLOAT fStartElapsed);
+//void DECL_DLL Particles_SummonerProjectileFly(CEntity *pen, FLOAT fSize, FLOAT fTimeAdjust);
+//void DECL_DLL Particles_SummonerProjectileExplode(CEntity *pen, FLOAT fSize, FLOAT fBeginTime, FLOAT fDuration, FLOAT fTimeAdjust);
+//void DECL_DLL Particles_SummonerExplode(CEntity *pen, FLOAT3D vCenter, FLOAT fArea, FLOAT fSize, FLOAT fBeginTime, FLOAT fDuration);
+//void DECL_DLL Particles_ExotechLarvaLaser(CEntity *pen, FLOAT3D vSource, FLOAT3D vTarget);
 void DECL_DLL Particles_Smoke(CEntity *pen, FLOAT3D vOffset, INDEX ctCount, FLOAT fLife, FLOAT fSpread, FLOAT fStretchAll, FLOAT fYSpeed);
 void DECL_DLL Particles_Windblast( CEntity *pen, FLOAT fStretch, FLOAT fFadeOutStartTime);
-void DECL_DLL Particles_CollectEnergy(CEntity *pen, FLOAT tmStart, FLOAT tmStop);
+//void DECL_DLL Particles_CollectEnergy(CEntity *pen, FLOAT tmStart, FLOAT tmStop, BOOL bCloudFx);
 void DECL_DLL Particles_SniperResidue(CEntity *pen, FLOAT3D vSource, FLOAT3D vTarget); 
 void DECL_DLL Particles_GrowingSwirl( CEntity *pen, FLOAT fStretch, FLOAT fStartTime);
 void DECL_DLL Particles_SummonerDisappear( CEntity *pen, FLOAT tmStart);
 void DECL_DLL Particles_DisappearDust( CEntity *pen, FLOAT fStretch, FLOAT fStartTime);
 void DECL_DLL Particles_DustFall(CEntity *pen, FLOAT tmStart, FLOAT3D vStretch);
-void DECL_DLL Particles_AirElementalBlow(class CEmiter &em);
+//void DECL_DLL Particles_AirElementalBlow(class CEmiter &em);
 void DECL_DLL Particles_SummonerStaff(class CEmiter &em);
-void DECL_DLL Particles_AirElemental(CEntity *pen, FLOAT fStretch, FLOAT fFade, FLOAT tmDeath, COLOR colMultiply);
+//void DECL_DLL Particles_AirElemental(CEntity *pen, FLOAT fStretch, FLOAT fFade, FLOAT tmDeath, COLOR colMultiply);
 void DECL_DLL Particles_MeteorTrail(CEntity *pen, FLOAT fStretch, FLOAT fLength, FLOAT3D vSpeed);
 void DECL_DLL Particles_Leaves(CEntity *penTree, FLOATaabbox3D boxSize, FLOAT3D vSource, FLOAT fDamagePower,
                                FLOAT fLaunchPower, FLOAT3D vGDir, FLOAT fGA, FLOAT tmStarted, COLOR colMaxColor);
 void DECL_DLL Particles_LarvaEnergy(CEntity *pen, FLOAT3D vOffset);
-void DECL_DLL Particles_AirElemental_Comp(CModelObject *mo, FLOAT fStretch, FLOAT fFade, CPlacement3D pl);
+//void DECL_DLL Particles_AirElemental_Comp(CModelObject *mo, FLOAT fStretch, FLOAT fFade, CPlacement3D pl);
 void DECL_DLL Particles_Burning_Comp(CModelObject *mo, FLOAT fPower, CPlacement3D pl);
 void DECL_DLL Particles_ModelGlow( CEntity *pen, FLOAT tmEnd, enum ParticleTexture ptTexture, FLOAT fSize, FLOAT iVtxStep, FLOAT fAnimSpd, COLOR iCol);
 void DECL_DLL Particles_RunAfterBurner(CEntity *pen, FLOAT tmEnd, FLOAT fStretch, INDEX iGradientType);
-void DECL_DLL Particles_Fireworks01(CEmiter &em);
+//void DECL_DLL Particles_Fireworks01(CEmiter &em);
 void DECL_DLL Particles_ModelGlow2( CModelObject *mo,  CPlacement3D pl, FLOAT tmEnd, enum ParticleTexture ptTexture, FLOAT fSize, FLOAT iVtxStep, FLOAT fAnimSpd, COLOR iCol);
 void DECL_DLL Particles_RunAfterBurner(CEntity *pen, FLOAT tmEnd, FLOAT fStretch, INDEX iGradientType);
+void DECL_DLL ParticlesClouds(class CParticleCloudsHolder *ppch, CTextureObject &to, INDEX ctTilesPerX, INDEX ctTilesPerY);
+

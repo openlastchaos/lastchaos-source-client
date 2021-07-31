@@ -138,6 +138,20 @@ void CPlacement3D::Lerp(const CPlacement3D &pl0, const CPlacement3D &pl1, FLOAT 
     LerpANGLE(pl0.pl_OrientationAngle(3), pl1.pl_OrientationAngle(3), fFactor);
 }
 
+
+
+void CPlacement3D::Extrapolate(const CPlacement3D &plPlacement, const CPlacement3D &plSpeed, FLOAT fFactor)
+{
+   // extrapolate the position
+  pl_PositionVector(1) = plPlacement.pl_PositionVector(1) + plSpeed.pl_PositionVector(1) * fFactor;
+  pl_PositionVector(2) = plPlacement.pl_PositionVector(2) + plSpeed.pl_PositionVector(2) * fFactor;
+  pl_PositionVector(3) = plPlacement.pl_PositionVector(3) + plSpeed.pl_PositionVector(3) * fFactor;
+
+  // extrapolate the orientation
+  pl_OrientationAngle(1) = plPlacement.pl_OrientationAngle(1) + plSpeed.pl_OrientationAngle(1) * fFactor;
+  pl_OrientationAngle(2) = plPlacement.pl_OrientationAngle(2) + plSpeed.pl_OrientationAngle(2) * fFactor;
+  pl_OrientationAngle(3) = plPlacement.pl_OrientationAngle(3) + plSpeed.pl_OrientationAngle(3) * fFactor;
+}
 /////////////////////////////////////////////////////////////////////
 // translations and rotations
 

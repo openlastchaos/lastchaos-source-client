@@ -1,10 +1,10 @@
 #include "StdH.H"
 
 #include <Engine/World/World.h>
-#include <Engine/World/PhysicsProfile.h>
 #include <Engine/Templates/StaticStackArray.cpp>
 #include <Engine/Templates/AllocationArray.h>
 #include <Engine/Templates/AllocationArray.cpp>
+#include <Engine/Base/MemoryTracking.h>
 
 #define DEBUG_COLLIDEWITHALL 0
 
@@ -61,7 +61,7 @@ static inline INDEX MakeKey(INDEX iX, INDEX iZ)
   return iKey;
 }
 
-static inline INDEX MakeKeyFromCode(ULONG ulCode)
+static inline MakeKeyFromCode(ULONG ulCode)
 {
   INDEX iX = SLONG(ulCode)>>16;
   INDEX iZ = SLONG(SWORD(ulCode&0xffff));
@@ -117,6 +117,9 @@ CCollisionGrid::~CCollisionGrid(void)
 
 void CCollisionGrid::Clear(void)
 {
+  // Checked
+  MEMTRACK_SETFLAGS(mem,MTF_NOSTACKTRACE);
+
   cg_aiFirstCells.Clear();
   cg_agcCells.Clear();
   cg_ageEntries.Clear();
@@ -276,7 +279,6 @@ void CWorld::ClearCollisionGrid(void)
 /* Add an entity to cell(s) in collision grid. */
 void CWorld::AddEntityToCollisionGrid(CEntity *pen, const FLOATaabbox3D &boxEntity)
 {
-  _pfPhysicsProfile.StartTimer(CPhysicsProfile::PTI_ADDENTITYTOGRID);
   // find grid coordinates
   INDEX iMinX, iMaxX, iMinZ, iMaxZ;
   BoxToGrid(boxEntity, iMinX, iMaxX, iMinZ, iMaxZ);
@@ -289,14 +291,12 @@ void CWorld::AddEntityToCollisionGrid(CEntity *pen, const FLOATaabbox3D &boxEnti
       wo_pcgCollisionGrid->AddEntry(igc, pen);
     }
   }
-  _pfPhysicsProfile.StopTimer(CPhysicsProfile::PTI_ADDENTITYTOGRID);
 }
 
 
 /* Remove an entity from cell(s) in collision grid. */
 void CWorld::RemoveEntityFromCollisionGrid(CEntity *pen, const FLOATaabbox3D &boxEntity)
 {
-  _pfPhysicsProfile.StartTimer(CPhysicsProfile::PTI_REMENTITYFROMGRID);
   // find grid coordinates
   INDEX iMinX, iMaxX, iMinZ, iMaxZ;
   BoxToGrid(boxEntity, iMinX, iMaxX, iMinZ, iMaxZ);
@@ -305,22 +305,19 @@ void CWorld::RemoveEntityFromCollisionGrid(CEntity *pen, const FLOATaabbox3D &bo
     for(INDEX iZ=iMinZ; iZ<=iMaxZ; iZ++) {
       // find that cell
       INDEX igc = wo_pcgCollisionGrid->FindCell(iX, iZ, FALSE);
-      ASSERT(igc>=0);
-      // remove the entity from the cell
-      if (igc>=0) {
+      // ASSERT(igc>=0); // this *can* be 0 because whole collision grid cannot exist (was cleared before)
+      if (igc>=0) { // remove the entity from the cell only if there was a cell
         wo_pcgCollisionGrid->RemoveEntry(igc, pen);
       }
     }
   }
-  _pfPhysicsProfile.StopTimer(CPhysicsProfile::PTI_REMENTITYFROMGRID);
 }
+
 
 /* Move an entity inside cell(s) in collision grid. */
 void CWorld::MoveEntityInCollisionGrid(CEntity *pen,
   const FLOATaabbox3D &boxOld, const FLOATaabbox3D &boxNew)
 {
-  _pfPhysicsProfile.StartTimer(CPhysicsProfile::PTI_MOVEENTITYINGRID);
-
   // find grid coordinates
   INDEX iOldMinX, iOldMaxX, iOldMinZ, iOldMaxZ;
   BoxToGrid(boxOld, iOldMinX, iOldMaxX, iOldMinZ, iOldMaxZ);
@@ -356,7 +353,6 @@ void CWorld::MoveEntityInCollisionGrid(CEntity *pen,
       wo_pcgCollisionGrid->AddEntry(igc, pen);
     }
   }}
-  _pfPhysicsProfile.StopTimer(CPhysicsProfile::PTI_MOVEENTITYINGRID);
 }
 
 
@@ -378,9 +374,6 @@ void CWorld::FindEntitiesNearBox(const FLOATaabbox3D &boxNear,
   return;
 #endif
 
-  _pfPhysicsProfile.StartTimer(CPhysicsProfile::PTI_FINDENTITIESNEARBOX);
-  _pfPhysicsProfile.IncrementCounter(CPhysicsProfile::PCI_FINDINGNEARENTITIES);
-
   // find grid coordinates
   INDEX iMinX, iMaxX, iMinZ, iMaxZ;
   BoxToGrid(boxNear, iMinX, iMaxX, iMinZ, iMaxZ);
@@ -389,7 +382,6 @@ void CWorld::FindEntitiesNearBox(const FLOATaabbox3D &boxNear,
   // for each cell spanned by the box
   {for(INDEX iX=iMinX; iX<=iMaxX; iX++) {
     for(INDEX iZ=iMinZ; iZ<=iMaxZ; iZ++) {
-      _pfPhysicsProfile.IncrementCounter(CPhysicsProfile::PCI_NEARCELLSFOUND);
       // find that cell
       INDEX igc = wo_pcgCollisionGrid->FindCell(iX, iZ, FALSE);
       // if the cell is empty
@@ -397,7 +389,6 @@ void CWorld::FindEntitiesNearBox(const FLOATaabbox3D &boxNear,
         // skip it
         continue;
       }
-      _pfPhysicsProfile.IncrementCounter(CPhysicsProfile::PCI_NEAROCCUPIEDCELLSFOUND);
       // for each entity in the cell
       for(INDEX iEntry = wo_pcgCollisionGrid->cg_agcCells[igc].gc_iFirstEntry;
           iEntry>=0;
@@ -414,15 +405,11 @@ void CWorld::FindEntitiesNearBox(const FLOATaabbox3D &boxNear,
     }
   }}
 
-
-  _pfPhysicsProfile.IncrementCounter(
-    CPhysicsProfile::PCI_NEARENTITIESFOUND, apenNearEntities.Count());
   // for each of the found entities
   for(INDEX ienFound=0; ienFound<apenNearEntities.Count(); ienFound++) {
     // clear found flag
     apenNearEntities[ienFound]->en_ulFlags&=~ENF_FOUNDINGRIDSEARCH;
   }
-  _pfPhysicsProfile.StopTimer(CPhysicsProfile::PTI_FINDENTITIESNEARBOX);
 }
 
 

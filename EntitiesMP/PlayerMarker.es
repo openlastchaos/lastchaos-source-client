@@ -2,9 +2,14 @@
 %{
 #include "StdH.h"
 #include "EntitiesMP/MusicHolder.h"
+#include "EntitiesMP/Player.h"
 %}
 
 uses "EntitiesMP/Marker";
+
+event ETriggerPlayerMarker {
+  CEntityID eidCaused,
+};
 
 %{
   extern void CPlayerWeapons_Precache(ULONG ulAvailable);
@@ -23,6 +28,7 @@ properties:
   5 CTString m_strGroup      "Group" 'G' = "",
   6 BOOL m_bQuickStart       "Quick start" 'Q' = FALSE,
   7 BOOL m_bStartInComputer  "Start in computer" 'C' = FALSE,
+ 30 BOOL m_bStartInComputerOnce "Start in computer only once" = TRUE,
   8 CEntityPointer m_penMessage  "Message" 'M',
   9 FLOAT m_fMaxAmmoRatio    "Max ammo ratio" 'A' = 0.0f,
  10 FLOAT m_tmLastSpawned = -1000.0f, // to avoid telefragging in deathmatch
@@ -30,8 +36,8 @@ properties:
  12 BOOL m_bNoRespawnInPlace "No Respawn In Place" 'R'  = FALSE,
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\PlayerStart.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\PlayerStart.tex",
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\PlayerStart.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\PlayerStart.tex",
 
 functions:
   void Precache(void) {
@@ -42,24 +48,37 @@ functions:
   BOOL HandleEvent(const CEntityEvent &ee) {
     if (ee.ee_slEvent == EVENTCODE_ETrigger) {
       CEntity *penMainMusicHolder = _pNetwork->GetEntityWithName("MusicHolder", 0);
-      if (penMainMusicHolder==NULL || !IsOfClass(penMainMusicHolder, "MusicHolder")) {
+      if( penMainMusicHolder==NULL || !IsOfClass( penMainMusicHolder, &CMusicHolder_DLLClass)) {
+        return TRUE;
+      }
+      if (_pNetwork->IsServer()) {
+        ETriggerPlayerMarker etpm; 
+        etpm.eidCaused = ((ETrigger&)ee).penCaused;
+        SendEvent(ETriggerPlayerMarker(),TRUE);
+      }
+      return TRUE;
+    } else if (ee.ee_slEvent == EVENTCODE_ETriggerPlayerMarker) {
+      CEntity *penMainMusicHolder = _pNetwork->GetEntityWithName("MusicHolder", 0);
+      if( penMainMusicHolder==NULL || !IsOfClass( penMainMusicHolder, &CMusicHolder_DLLClass)) {
         return TRUE;
       }
       CMusicHolder *pmh = (CMusicHolder *)penMainMusicHolder;
-      BOOL bNew = (pmh->m_penRespawnMarker!=this);
-      pmh->m_penRespawnMarker = this;
+
+      BOOL bNew = (pmh->m_iRespawnMarker!=en_ulID);
+      pmh->m_iRespawnMarker = en_ulID;
 
       // if this is a new marker and we are in single player and the trigger originator is valid
-      CEntity *penCaused = ((ETrigger&)ee).penCaused;
-      if (bNew &&
-        (GetSP()->sp_bSinglePlayer && GetSP()->sp_gmGameMode!=CSessionProperties::GM_FLYOVER)
-        && IsOfClass(penCaused, "Player")) {
+      CEntity *penCaused = (CEntity*)(((ETriggerPlayerMarker&)ee).eidCaused);
+      if( bNew && (GetSP()->sp_bSinglePlayer && GetSP()->sp_gmGameMode!=CSessionProperties::GM_FLYOVER)
+       && penCaused!=NULL &&IsOfClass( penCaused, &CPlayer_DLLClass)) {
         // if the player wants auto-save
         CPlayerSettings *pps = (CPlayerSettings *) (((CPlayerEntity*)penCaused)->en_pcCharacter.pc_aubAppearance);
+        /*
         if (pps->ps_ulFlags&PSF_AUTOSAVE) {
           // save now
-          _pShell->Execute("gam_bQuickSave=1;");
+         // _pShell->Execute("gam_bQuickSave=1;");
         }
+        */
       }
       return TRUE;
     }
@@ -73,6 +92,10 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOff(ENF_PROPSCHANGED);
 
     // set appearance
     SetModel(MODEL_MARKER);

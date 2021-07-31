@@ -1,3 +1,4 @@
+
 class CSetPriority {
 public:
   DWORD sp_dwProcessOld;

@@ -50,8 +50,8 @@ properties:
   6 CEntityPointer m_penItem "Item to pick" 'I',
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\PlayerActionMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\PlayerActionMarker.tex",
+  1 model   MODEL_MARKER     "Data\\Models\\Editor\\PlayerActionMarker.mdl",
+  2 texture TEXTURE_MARKER   "Data\\Models\\Editor\\PlayerActionMarker.tex",
 
 functions:
   const CTString &GetDescription(void) const {
@@ -82,7 +82,7 @@ functions:
       if( IsDerivedFromClass(eTrigger.penCaused, "Player")) {
         // send it event to start auto actions from here
         EAutoAction eAutoAction;
-        eAutoAction.penFirstMarker = this;
+        eAutoAction.eidFirstMarker = this;
         eTrigger.penCaused->SendEvent(eAutoAction);
       }
       return TRUE;

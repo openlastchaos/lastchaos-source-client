@@ -37,8 +37,8 @@ properties:
 
 components:
 
-  1 model   MODEL_MARKER     "Models\\Editor\\MovingBrushMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\GravityMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\MovingBrushMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\GravityMarker.tex"
 
 
 functions:
@@ -63,6 +63,10 @@ procedures:
 
   Main()
   {
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOff(ENF_PROPSCHANGED);
+
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);

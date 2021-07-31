@@ -1,4 +1,4 @@
-218
+245
 %{
 #include "StdH.h"
 %}
@@ -21,10 +21,10 @@ properties:
   1 enum WarpRotation m_wrRotation "Rotation Type" 'R' = WR_NONE,
   2 FLOAT m_fRotationSpeed "Rotation Speed" 'S' = 90.0f,
 components:
-  1 model   MODEL_IN     "Models\\Editor\\WarpEntrance.mdl",
-  2 texture TEXTURE_IN   "Models\\Editor\\Warp.tex",
-  3 model   MODEL_OUT    "Models\\Editor\\WarpExit.mdl",
-  4 texture TEXTURE_OUT  "Models\\Editor\\Warp.tex"
+  1 editor model   MODEL_IN     "Data\\Models\\Editor\\WarpEntrance.mdl",
+  2 editor texture TEXTURE_IN   "Data\\Models\\Editor\\Warp.tex",
+  3 editor model   MODEL_OUT    "Data\\Models\\Editor\\WarpExit.mdl",
+  4 editor texture TEXTURE_OUT  "Data\\Models\\Editor\\Warp.tex"
 
 functions:
 
@@ -64,6 +64,10 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOff(ENF_PROPSCHANGED);
 
     // set appearance
     if (m_penTarget!=NULL) {

@@ -9,27 +9,72 @@
 #ifndef EAX_H_INCLUDED
 #define EAX_H_INCLUDED
 
-#include <dsound.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
+#ifndef OPENAL
+	#include <dsound.h>
+	/*
+	* EAX Wrapper Interface (using Direct X 7) {4FF53B81-1CE0-11d3-AAB8-00A0C95949D5}
+	*/
+	DEFINE_GUID(CLSID_EAXDirectSound, 
+		0x4ff53b81, 
+		0x1ce0, 
+		0x11d3,
+		0xaa, 0xb8, 0x0, 0xa0, 0xc9, 0x59, 0x49, 0xd5);
+
+	/*
+	* EAX Wrapper Interface (using Direct X 8) {CA503B60-B176-11d4-A094-D0C0BF3A560C}
+	*/
+	DEFINE_GUID(CLSID_EAXDirectSound8, 
+		0xca503b60,
+		0xb176,
+		0x11d4,
+		0xa0, 0x94, 0xd0, 0xc0, 0xbf, 0x3a, 0x56, 0xc);
+
+#ifdef DIRECTSOUND_VERSION
+#if DIRECTSOUND_VERSION == 0x0800
+		__declspec(dllimport) HRESULT WINAPI EAXDirectSoundCreate8(GUID*, LPDIRECTSOUND8*, IUnknown FAR *);
+		typedef HRESULT (FAR PASCAL *LPEAXDIRECTSOUNDCREATE8)(GUID*, LPDIRECTSOUND8*, IUnknown FAR*);
+#endif
+#endif
+
+	__declspec(dllimport) HRESULT WINAPI EAXDirectSoundCreate(GUID*, LPDIRECTSOUND*, IUnknown FAR *);
+	typedef HRESULT (FAR PASCAL *LPEAXDIRECTSOUNDCREATE)(GUID*, LPDIRECTSOUND*, IUnknown FAR*);
+
+#else
+	#include <al.h>
+
+	#ifndef GUID_DEFINED
+		#define GUID_DEFINED
+		typedef struct _GUID
+		{
+			unsigned long Data1;
+			unsigned short Data2;
+			unsigned short Data3;
+			unsigned char Data4[8];
+		} GUID;
+	#endif // !GUID_DEFINED
+
+	#ifndef DEFINE_GUID
+		#ifndef INITGUID
+			#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+					extern const GUID FAR name
+		#else
+			#define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+					extern const GUID name = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
+		#endif // INITGUID
+	#endif // DEFINE_GUID
+
+	/*
+	* EAX OpenAL Extension {4FF53B81-1CE0-11d3-AAB8-00A0C95949D5}
+	*/
+	typedef ALenum (*EAXSet)(const GUID*, ALuint, ALuint, ALvoid*, ALuint);
+	typedef ALenum (*EAXGet)(const GUID*, ALuint, ALuint, ALvoid*, ALuint);
+#endif
+
 #pragma pack(push, 4)
-
-/*
-* EAX Wrapper Interface {4FF53B81-1CE0-11d3-AAB8-00A0C95949D5}
-*/
-DEFINE_GUID(CLSID_EAXDirectSound, 
-    0x4ff53b81, 
-    0x1ce0, 
-    0x11d3,
-    0xaa, 0xb8, 0x0, 0xa0, 0xc9, 0x59, 0x49, 0xd5);
-
-__declspec(dllimport) HRESULT WINAPI EAXDirectSoundCreate(GUID*, LPDIRECTSOUND*, IUnknown FAR *);
-
-typedef HRESULT (FAR PASCAL *LPEAXDIRECTSOUNDCREATE)(GUID*, LPDIRECTSOUND*, IUnknown FAR*);
-
 
 /*
 * EAX 2.0 listener property set {0306A6A8-B224-11d2-99E5-0000E8D8C722}
@@ -42,6 +87,7 @@ DEFINE_GUID(DSPROPSETID_EAX20_ListenerProperties,
 
 // For compatibility with future EAX versions:
 #define DSPROPSETID_EAX_ListenerProperties DSPROPSETID_EAX20_ListenerProperties
+#define DSPROPSETID_EAX_SourceProperties DSPROPSETID_EAX20_BufferProperties
 
 typedef enum
 {
@@ -62,7 +108,7 @@ typedef enum
     DSPROPERTY_EAXLISTENER_AIRABSORPTIONHF,
     DSPROPERTY_EAXLISTENER_FLAGS
 } DSPROPERTY_EAX_LISTENERPROPERTY;
-
+	
 // OR these flags with property id
 #define DSPROPERTY_EAXLISTENER_IMMEDIATE 0x00000000 // changes take effect immediately
 #define DSPROPERTY_EAXLISTENER_DEFERRED  0x80000000 // changes take effect later
@@ -87,20 +133,20 @@ typedef enum
 //
 typedef struct _EAXLISTENERPROPERTIES
 {
-    LONG lRoom;                    // room effect level at low frequencies
-    LONG lRoomHF;                  // room effect high-frequency level re. low frequency level
-    FLOAT flRoomRolloffFactor;     // like DS3D flRolloffFactor but for room effect
-    FLOAT flDecayTime;             // reverberation decay time at low frequencies
-    FLOAT flDecayHFRatio;          // high-frequency to low-frequency decay time ratio
-    LONG lReflections;             // early reflections level relative to room effect
-    FLOAT flReflectionsDelay;      // initial reflection delay time
-    LONG lReverb;                  // late reverberation level relative to room effect
-    FLOAT flReverbDelay;           // late reverberation delay time relative to initial reflection
-    DWORD dwEnvironment;           // sets all listener properties
-    FLOAT flEnvironmentSize;       // environment size in meters
-    FLOAT flEnvironmentDiffusion;  // environment diffusion
-    FLOAT flAirAbsorptionHF;       // change in level per meter at 5 kHz
-    DWORD dwFlags;                 // modifies the behavior of properties
+    long lRoom;                    // room effect level at low frequencies
+    long lRoomHF;                  // room effect high-frequency level re. low frequency level
+    float flRoomRolloffFactor;     // like DS3D flRolloffFactor but for room effect
+    float flDecayTime;             // reverberation decay time at low frequencies
+    float flDecayHFRatio;          // high-frequency to low-frequency decay time ratio
+    long lReflections;             // early reflections level relative to room effect
+    float flReflectionsDelay;      // initial reflection delay time
+    long lReverb;                  // late reverberation level relative to room effect
+    float flReverbDelay;           // late reverberation delay time relative to initial reflection
+    unsigned long dwEnvironment;   // sets all listener properties
+    float flEnvironmentSize;       // environment size in meters
+    float flEnvironmentDiffusion;  // environment diffusion
+    float flAirAbsorptionHF;       // change in level per meter at 5 kHz
+    unsigned long dwFlags;         // modifies the behavior of properties
 } EAXLISTENERPROPERTIES, *LPEAXLISTENERPROPERTIES;
 
 // used by DSPROPERTY_EAXLISTENER_ENVIRONMENT
@@ -270,19 +316,19 @@ typedef enum
 //
 typedef struct _EAXBUFFERPROPERTIES
 {
-    LONG lDirect;                // direct path level
-    LONG lDirectHF;              // direct path level at high frequencies
-    LONG lRoom;                  // room effect level
-    LONG lRoomHF;                // room effect level at high frequencies
-    FLOAT flRoomRolloffFactor;   // like DS3D flRolloffFactor but for room effect
-    LONG lObstruction;           // main obstruction control (attenuation at high frequencies) 
-    FLOAT flObstructionLFRatio;  // obstruction low-frequency level re. main control
-    LONG lOcclusion;             // main occlusion control (attenuation at high frequencies)
-    FLOAT flOcclusionLFRatio;    // occlusion low-frequency level re. main control
-    FLOAT flOcclusionRoomRatio;  // occlusion room effect level re. main control
-    LONG lOutsideVolumeHF;       // outside sound cone level at high frequencies
-    FLOAT flAirAbsorptionFactor; // multiplies DSPROPERTY_EAXLISTENER_AIRABSORPTIONHF
-    DWORD dwFlags;               // modifies the behavior of properties
+    long lDirect;                // direct path level
+    long lDirectHF;              // direct path level at high frequencies
+    long lRoom;                  // room effect level
+    long lRoomHF;                // room effect level at high frequencies
+    float flRoomRolloffFactor;   // like DS3D flRolloffFactor but for room effect
+    long lObstruction;           // main obstruction control (attenuation at high frequencies) 
+    float flObstructionLFRatio;  // obstruction low-frequency level re. main control
+    long lOcclusion;             // main occlusion control (attenuation at high frequencies)
+    float flOcclusionLFRatio;    // occlusion low-frequency level re. main control
+    float flOcclusionRoomRatio;  // occlusion room effect level re. main control
+    long lOutsideVolumeHF;       // outside sound cone level at high frequencies
+    float flAirAbsorptionFactor; // multiplies DSPROPERTY_EAXLISTENER_AIRABSORPTIONHF
+    unsigned long dwFlags;       // modifies the behavior of properties
 } EAXBUFFERPROPERTIES, *LPEAXBUFFERPROPERTIES;
 
 // Used by DSPROPERTY_EAXBUFFER_FLAGS

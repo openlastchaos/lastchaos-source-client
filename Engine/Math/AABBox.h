@@ -36,9 +36,11 @@ public:
   inline AABBox<Type, iDimensions> &operator&=(const AABBox<Type, iDimensions> &b);
   /* Bounding box for intersection. */
   inline AABBox<Type, iDimensions> operator&(const AABBox<Type, iDimensions> &b) const;
-  /* Function for moving bounding box. */
+  /* Functions for moving bounding box. */
   inline AABBox<Type, iDimensions> &operator+=(const Vector<Type, iDimensions> &vct);
   inline AABBox<Type, iDimensions> &operator-=(const Vector<Type, iDimensions> &vct);
+  inline AABBox<Type, iDimensions> operator+(const Vector<Type, iDimensions> &vct) const;
+  inline AABBox<Type, iDimensions> operator-(const Vector<Type, iDimensions> &vct) const;
   /* Function for testing equality of bounding boxes. */
   inline BOOL operator==(const AABBox<Type, iDimensions> &box2) const;
   /* Function for testing difference between bounding boxes. */
@@ -91,7 +93,7 @@ inline void AABBox<Type, iDimensions>::SetToNormalizedEmpty(void) {
  * Constructor for empty bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox() {
+inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>() {
   SetToNormalizedEmpty();
 }
 
@@ -99,7 +101,7 @@ inline AABBox<Type, iDimensions>::AABBox() {
  * Constructor for one-point bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox(const Vector<Type, iDimensions> &vPoint) {
+inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>(const Vector<Type, iDimensions> &vPoint) {
   for ( int i=1; i<=iDimensions; i++ ) {
     minvect(i) = maxvect(i) = vPoint(i);
   }
@@ -109,7 +111,7 @@ inline AABBox<Type, iDimensions>::AABBox(const Vector<Type, iDimensions> &vPoint
  * Constructor for one-point and radius bounding box.
  */
 template<class Type, int iDimensions>
-inline AABBox<Type, iDimensions>::AABBox(const Vector<Type, iDimensions> &vPoint, const Type radius) {
+inline AABBox<Type, iDimensions>::AABBox<Type, iDimensions>(const Vector<Type, iDimensions> &vPoint, const Type radius) {
   for ( int i=1; i<=iDimensions; i++ ) {
     minvect(i) = vPoint(i)-radius;
     maxvect(i) = vPoint(i)+radius;
@@ -246,7 +248,7 @@ inline AABBox<Type, iDimensions> &AABBox<Type, iDimensions>::operator&=(const AA
 }
 
 /*
- * Function for moving bounding box.
+ * Functions for moving bounding box.
  */
 template<class Type, int iDimensions>
 inline AABBox<Type, iDimensions> &AABBox<Type, iDimensions>::operator+=(const Vector<Type, iDimensions> &vct) {
@@ -261,12 +263,47 @@ inline AABBox<Type, iDimensions> &AABBox<Type, iDimensions>::operator-=(const Ve
   maxvect -= vct;
   return *this;
 }
+template<class Type, int iDimensions>
+inline AABBox<Type, iDimensions> AABBox<Type, iDimensions>::operator+(const Vector<Type, iDimensions> &vct) const
+{
+  AABBox<Type, iDimensions> result = *this;
+  result.minvect += vct;
+  result.maxvect += vct;
+  return result;
+}
+template<class Type, int iDimensions>
+inline AABBox<Type, iDimensions> AABBox<Type, iDimensions>::operator-(const Vector<Type, iDimensions> &vct) const
+{
+  AABBox<Type, iDimensions> result = *this;
+  result.minvect -= vct;
+  result.maxvect -= vct;
+  return result;
+}
 
 /* Bounding box for intersection. */
 template<class Type, int iDimensions>
 inline AABBox<Type, iDimensions> AABBox<Type, iDimensions>::operator&(const AABBox<Type, iDimensions> &b) const {
   return AABBox<Type, iDimensions>(*this)&=b;
 }
+
+
+/* Check if intersects or touches another bounding box - OPTIMIZED FOR 'FLOAT3D'! */
+__forceinline BOOL AABBox<FLOAT,3>::HasContactWith(const AABBox<FLOAT,3> &b) const
+{
+  SLONG slRes = 0;
+  FLOAT fRes;
+  fRes = maxvect.vector[0] - b.minvect.vector[0]; slRes |= (SLONG&)fRes;
+  fRes = b.maxvect.vector[0] - minvect.vector[0]; slRes |= (SLONG&)fRes;
+
+  fRes = maxvect.vector[1] - b.minvect.vector[1]; slRes |= (SLONG&)fRes;
+  fRes = b.maxvect.vector[1] - minvect.vector[1]; slRes |= (SLONG&)fRes;
+
+  fRes = maxvect.vector[2] - b.minvect.vector[2]; slRes |= (SLONG&)fRes;
+  fRes = b.maxvect.vector[2] - minvect.vector[2]; slRes |= (SLONG&)fRes;
+
+  return !(slRes & 0x80000000);
+}
+
 
 /* Check if intersects or touches another bounding box. */
 template<class Type, int iDimensions>
@@ -282,6 +319,7 @@ inline BOOL AABBox<Type, iDimensions>::HasContactWith(const AABBox<Type, iDimens
   }
   return TRUE;
 }
+
 
 /* Check if intersects or touches another bounding box. */
 template<class Type, int iDimensions>

@@ -1,4 +1,7 @@
-
+/*
+Copyright (C) 2001-2002 Croteam, Ltd.
+See COPYING (GNU Library General Public License 2) for license
+*/
 
 #include "base.h"
 #include <assert.h>
@@ -104,15 +107,15 @@ int __cdecl qsort_ComparePolPntsByPnt_modeler(const void *elem1, const void *ele
 // fill base vertex coordinates (without morphing)
 void FillOriginalVertexCoords_modeler(void)
 {
-	EDPointInfo * poiPoint;
+  EDPointInfo * poiPoint;
 
   // for each vertex
   for(int iPnt=0; iPnt<_ctPntIDs; iPnt++) {
     // get the coords
-		poiPoint = _meshEditOperations->pointInfo(_state, _aidPntIDs[iPnt]);
-		_avPnts[iPnt][0] = (float) poiPoint->position[0];
-		_avPnts[iPnt][1] = (float) poiPoint->position[1];
-		_avPnts[iPnt][2] = (float) poiPoint->position[2];
+    poiPoint = _meshEditOperations->pointInfo(_state, _aidPntIDs[iPnt]);
+    _avPnts[iPnt][0] = (float) poiPoint->position[0];
+    _avPnts[iPnt][1] = (float) poiPoint->position[1];
+    _avPnts[iPnt][2] = (float) poiPoint->position[2];
   }
 
 }
@@ -124,7 +127,7 @@ void FillRelativeMorphVertexCoords_modeler(const char *strRelMorphMapName)
   // fill base vertex coordinates (without morphing)
   FillOriginalVertexCoords_modeler();
 
-	void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strRelMorphMapName);
+  void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strRelMorphMapName);
   
   // for each vertex
   {for(int iPnt=0; iPnt<_ctPntIDs; iPnt++) {
@@ -144,7 +147,7 @@ void FillAbsoluteMorphVertexCoords_modeler(const char *strAbsMorphMapName)
   // fill base vertex coordinates (without morphing)
   FillOriginalVertexCoords_modeler();
 
-	void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_SPOT, strAbsMorphMapName);
+  void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_SPOT, strAbsMorphMapName);
  
   // for each vertex
   {for(int iPnt=0; iPnt<_ctPntIDs; iPnt++) {
@@ -189,12 +192,12 @@ void MakeNormals_modeler(void)
   // generate polygon normals
   for(int iPol=0; iPol<_ctPolIDs; iPol++) {
     LWPolID idPol = _aidPolIDs[iPol];
-		double dPolNormal[3];
-		_meshEditOperations->polyNormal(_state,idPol,dPolNormal);
+    double dPolNormal[3];
+    _meshEditOperations->polyNormal(_state,idPol,dPolNormal);
 
-		_avPolNormals[iPol][0] = (float) dPolNormal[0];
-		_avPolNormals[iPol][1] = (float) dPolNormal[1];
-		_avPolNormals[iPol][2] = (float) dPolNormal[2];
+    _avPolNormals[iPol][0] = (float) dPolNormal[0];
+    _avPolNormals[iPol][1] = (float) dPolNormal[1];
+    _avPolNormals[iPol][2] = (float) dPolNormal[2];
 
   }
 
@@ -246,23 +249,23 @@ void ExtractMeshData_modeler(void)
   // extract point and poly ids, so we can walk them later
   _aidPntIDs = (LWPntID*)malloc(_ctPntIDs*sizeof(LWPntID));
   _iPnt = 0;
-	_meshEditOperations->pointScan(_state,EnumPnts_modeler,NULL,OPLYR_FG);
+  _meshEditOperations->pointScan(_state,EnumPnts_modeler,NULL,OPLYR_FG);
   qsort(_aidPntIDs, _ctPntIDs, sizeof(LWPntID), qsort_CompareIDs_modeler);
 
   _aidPolIDs = (LWPolID*)malloc(_ctPolIDs*sizeof(LWPolID));
   _iPol = 0;
-	_ctPolPnts = 0;
-	_meshEditOperations->polyScan(_state,EnumPols_modeler,NULL,OPLYR_FG);
+  _ctPolPnts = 0;
+  _meshEditOperations->polyScan(_state,EnumPols_modeler,NULL,OPLYR_FG);
   qsort(_aidPolIDs, _ctPolIDs, sizeof(LWPolID), qsort_CompareIDs_modeler);
 
   _appPolPnts = (PolPnt *)malloc(_ctPolPnts*sizeof(PolPnt));
   _appPntPols = (PolPnt *)malloc(_ctPolPnts*sizeof(PolPnt));
   // fill in all point and polygon combinations
   {int iPolPnt = 0;
-	 EDPolygonInfo *pliPolly;
+   EDPolygonInfo *pliPolly;
   for(int iPol=0; iPol<_ctPolIDs; iPol++) {
     LWPolID idPol = _aidPolIDs[iPol];
-		pliPolly = _meshEditOperations->polyInfo(_state,idPol);
+    pliPolly = _meshEditOperations->polyInfo(_state,idPol);
     int ctInThisPol = pliPolly->numPnts;
     for (int iPnt=0; iPnt<ctInThisPol; iPnt++) {
       _appPolPnts[iPolPnt].pp_idPol = idPol;
@@ -275,7 +278,7 @@ void ExtractMeshData_modeler(void)
   qsort(_appPntPols, _ctPolPnts, sizeof(PolPnt), qsort_ComparePolPntsByPnt_modeler);
 
 
-	// allocate point coords and polygon and point normals
+  // allocate point coords and polygon and point normals
   _avPnts = (float(*)[3])malloc(_ctPntIDs*sizeof(float)*3);
   _avPolNormals = (float(*)[3])malloc(_ctPolIDs*sizeof(float)*3);
   _avPntNormals = (float(*)[3])malloc(_ctPntIDs*sizeof(float)*3);
@@ -285,7 +288,7 @@ void ExtractMeshData_modeler(void)
   MakeNormals_modeler();
 
 
-	// list all the uvmaps used by this object
+  // list all the uvmaps used by this object
   _ctUVMapNames = _objfunc->numVMaps(LWVMAP_TXUV);
   _astrUVMapNames = (const char**) malloc(_ctUVMapNames*sizeof(char*));
   memset(_astrUVMapNames, 0, _ctUVMapNames*sizeof(char*));
@@ -307,7 +310,7 @@ void ExtractMeshData_modeler(void)
   }}
 
 
-	// list all the weightmaps used by this object
+  // list all the weightmaps used by this object
   _ctWeightMapNames = _objfunc->numVMaps(LWVMAP_WGHT);
   _astrWeightMapNames = (const char**) malloc(_ctWeightMapNames*sizeof(char*));
   _actWeightMapCounts = (int *) malloc(_ctWeightMapNames*sizeof(int));
@@ -316,7 +319,7 @@ void ExtractMeshData_modeler(void)
   _ctUsedWeightMapNames = 0;
   {for(int iWeightMap=0; iWeightMap<_ctWeightMapNames; iWeightMap++) {
     const char *strName = _objfunc->vmapName(LWVMAP_WGHT, iWeightMap);
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_WGHT, strName);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_WGHT, strName);
     int ct = 0;
     // for each polygonvertex
     for(int iPolPnt=0; iPolPnt<_ctPolPnts; iPolPnt++) {
@@ -345,7 +348,7 @@ void ExtractMeshData_modeler(void)
   _ctUsedRelMorphMapNames = 0;
   {for(int iRelMorphMap=0; iRelMorphMap<_ctRelMorphMapNames; iRelMorphMap++) {
     const char *strName = _objfunc->vmapName(LWVMAP_MORF, iRelMorphMap);
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strName);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strName);
     int ct = 0;
     // for each polygonvertex
     for(int iPolPnt=0; iPolPnt<_ctPolPnts; iPolPnt++) {
@@ -371,7 +374,7 @@ void ExtractMeshData_modeler(void)
   _ctUsedAbsMorphMapNames = 0;
   {for(int iAbsMorphMap=0; iAbsMorphMap<_ctAbsMorphMapNames; iAbsMorphMap++) {
     const char *strName = _objfunc->vmapName(LWVMAP_SPOT, iAbsMorphMap);
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_SPOT, strName);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_SPOT, strName);
     int ct = 0;
     // for each polygonvertex
     for(int iPolPnt=0; iPolPnt<_ctPolPnts; iPolPnt++) {
@@ -395,35 +398,35 @@ void ExtractMeshData_modeler(void)
 
 
 void ExportMesh_modeler(int iFaceForward) {  
-	char fnmOut[256];
-	char *strFileName;
+  char fnmOut[256];
+  char *strFileName;
+  int ctFullSurfs = 0; // number of surfaces containing some polygons
 
-	if (_meshEditOperations == NULL) {
-		_msg->error("Error!", "Error _meshEditOperations is NULL!");
-		return;
-	}
+  _state = _meshEditOperations->state; 
 
-	_state = _meshEditOperations->state; 
+  if (_meshEditOperations == NULL) {
+    _msg->error("Error!","Error _meshEditOperations is NULL!");
+    return;
+  }
 
   _ctPntIDs = _meshEditOperations->pointCount(_state,OPLYR_FG,EDCOUNT_ALL);
-	_ctPolIDs = _meshEditOperations->polyCount(_state,OPLYR_FG,EDCOUNT_ALL);
+  _ctPolIDs = _meshEditOperations->polyCount(_state,OPLYR_FG,EDCOUNT_ALL);
 
   strFileName = strdup(_statequery->object());
   
-	strcpy(fnmOut, strFileName);
+  strcpy(fnmOut, strFileName);
   char *pchDot = strrchr(fnmOut, '.');
   if (pchDot!=NULL) {
     strcpy(pchDot, ".am");
   }
 
-	//msgbox(_xpanf,fnmOut);
+  //msgbox(_xpanf,fnmOut);
 
-	ExtractMeshData_modeler();
+  ExtractMeshData_modeler();
 
-	_fpOutput = fopen(fnmOut, "w");
+  _fpOutput = fopen(fnmOut, "w");
   if (_fpOutput==NULL) {
     msgbox_modeler(_xpanf, "Can't open file!");
-	return;
   }
 
   // write the mesh header
@@ -436,18 +439,18 @@ void ExportMesh_modeler(int iFaceForward) {
     fprintf(_fpOutput, "FULL_FACE_FORWARD TRUE;\n\n");
   }
 
-	// write the vertex header
+  // write the vertex header
   fprintf(_fpOutput, "VERTICES %d\n", _ctPolPnts);
   fprintf(_fpOutput, "{\n");
   // for each polygonvertex
   {for(int iPolPnt=0; iPolPnt<_ctPolPnts; iPolPnt++) {
     // get the coords
-		EDPointInfo * poiPoint;
-		double v[3];
-		poiPoint = _meshEditOperations->pointInfo(_state, _appPolPnts[iPolPnt].pp_idPnt);
-		v[0] = (float) poiPoint->position[0];
-		v[1] = (float) poiPoint->position[1];
-		v[2] = (float) poiPoint->position[2];
+    EDPointInfo * poiPoint;
+    double v[3];
+    poiPoint = _meshEditOperations->pointInfo(_state, _appPolPnts[iPolPnt].pp_idPnt);
+    v[0] = (float) poiPoint->position[0];
+    v[1] = (float) poiPoint->position[1];
+    v[2] = (float) poiPoint->position[2];
 
     fprintf(_fpOutput, "  %g, %g, %g;\n", v[0], v[1], -v[2]);
   }}
@@ -502,23 +505,13 @@ void ExportMesh_modeler(int iFaceForward) {
 
 
 
-	// get surfaces
+  // get surfaces
   _asurSurfaces = _srf->byObject(strFileName);
 
   // count the surfaces
-  _ctSurfs = 0;
+  _ctSurfs = 0;  
   while(_asurSurfaces[_ctSurfs]!=NULL) {
-    _ctSurfs++;
-  }
-
-  // write the surfaces header
-  fprintf(_fpOutput, "SURFACES %d\n", _ctSurfs);
-  fprintf(_fpOutput, "{\n");
-  // for each surface
-  {for(int iSurf=0; iSurf<_ctSurfs; iSurf++) {
-    fprintf(_fpOutput, "  {\n");
-    const char *strSurf = _srf->name(_asurSurfaces[iSurf]);
-    fprintf(_fpOutput, "    NAME \"%s\";\n", strSurf);
+    const char *strSurf = _srf->name(_asurSurfaces[_ctSurfs]);
     // count the polygons
     int iSurfPols = 0;
     {for(int i=0; i<_ctPolIDs; i++) {
@@ -526,6 +519,34 @@ void ExportMesh_modeler(int iFaceForward) {
         iSurfPols++;
       }
     }}
+    // if there are no polygons in this surface, don't export it
+    if (iSurfPols != 0) {
+      ctFullSurfs++;
+    }
+
+    _ctSurfs++;
+  }
+
+  // write the surfaces header
+  fprintf(_fpOutput, "SURFACES %d\n", ctFullSurfs);
+  fprintf(_fpOutput, "{\n");
+  // for each surface
+  {for(int iSurf=0; iSurf<_ctSurfs; iSurf++) {
+    const char *strSurf = _srf->name(_asurSurfaces[iSurf]);
+    // count the polygons
+    int iSurfPols = 0;
+    {for(int i=0; i<_ctPolIDs; i++) {
+      if (strcmp(_meshEditOperations->polyTag(_state, _aidPolIDs[i], LWPTAG_SURF), strSurf)==0) {
+        iSurfPols++;
+      }
+    }}
+    // if there are no polygons in this surface, don't export it
+    if (iSurfPols == 0) {
+      continue;
+    }
+
+    fprintf(_fpOutput, "  {\n");    
+    fprintf(_fpOutput, "    NAME \"%s\";\n", strSurf);
     // write the polygon set header
     fprintf(_fpOutput, "    TRIANGLE_SET %d\n", iSurfPols);
     fprintf(_fpOutput, "    {\n");
@@ -544,16 +565,16 @@ void ExportMesh_modeler(int iFaceForward) {
   }}
   fprintf(_fpOutput, "}\n");
 
-	// write the weightmaps header
+  // write the weightmaps header
   fprintf(_fpOutput, "WEIGHTS %d\n", _ctUsedWeightMapNames);
   fprintf(_fpOutput, "{\n");
 
-	// for each weightmap
+  // for each weightmap
   {for(int iWeightMap=0; iWeightMap<_ctUsedWeightMapNames; iWeightMap++) {
     fprintf(_fpOutput, "  {\n");
     const char *strWeightMap = _astrWeightMapNames[iWeightMap];
     fprintf(_fpOutput, "    NAME \"%s\";\n", strWeightMap);
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_WGHT, strWeightMap);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_WGHT, strWeightMap);
     fprintf(_fpOutput, "    WEIGHT_SET %d\n", _actWeightMapCounts[iWeightMap]);
     fprintf(_fpOutput, "    {\n");
 
@@ -561,7 +582,7 @@ void ExportMesh_modeler(int iFaceForward) {
     {for(int iPolPnt=0; iPolPnt<_ctPolPnts; iPolPnt++) {
       // get the coords
       float v[1];
-			if (_meshEditOperations->pointVGet(_state, _appPolPnts[iPolPnt].pp_idPnt, v) && v[0]!=0.0f) {
+      if (_meshEditOperations->pointVGet(_state, _appPolPnts[iPolPnt].pp_idPnt, v) && v[0]!=0.0f) {
         if (v[0] < 0) {
           _msg->error("Weight map value lesser than zero!",NULL);
         } else {
@@ -575,12 +596,12 @@ void ExportMesh_modeler(int iFaceForward) {
   fprintf(_fpOutput, "}\n\n");
 
 
-	// write the morphmaps header
+  // write the morphmaps header
   fprintf(_fpOutput, "MORPHS %d\n", _ctUsedRelMorphMapNames+_ctUsedAbsMorphMapNames);
   fprintf(_fpOutput, "{\n");
 
 
-	// for each relmorphmap
+  // for each relmorphmap
   {for(int iRelMorphMap=0; iRelMorphMap<_ctUsedRelMorphMapNames; iRelMorphMap++) {
     const char *strRelMorphMap = _astrRelMorphMapNames[iRelMorphMap];
     // calculate mesh normals using the given morphmap
@@ -590,7 +611,7 @@ void ExportMesh_modeler(int iFaceForward) {
     fprintf(_fpOutput, "  {\n");
     fprintf(_fpOutput, "    NAME \"%s\";\n", strRelMorphMap);
     fprintf(_fpOutput, "    RELATIVE TRUE;\n");
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strRelMorphMap);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strRelMorphMap);
     fprintf(_fpOutput, "    MORPH_SET %d\n", _actRelMorphMapCounts[iRelMorphMap]);
     fprintf(_fpOutput, "    {\n");
 
@@ -620,7 +641,7 @@ void ExportMesh_modeler(int iFaceForward) {
     fprintf(_fpOutput, "  {\n");
     fprintf(_fpOutput, "    NAME \"%s\";\n", strAbsMorphMap);
     fprintf(_fpOutput, "    RELATIVE FALSE;\n");
-		void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strAbsMorphMap);
+    void *pMap = _meshEditOperations->pointVSet(_state,NULL, LWVMAP_MORF, strAbsMorphMap);
     fprintf(_fpOutput, "    MORPH_SET %d\n", _actAbsMorphMapCounts[iAbsMorphMap]);
     fprintf(_fpOutput, "    {\n");
 
@@ -692,5 +713,5 @@ void ExportMesh_modeler(int iFaceForward) {
       _astrWeightMapNames = NULL;
     }
    
-	
+  
 }

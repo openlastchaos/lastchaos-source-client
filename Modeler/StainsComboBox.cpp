@@ -41,13 +41,13 @@ void CStainsComboBox::Refresh()
   {
     FOREACHINLIST( CWorkingPatch, wp_ListNode, pApp->m_WorkingPatches, it)
     {
-      AddString( CString(it->wp_FileName.FileName()));
+      AddString( it->wp_FileName.FileName());
     }
     SetCurSel( 0);
   }
   else
   {
-    AddString( L"None available");
+    AddString( "None available");
     SetCurSel( 0);
   }
 }

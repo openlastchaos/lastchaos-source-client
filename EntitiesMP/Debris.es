@@ -43,6 +43,7 @@ event ESpawnDebris {
 class CDebris: CMovableModelEntity {
 name      "Debris";
 thumbnail "";
+features "NotSentOverNet";
 
 properties:
 
@@ -65,6 +66,9 @@ properties:
   17 BOOL m_bTouchedGround=FALSE,
   18 CEntityPointer m_penFallFXPapa,
 
+  200 BOOL m_bDebrisFade = TRUE,
+  201 BOOL m_bDebrisCollision = FALSE,
+
 
 components:
 
@@ -83,8 +87,7 @@ functions:
     FLOAT fDamageAmmount, const FLOAT3D &vHitPoint, const FLOAT3D &vDirection) 
   {
     // cannot be damaged immediately after spawning
-    if ((_pTimer->CurrentTick()-m_tmStarted<1.0f)
-      ||(dmtType==DMT_CANNONBALL_EXPLOSION) && (_pTimer->CurrentTick()-m_tmStarted<5.0f)) {
+    if ((_pTimer->CurrentTick()-m_tmStarted<1.0f) /*||(dmtType==DMT_CANNONBALL_EXPLOSION) */&& (_pTimer->CurrentTick()-m_tmStarted<5.0f)) {
       return;
     }
     CMovableModelEntity::ReceiveDamage(penInflictor, dmtType, fDamageAmmount, vHitPoint, vDirection);
@@ -162,8 +165,8 @@ functions:
   // spawn effect
   void SpawnEffect(const CPlacement3D &plEffect, const class ESpawnEffect &eSpawnEffect)
   {
-    CEntityPointer penEffect = CreateEntity(plEffect, CLASS_BASIC_EFFECT);
-    penEffect->Initialize(eSpawnEffect);
+    CEntityPointer penEffect = CreateEntity(plEffect, CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+    penEffect->Initialize(eSpawnEffect,FALSE);
   };
 
   // particles
@@ -202,12 +205,12 @@ functions:
   {
     // spawn explosion
     CPlacement3D plExplosion = GetPlacement();
-    CEntityPointer penExplosion = CreateEntity(plExplosion, CLASS_BASIC_EFFECT);
+    CEntityPointer penExplosion = CreateEntity(plExplosion, CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
     ESpawnEffect eSpawnEffect;
     eSpawnEffect.colMuliplier = C_WHITE|CT_OPAQUE;
     eSpawnEffect.betType = BET_BOMB;
     eSpawnEffect.vStretch = FLOAT3D(0.3f,0.3f,0.3f);
-    penExplosion->Initialize(eSpawnEffect);
+    penExplosion->Initialize(eSpawnEffect,FALSE);
   }
 
 /************************************************************
@@ -223,6 +226,8 @@ procedures:
     SetCollisionFlags(ECF_DEBRIS);
     SetFlags(GetFlags() | ENF_SEETHROUGH);
     SetHealth(25.0f);
+    SetFlagOn(ENF_CLIENTHANDLING);
+    SetFlagOff(ENF_PROPSCHANGED);
     en_fBounceDampNormal   = 0.15f;
     en_fBounceDampParallel = 0.5f;
     en_fJumpControlMultiplier = 0.0f;
@@ -306,7 +311,7 @@ procedures:
               // start it
               CEntity *penNew = GetWorld()->CopyEntityInWorld( *iten, GetPlacement());
               penNew->SetParent(NULL);
-              if( IsOfClass(&*penNew, "SoundHolder"))
+              if( IsOfClass( &*penNew, &CSoundHolder_DLLClass))
               {
                 penNew->SendEvent( EStart());
               }
@@ -328,8 +333,8 @@ procedures:
             ese.vStretch = FLOAT3D(m_fDustStretch,m_fDustStretch,m_fDustStretch);
             ese.vNormal = FLOAT3D(0,1,0);
             ese.betType = BET_DUST_FALL;
-            CEntityPointer penFX = CreateEntity(plDust, CLASS_BASIC_EFFECT);
-            penFX->Initialize(ese);
+            CEntityPointer penFX = CreateEntity(plDust, CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+            penFX->Initialize(ese,FALSE);
           }
           m_bTouchedGround=TRUE;
 
@@ -350,20 +355,29 @@ procedures:
         }
         resume;
       }
-      on (EDeath) : { Destroy(); return; }
+      on (EDeath) : { Destroy(FALSE); return; }
       on (ETimer) : { stop; }
     }
 
     // fade away
+	if(m_bDebrisCollision)
+	{
+		SetCollisionFlags(ECF_MODEL);
+	}
+	else
+	{
     SetCollisionFlags(ECF_DEBRIS);
+	}
     m_fFadeStartTime = _pTimer->CurrentTick();
     m_fFadeTime = 5.0f;
-    m_bFade = TRUE;
+    m_bFade = m_bDebrisFade;
     autowait(m_fFadeTime);
 
+	if(m_bDebrisFade)
+	{
     // cease to exist
-    Destroy();
-
+    Destroy(FALSE);
+	}
     return;
   }
 };

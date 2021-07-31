@@ -245,7 +245,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("Failed to create model speed edit control\n");
 		return FALSE;
 	}
-  m_ctrlZSpeed.SetWindowText(L"0");
+  m_ctrlZSpeed.SetWindowText("0");
   
   // Set z-loop edit ctrl
   m_AnimToolBar.SetButtonInfo(1, ID_Z_LOOP_TIMES, TBBS_SEPARATOR, 25);
@@ -259,7 +259,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("Failed to create model loop edit control\n");
 		return FALSE;
 	}
-  m_ctrlZLoop.SetWindowText(L"4");
+  m_ctrlZLoop.SetWindowText("4");
 
   m_AnimToolBar.SetButtonInfo(6, ID_ANIM_CHOOSE, TBBS_SEPARATOR, 150);
   m_TextureToolBar.SetButtonInfo(2, ID_TEXTURE_CHOOSE, TBBS_SEPARATOR, 150);
@@ -299,13 +299,13 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return FALSE;
 	}
 
-  m_AnimComboBox.AddString( L"None available");
+  m_AnimComboBox.AddString( "None available");
   m_AnimComboBox.SetCurSel( 0);
 	
-  m_SkinComboBox.AddString( L"None available");
+  m_SkinComboBox.AddString( "None available");
   m_SkinComboBox.SetCurSel( 0);
 	
-  m_StainsComboBox.AddString( L"None available");
+  m_StainsComboBox.AddString( "None available");
   m_StainsComboBox.SetCurSel( 0);
 	
   //  Create a font for the comboboxes
@@ -599,8 +599,8 @@ void CMainFrame::OnFileCreateTexture()
   {
     pDoc = pView->GetDocument();
     // setup create texture directory
-    theApp.WriteProfileString(L"Scape", CString(KEY_NAME_CREATE_TEXTURE_DIR), 
-      CString(_fnmApplicationPath+pDoc->GetModelDirectory()));
+    theApp.WriteProfileString("Scape", KEY_NAME_CREATE_TEXTURE_DIR, 
+      _fnmApplicationPath+pDoc->GetModelDirectory());
   }
   // call create texture dialog
   CTFileName fnCreated = _EngineGUI.CreateTexture();
@@ -615,7 +615,7 @@ void CMainFrame::OnFileCreateTexture()
     }
     catch( char *err_str)
     {
-      AfxMessageBox( CString(err_str));
+      AfxMessageBox( err_str);
       pNewTDI = NULL;
     }
     if( pNewTDI != NULL)
@@ -898,7 +898,7 @@ void CMainFrame::OnUpdateViewMapping(CCmdUI* pCmdUI)
 }
 
 BOOL _bApplicationActive = TRUE;
-void CMainFrame::OnActivateApp(BOOL bActive, DWORD hTask) 
+void CMainFrame::OnActivateApp(BOOL bActive, DWORD_OR_HTASK hTask) 
 {
   _bApplicationActive = bActive;
 	CMDIFrameWnd::OnActivateApp(bActive, hTask);
@@ -987,7 +987,7 @@ void CMainFrame::ToggleInfoWindow(void)
 	  m_pInfoFrame = new CDlgInfoFrame;
     // set initial size of rect window
     CRect rectInfoWindow(0, 0, 0, 0);
-    if( !m_pInfoFrame->Create( NULL, L"Tools info",
+    if( !m_pInfoFrame->Create( NULL, "Tools info",
         MFS_SYNCACTIVE|WS_POPUP|WS_CAPTION|WS_SYSMENU, rectInfoWindow, this))
 	  {
 		  TRACE0("Failed to create Tools info window!\n");
@@ -1045,10 +1045,9 @@ LRESULT CMainFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 void CMainFrame::OnHelpFinder() 
 {
-  HtmlHelp(NULL); // Hmmm...
-  /*HtmlHelp(NULL, 
+	::HtmlHelp(NULL, 
     _fnmApplicationPath+"Help\\ToolsHelp.chm::/SeriousModeler/Overview.htm", 
-    HH_DISPLAY_TOPIC, NULL);*/
+    HH_DISPLAY_TOPIC, NULL);
 }
 
 void CMainFrame::OnTessellateLess() 
@@ -1059,7 +1058,7 @@ void CMainFrame::OnTessellateLess()
   _pShell->SetINDEX( "gap_iTruformLevel", iTruform);
   CTString strVar;
   strVar.PrintF( "Tessellation level = %d", iTruform);
-  m_wndStatusBar.SetPaneText( STATUS_LINE_PANE, CString(strVar));
+  m_wndStatusBar.SetPaneText( STATUS_LINE_PANE, strVar);
 }
 
 void CMainFrame::OnTessellateMore() 
@@ -1070,5 +1069,5 @@ void CMainFrame::OnTessellateMore()
   _pShell->SetINDEX( "gap_iTruformLevel", iTruform);
   CTString strVar;
   strVar.PrintF( "Tessellation level = %d", iTruform);
-  m_wndStatusBar.SetPaneText( STATUS_LINE_PANE, CString(strVar));
+  m_wndStatusBar.SetPaneText( STATUS_LINE_PANE, strVar);
 }

@@ -40,7 +40,7 @@ BOOL CAnimComboBox::OnIdle(LONG lCount)
   {
     m_pvLastUpdatedView = NULL;
     ResetContent();
-    AddString( L"None available");
+    AddString( "None available");
     SetCurSel( 0);
   }
   else if( (pModelerView != NULL) &&
@@ -55,7 +55,7 @@ BOOL CAnimComboBox::OnIdle(LONG lCount)
     for( INDEX i=0; i<pModelerView->m_ModelObject.GetAnimsCt(); i++)
     {
       pModelerView->m_ModelObject.GetAnimInfo( i, aiInfo);
-      AddString( CString(aiInfo.ai_AnimName));
+      AddString( aiInfo.ai_AnimName);
       SetCurSel( pModelerView->m_ModelObject.GetAnim());
     }
   }

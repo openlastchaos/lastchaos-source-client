@@ -3,19 +3,22 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Network/MessageDispatcher.h>
-#include <Engine/Network/Network.h>
+#include <Engine/Network/CNetwork.h>
 #include <Engine/Network/NetworkProfile.h>
 #include <Engine/Network/NetworkMessage.h>
 #include <Engine/Network/CommunicationInterface.h>
 #include <Engine/Base/ErrorTable.h>
 
 #include <Engine/Base/ListIterator.inl>
+#include <Engine/Network/MessageDefine.h>
+//#include "stdio.h"
 
 // define this to randomly drop messages (for debugging of packet-loss recovery)
 //#define LOSEPACKETS_THRESHOLD (RAND_MAX/10)
 
+
 extern INDEX net_bReportTraffic;
-extern BOOL _bTempNetwork;
+extern BOOL _bTcp4ClientInterface;				// by seo-40227 declared in ClientInterface.cpp
 
 /////////////////////////////////////////////////////////////////////
 // CMessageBuffer helper class+implementation
@@ -101,6 +104,11 @@ void CNetworkSession::Copy(const CNetworkSession &nsOriginal)
   ns_strGameType    = nsOriginal.ns_strGameType    ;
   ns_strMod         = nsOriginal.ns_strMod         ;
   ns_strVer         = nsOriginal.ns_strVer         ;
+
+  ns_ulAddress      = nsOriginal.ns_ulAddress      ;
+  ns_uwPort         = nsOriginal.ns_uwPort         ;
+  ns_tmLastSeen     = nsOriginal.ns_tmLastSeen     ;
+
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -110,11 +118,11 @@ void CNetworkSession::Copy(const CNetworkSession &nsOriginal)
  * Default constructor.
  */
 CMessageDispatcher::CMessageDispatcher(void) {
-  if (!_bTempNetwork) {
-    _cmiComm.Init();
-  }
+   _cmiComm.Init();
+
   // enumerate network providers
   EnumNetworkProviders_startup(md_lhProviders);
+  IsTcpServer = FALSE;				// by seo-40225
 }
 
 /*
@@ -122,9 +130,8 @@ CMessageDispatcher::CMessageDispatcher(void) {
  */
 CMessageDispatcher::~CMessageDispatcher(void)
 {
-  if (!_bTempNetwork) {
-    _cmiComm.Close();
-  }
+  _cmiComm.Close();
+
   // destroy the list of network providers
   FORDELETELIST(CNetworkProvider, np_Node, md_lhProviders, litProviders) {
     delete &*litProviders;
@@ -159,6 +166,14 @@ void CMessageDispatcher::EnumNetworkProviders_startup(CListHead &lh)
   CNetworkProvider *pnpTCPCl = new CNetworkProvider;
   pnpTCPCl->np_Description = "TCP/IP Client";
   lh.AddTail(pnpTCPCl->np_Node);
+
+  CNetworkProvider *pnpTCPMmo = new CNetworkProvider;	// by seo 40225
+  pnpTCPMmo->np_Description = "TCP/IP Mmo";
+  lh.AddTail(pnpTCPMmo->np_Node);
+
+  CNetworkProvider *pnpTCPNEW = new CNetworkProvider; //0311 kwon
+  pnpTCPNEW->np_Description = "TCP/IP NEW Client";
+  lh.AddTail(pnpTCPNEW->np_Node);
 }
 
 /*
@@ -180,12 +195,39 @@ void CMessageDispatcher::EnumNetworkProviders(CListHead &lh)
  */
 void CMessageDispatcher::StartProvider_t(const CNetworkProvider &npProvider)
 {
+  extern INDEX net_bNetworkGame;
+  extern INDEX net_bMmoGame;
   if (npProvider.np_Description=="Local") {
-    _cmiComm.PrepareForUse(FALSE, FALSE);
+//강동민 수정 시작 클로즈 준비 작업	08.10
+		//_cmiComm.PrepareForUse(FALSE, FALSE);
+		//net_bNetworkGame = FALSE;
+		_cmiComm.PrepareForUse(TRUE, FALSE);
+		net_bNetworkGame = TRUE;
+	//_bTcp4ClientInterface = FALSE;
+//강동민 수정 끝 클로즈 준비 작업		08.10
   } else if (npProvider.np_Description=="TCP/IP Server") {
+	 if (net_bMmoGame) {
+		_cmiComm.PrepareForUse(TRUE, FALSE, TRUE);
+		_bTcp4ClientInterface = TRUE;
+	 } else {
+	   _cmiComm.PrepareForUse(TRUE, FALSE, IsTcpServer);	// dedicated server를 띄울때 파라미터가 넘어가는 방법에 따라 bTcp가 이미 설정되어 있다.
+	   _bTcp4ClientInterface = IsTcpServer;
+	 }
+    net_bNetworkGame = TRUE;	
+  } else if (npProvider.np_Description=="TCP/IP Mmo") {			// by seo 40225
+	_bTcp4ClientInterface = TRUE;
+	net_bNetworkGame = TRUE;
+	net_bMmoGame = TRUE;
+	_cmiComm.PrepareForUse(/*bNetwork*/TRUE, /*bClient*/TRUE, /*bTcp*/TRUE);	
+  } 
+  else if (npProvider.np_Description=="TCP/IP New Client") { //0311 kwon
     _cmiComm.PrepareForUse(TRUE, FALSE);
-  } else {
-    _cmiComm.PrepareForUse(TRUE, TRUE);
+    net_bNetworkGame = TRUE;
+  }
+  else {
+	net_bNetworkGame = TRUE;
+	_bTcp4ClientInterface = FALSE;
+    _cmiComm.PrepareForUse(TRUE, TRUE);    
   }
 }
 
@@ -208,7 +250,7 @@ static void UpdateSentMessageStats(const CNetworkMessage &nmMessage)
   case MSG_GAMESTREAMBLOCKS:
     _pfNetworkProfile.IncrementCounter(CNetworkProfile::PCI_GAMESTREAM_BYTES_SENT, nmMessage.nm_slSize);
     break;
-  case MSG_ACTION:
+  case MSG_ACTIONS:
     _pfNetworkProfile.IncrementCounter(CNetworkProfile::PCI_ACTION_BYTES_SENT, nmMessage.nm_slSize);
     break;
   }
@@ -231,7 +273,7 @@ static void UpdateReceivedMessageStats(const CNetworkMessage &nmMessage)
   case MSG_GAMESTREAMBLOCKS:
     _pfNetworkProfile.IncrementCounter(CNetworkProfile::PCI_GAMESTREAM_BYTES_RECEIVED, nmMessage.nm_slSize);
     break;
-  case MSG_ACTION:
+  case MSG_ACTIONS:
     _pfNetworkProfile.IncrementCounter(CNetworkProfile::PCI_ACTION_BYTES_RECEIVED, nmMessage.nm_slSize);
     break;
   }
@@ -332,6 +374,131 @@ BOOL CMessageDispatcher::ReceiveFromServer(CNetworkMessage &nmMessage)
   return bReceived;
 }
 
+//0311 kwon 함수추가. master input버퍼로부터 서버로부터온 메시지를 가져온다.
+/* Receive next message from server to client. */
+BOOL CMessageDispatcher::ReceiveFromServerNew(CNetworkMessage &nmMessage)
+{		
+  _pfNetworkProfile.StartTimer(CNetworkProfile::PTI_RECEIVEMESSAGE);
+  // receive message in static buffer
+  nmMessage.nm_slSize = nmMessage.nm_slMaxSize;
+  BOOL bReceived = _cmiComm.Client_Receive_Unreliable_New(
+    (void*)nmMessage.nm_pubMessage, nmMessage.nm_slSize, nmMessage.nm_iIndex);
+
+  // if there is message
+  if (bReceived) {
+		// EDIT : BS : 패킷 암호화 : 복호화
+
+	extern UINT g_uiEngineVersion;
+//	if( g_uiEngineVersion >= 10000 )  // 060303 wooss : 본섭 암호화 적용
+	{
+#ifdef CRYPT_NET_MSG
+		// EDIT : BS : 070413 : 신규 패킷 암호화
+		UBYTE pDecryptBuf[CNM_TEMP_BUFFER_LENGTH];
+		UBYTE pDecryptBufTmp[CNM_TEMP_BUFFER_LENGTH];
+#ifdef CRYPT_NET_MSG_MANUAL
+		int nDecryptBuf = CNM_Decrypt(nmMessage.nm_pubMessage, nmMessage.nm_slSize, &_pNetwork->cnmKey, pDecryptBuf, pDecryptBufTmp);
+#else // CRYPT_NET_MSG_MANUAL
+		int nDecryptBuf = CNM_Decrypt(nmMessage.nm_pubMessage, nmMessage.nm_slSize, &_pNetwork->cnmKeyServer, pDecryptBuf, pDecryptBufTmp);
+#endif // CRYPT_NET_MSG_MANUAL
+#else 
+		UBYTE* pDecryptBuf = NULL;
+		int nDecryptBuf = CNM_Decrypt(nmMessage.nm_pubMessage, nmMessage.nm_slSize, _pNetwork->cnmKey, &pDecryptBuf);
+#endif // CRYPT_NET_MSG
+
+		if (nDecryptBuf < 0)
+			bReceived = FALSE;
+		else
+		{
+			memcpy(nmMessage.nm_pubMessage, pDecryptBuf, nDecryptBuf);
+			nmMessage.nm_slSize = nDecryptBuf;
+		}
+
+#ifndef CRYPT_NET_MSG
+		if (pDecryptBuf)
+			delete [] pDecryptBuf;
+#endif
+	}
+	// EDIT : BS : 070413 : 신규 패킷 암호화
+#ifdef CRYPT_NET_MSG
+#ifndef CRYPT_NET_MSG_MANUAL
+//	CNM_NextKey(&_pNetwork->cnmKeyServer);//edit by kevin
+#endif // #ifndef CRYPT_NET_MSG_MANUAL
+#endif // #ifdef CRYPT_NET_MSG
+		
+    // init the message structure
+    nmMessage.nm_pubPointer = nmMessage.nm_pubMessage;
+    nmMessage.nm_iBit = 0;
+    UBYTE ubType;
+    nmMessage.Read(&ubType, sizeof(ubType));
+    nmMessage.nm_mtType = (MESSAGETYPE)ubType;
+
+    UpdateReceivedMessageStats(nmMessage);
+  }
+  _pfNetworkProfile.StopTimer(CNetworkProfile::PTI_RECEIVEMESSAGE);
+  return bReceived;
+}
+
+//0311 kwon 함수추가. 서버로 보낼 메시지를 master out buffer로 보낸다.
+void CMessageDispatcher::SendToServerNew(const CNetworkMessage &nmMessage, BOOL bLogin)
+{	
+	//0707
+	CNetworkMessage tmpMessage;
+	tmpMessage = nmMessage;
+	
+	// EDIT : BS : 패킷 암호화 : 암호화 하기
+	extern UINT g_uiEngineVersion;
+//	if( g_uiEngineVersion >= 10000 ) // 060303 wooss : 본섭 암호화 적용	
+	{
+#ifdef CRYPT_NET_MSG
+		// EDIT : BS : 070413 : 신규 패킷 암호화
+		UBYTE pCryptBuf[CNM_TEMP_BUFFER_LENGTH];
+		UBYTE pCryptTmpBuf[CNM_TEMP_BUFFER_LENGTH];
+
+		int nCryptBuf = CNM_Crypt(tmpMessage.nm_pubMessage, tmpMessage.nm_slSize, &_pNetwork->cnmKey, pCryptBuf, pCryptTmpBuf);
+#else
+		UBYTE* pCryptBuf = NULL;
+		int nCryptBuf = CNM_Crypt(tmpMessage.nm_pubMessage, tmpMessage.nm_slSize, _pNetwork->cnmKey, &pCryptBuf);
+#endif	
+
+		if (nCryptBuf < 0)
+			return ;
+		// EDIT : BS : 만약 메시지 타입이 UBYTE에서 다른 것으로 변경되면 여기도 변경해야함
+		CNetworkMessage cryptMessage(pCryptBuf[0]);
+		cryptMessage.Write(pCryptBuf + sizeof(UBYTE), nCryptBuf - sizeof(UBYTE));
+		tmpMessage = cryptMessage;
+
+#ifndef CRYPT_NET_MSG
+		if (pCryptBuf)
+			delete [] pCryptBuf;
+#endif // #ifndef CRYPT_NET_MSG
+	}
+	// EDIT : BS : 070413 : 신규 패킷 암호화
+#ifdef CRYPT_NET_MSG
+#ifndef CRYPT_NET_MSG_MANUAL
+//	CNM_NextKey(&_pNetwork->cnmKey);//edit by kevin
+#endif // #ifndef CRYPT_NET_MSG_MANUAL
+#endif // #ifdef CRYPT_NET_MSG
+
+#ifdef COMPRESSION_MESSAGE
+	
+	CNetworkMessage nmPackMessage(tmpMessage.GetType());
+	tmpMessage.PackDefault(nmPackMessage);
+#endif
+		
+	//	if(_cmiComm.cci_bBound){
+	_pfNetworkProfile.StartTimer(CNetworkProfile::PTI_SENDMESSAGE);
+	// send the message
+#ifdef COMPRESSION_MESSAGE
+	_cmiComm.Client_Send_Unreliable_New((void*)nmPackMessage.nm_pubMessage, nmPackMessage.nm_slSize, bLogin);
+	UpdateSentMessageStats(nmPackMessage);
+#else
+	_cmiComm.Client_Send_Unreliable_New((void*)nmMessage.nm_pubMessage, nmMessage.nm_slSize, bLogin);
+	UpdateSentMessageStats(nmMessage);
+#endif
+	_pfNetworkProfile.StopTimer(CNetworkProfile::PTI_SENDMESSAGE);
+}
+
+//! 서버에서 클라이언트로 다음 메시지를 받는다.
 BOOL CMessageDispatcher::ReceiveFromServerReliable(CNetworkMessage &nmMessage)
 {
   _pfNetworkProfile.StartTimer(CNetworkProfile::PTI_RECEIVEMESSAGE);
@@ -439,7 +606,7 @@ BOOL CMessageDispatcher::ReceiveBroadcast(CNetworkMessage &nmMessage, ULONG &ulA
   nmMessage.nm_slSize = nmMessage.nm_slMaxSize;
   BOOL bReceived = _cmiComm.Broadcast_Receive(
     (void*)nmMessage.nm_pubMessage, nmMessage.nm_slSize,adrSource);
-
+//! 서버는 이밑으로 안들어가~
   // if there is message
   if (bReceived) {
     // init the message structure

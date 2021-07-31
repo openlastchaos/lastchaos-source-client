@@ -37,6 +37,7 @@ properties:
  33 FLOATquat3D m_qANp0 = FLOATquat3D(0,0,0,0),
  34 FLOATquat3D m_qANp1 = FLOATquat3D(0,0,0,0),
  
+ 39 CEntityPointer m_penTargetOld, 
  40 CEntityPointer m_penLast,    // previous marker
  41 CEntityPointer m_penPlayer,  // player viewing this camera
  42 CTString m_strDescription = "",
@@ -66,13 +67,23 @@ properties:
  71 enum EventEType m_eetAutoCameraEndEvent "Auto camera end event" = EET_STOP,
  72 FLOAT3D m_vRelTargetOffset = FLOAT3D(0,0,0),
 
+ 82 BOOL m_bStopLerp = FALSE,
+ 83 BOOL bPlayedCamera = FALSE, 
+
 components:
 
-  1 model   MODEL_CAMERA     "Models\\Editor\\Camera.mdl",
-  2 texture TEXTURE_CAMERA   "Models\\Editor\\Camera.tex"
-
+  1 editor model   MODEL_CAMERA     "Data\\Models\\Editor\\Camera.mdl",
+  2 editor texture TEXTURE_CAMERA   "Data\\Models\\Editor\\Camera.tex"
 
 functions:
+//강동민 수정 시작 다중 공격 작업	08.27
+	virtual void Read_t( CTStream *istr, BOOL bNetwork)
+	{
+		CMovableModelEntity::Read_t(istr,bNetwork);
+		bPlayedCamera = FALSE;
+		m_penTargetOld = m_penTarget;
+	}
+//강동민 수정 끝 다중 공격 작업		08.27
 
   // render particles
   void RenderParticles(void)
@@ -130,11 +141,7 @@ functions:
   CPlacement3D GetLerpedPlacement(void) const
   {
     FLOAT fLerpFactor;
-    if (IsPredictor()) {
-      fLerpFactor = _pTimer->GetLerpFactor();
-    } else {
-      fLerpFactor = _pTimer->GetLerpFactor2();
-    }
+    fLerpFactor = _pTimer->GetLerpFactor2();
     
     if( m_bAutoRotation && m_bMoving)
     {
@@ -152,6 +159,10 @@ functions:
         {
           vTarget=pcm->m_penViewTarget->GetLerpedPlacement().pl_PositionVector+m_vRelTargetOffset;
         }
+        if (pcm->m_bTargetCaller && m_penPlayer!=NULL)
+        {
+          vTarget=m_penPlayer->GetLerpedPlacement().pl_PositionVector+m_vRelTargetOffset;
+        }
       }
 
       GetAutoRotatePlacement( fTime, vPos, mRot, plNew, vTarget);
@@ -167,8 +178,22 @@ functions:
     }
     else
     {
-      return LerpPlacementsPrecise(en_plLastPlacement, en_plPlacement, fLerpFactor);
-    }
+//강동민 수정 시작 클로즈 준비 작업	08.10
+			if(!m_bStopLerp)
+			{
+//안태훈 수정 시작	//(For Performance)(0.2)
+				CPlacement3D plLerped;
+				plLerped.Lerp(en_plLastPlacement, en_plPlacement, fLerpFactor);   
+				return plLerped;
+				//return LerpPlacementsPrecise(plLastPlacement, plPlacement, fLerpFactor);
+			}
+			else
+			{
+				return en_plLastPlacement;
+//안태훈 수정 끝	//(For Performance)(0.2)
+			}
+//강동민 수정 끝 클로즈 준비 작업		08.10
+		}
     //return CMovableEntity::GetLerpedPlacement();
   }
 
@@ -189,13 +214,16 @@ functions:
   void PreMoving()
   {
     // remember old placement for lerping
+		if(!m_bStopLerp)
+		{
     en_plLastPlacement = en_plPlacement;  
   }
-
+	}
 
   void DoMoving()  
   {
-    if (!m_bMoving) {
+		if (!m_bMoving) 
+		{
       return;
     }
     FLOAT tmCurrent;
@@ -206,7 +234,11 @@ functions:
     else
     {
       m_fMyTimerLast = m_fMyTimer;
-      m_fMyTimer+=_pTimer->TickQuantum/_pNetwork->GetRealTimeFactor();
+      if (_pNetwork->ga_bDemoPlay) {
+        m_fMyTimer+=_pTimer->TickQuantum/_pNetwork->ga_fDemoRealTimeFactor;
+      } else {
+        m_fMyTimer+=_pTimer->TickQuantum/_pNetwork->GetRealTimeFactor();
+      }
       tmCurrent = m_fMyTimer;
     }
 
@@ -230,12 +262,16 @@ functions:
         {
           vTarget=pcm->m_penViewTarget->GetPlacement().pl_PositionVector+m_vRelTargetOffset;
         }
+        if (pcm->m_bTargetCaller && m_penPlayer!=NULL)
+        {
+          vTarget=m_penPlayer->GetLerpedPlacement().pl_PositionVector+m_vRelTargetOffset;
+        }
       }
       GetAutoRotatePlacement( tmCurrent, vPos, mRot, plNew, vTarget);
       en_vNextPosition = vPos;
       en_mNextRotation = mRot;
       CacheNearPolygons();
-      SetPlacement_internal(plNew, mRot, TRUE);
+      SetPlacement_special(plNew, mRot, SPIF_NEAR);
       return;
     }
 
@@ -304,6 +340,13 @@ functions:
       m_penViewTarget1 = cmNp1.m_penViewTarget;
       m_vPosRatio0=FLOAT3D(0,0,0);
       m_vPosRatio1=FLOAT3D(0,0,0);
+
+      if (m_penPlayer!=NULL)
+      {
+        if(cmNp0.m_bTargetCaller)  { m_penViewTarget0=m_penPlayer;}
+        if(cmNp1.m_bTargetCaller)  { m_penViewTarget1=m_penPlayer;}
+      }
+
       if( m_penViewTarget0!=NULL)
       {
         m_vPosRatio0=cmNp0.m_vPosRatio;
@@ -378,8 +421,14 @@ functions:
       m_qANp1 = qPNp1*Exp( (Log(qPNp0.Inv()*qPNp1) - qTNp1)/2 );
 
       // check for stop moving
-      if( cmNp0.m_bStopMoving) {
+      if( cmNp0.m_bStopMoving) 
+	  {
         m_bStopMoving = TRUE;
+
+		if(_bLoginProcess && !_bWorldEditorApp)
+		{
+			m_bMoving		= FALSE;
+		}		
       }
     }
 
@@ -428,12 +477,15 @@ functions:
     CPlacement3D plNew;
     plNew.pl_PositionVector = vPos;
     DecomposeRotationMatrixNoSnap(plNew.pl_OrientationAngle, mRot);
-    SetPlacement_internal(plNew, mRot, TRUE);
+    SetPlacement_special(plNew, mRot, SPIF_NEAR);
     // if lerping is disabled
     if (!bLerping) {
       // make last placement same as this one
+			if(!m_bStopLerp)
+			{
       en_plLastPlacement = en_plPlacement;  
     }
+		}
     // set new fov
     m_fLastFOV = m_fFOV;
     m_fFOV = fFOV;
@@ -446,7 +498,11 @@ functions:
       return;
     }
     //
-    if( m_bStopMoving) {
+		extern CInput *_pInput;
+		if( m_bStopMoving || 
+			((_pInput->IsLMouseButtonPressed() || _pInput->IsRMouseButtonPressed()) &&
+			(!_bLoginProcess || _bWorldEditorApp)) )
+		{
       m_bMoving = FALSE;
       // mark for removing from list of movers
       en_ulFlags |= ENF_INRENDERING;
@@ -492,6 +548,34 @@ procedures:
         }
         return;
       }
+      on( EStart) : {
+        ECameraStart eStart;
+        eStart.penCamera = this;
+        m_penPlayer->SendEvent(eStart);
+        resume;
+      }
+		on (ETrigger eTrigger) : 
+		{
+			// 싱글모드에서는 카메라 플레이는 단 한번만 되도록 한다.
+			if(_pNetwork->m_bSingleMode && bPlayedCamera)
+			{
+				resume;
+			}
+
+			CEntity *penCaused;
+			penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
+			if( IsDerivedFromClass( penCaused, &CPlayer_DLLClass)) 
+			{
+				m_penPlayer = penCaused;
+
+				if(_pNetwork->m_bSingleMode)
+				{
+					bPlayedCamera = TRUE;
+				}
+				call PlayCamera();
+			}
+			resume;
+		}
       otherwise() : {
         resume;
       }
@@ -571,6 +655,34 @@ procedures:
         m_penPlayer->SendEvent(eStop);
         return;
       }
+      on( EStart) : {
+        ECameraStart eStart;
+        eStart.penCamera = this;
+        m_penPlayer->SendEvent(eStart);
+        resume;
+      }
+		on (ETrigger eTrigger) : 
+		{
+			// 싱글모드에서는 카메라 플레이는 단 한번만 되도록 한다.
+			if(_pNetwork->m_bSingleMode && bPlayedCamera)
+			{
+				resume;
+			}
+
+			CEntity *penCaused;
+			penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
+			if( IsDerivedFromClass( penCaused, &CPlayer_DLLClass)) 
+			{
+				m_penPlayer = penCaused;
+
+				if(_pNetwork->m_bSingleMode)
+				{
+					bPlayedCamera = TRUE;
+				}
+				call PlayCamera();
+			}
+			resume;
+		}
       otherwise() : {
         resume;
       }
@@ -604,13 +716,14 @@ procedures:
     }
   }
 
-
   Main()
   {
     // init as model
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MOVABLE);
     SetCollisionFlags(ECF_CAMERA);
+    SetSpawnFlags(GetSpawnFlags()&~SPF_COOPERATIVE);
+
     // set appearance
     FLOAT fSize = 5.0f;
     GetModelObject()->mo_Stretch = FLOAT3D(fSize, fSize, fSize);
@@ -618,7 +731,8 @@ procedures:
     SetModelMainTexture(TEXTURE_CAMERA);
     m_fLastFOV = m_fFOV;
 
-    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, "Camera Marker")) {
+		if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CCameraMarker_DLLClass)) 
+		{
       WarningMessage( "Entity '%s' is not of Camera Marker class!", m_penTarget);
       m_penTarget = NULL;
     }
@@ -638,20 +752,51 @@ procedures:
         pcm->m_penViewTarget->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
         m_vRelTargetOffset=vAbsTarget-pcm->m_penViewTarget->GetPlacement().pl_PositionVector;
       }
+      if (pcm->m_bTargetCaller && m_penPlayer!=NULL)
+      {
+        FLOAT3D vAbsTarget=FLOAT3D(0,0,0);
+        m_penPlayer->GetEntityPointRatio(pcm->m_vPosRatio, vAbsTarget, FALSE);
+        m_vRelTargetOffset=vAbsTarget-m_penPlayer->GetPlacement().pl_PositionVector;
+      }
     }
 
     while(TRUE)
     {
-      wait() {
-        on (ETrigger eTrigger) : {
-          CEntity *penCaused;
-          penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
-          if( IsDerivedFromClass(penCaused, "Player")) {
-            m_penPlayer = penCaused;
-            call PlayCamera();
-          }
-          resume;
-        }
+			wait() 
+			{
+				on (ETrigger eTrigger) : 
+				{
+//강동민 수정 시작 다중 공격 작업	08.27
+					// 싱글모드에서는 카메라 플레이는 단 한번만 되도록 한다.
+					if(_pNetwork->m_bSingleMode && bPlayedCamera)
+					{
+						resume;
+					}
+//강동민 수정 끝 다중 공격 작업		08.27
+
+			        CEntity *penCaused;
+					penCaused = FixupCausedToPlayer(this, eTrigger.penCaused, FALSE);
+					if( IsDerivedFromClass( penCaused, &CPlayer_DLLClass)) 
+					{
+						m_penPlayer = penCaused;
+
+//강동민 수정 시작 다중 공격 작업	08.27
+						if(_pNetwork->m_bSingleMode)
+						{
+							bPlayedCamera = TRUE;
+						}
+//강동민 수정 끝 다중 공격 작업		08.27
+						call PlayCamera();
+					}
+					resume;
+				}
+//강동민 수정 시작 클로즈 준비 작업	08.10
+				on(EStopLerp eStop) :
+				{
+					m_bStopLerp = eStop.bActive;
+					resume;
+				}
+//강동민 수정 끝 클로즈 준비 작업		08.10
       }
     };
 
@@ -660,4 +805,3 @@ procedures:
     return;
   };
 };
-

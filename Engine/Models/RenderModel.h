@@ -64,15 +64,19 @@ extern ENGINE_API void BeginModelRenderingMask(
   CAnyProjection3D &prProjection, UBYTE *pubMask, SLONG slMaskWidth, SLONG slMaskHeight);
 extern ENGINE_API void EndModelRenderingMask(void);
 
-#define RMF_ATTACHMENT          (1UL<<0)    // set for attachment render models
-#define RMF_FOG                 (1UL<<1)    // render in fog
-#define RMF_HAZE                (1UL<<2)    // render in haze
-#define RMF_SPECTATOR           (1UL<<3)    // model will not be rendered but shadows might
-#define RMF_INVERTED            (1UL<<4)    // stretch is inverted
-#define RMF_BBOXSET             (1UL<<5)    // bounding box has been calculated
-#define RMF_INSIDE              (1UL<<6)    // doesn't need clipping to frustum
-#define RMF_INMIRROR            (1UL<<7)    // doesn't need clipping to mirror/warp plane
-#define RMF_WEAPON              (1UL<<8)    // TEMP: weapon model is rendering so don't use ATI's Truform!
+#define RMF_ATTACHMENT (1UL<<0)  // set for attachment render models
+#define RMF_FOG        (1UL<<1)  // render in fog
+#define RMF_HAZE       (1UL<<2)  // render in haze
+#define RMF_SPECTATOR  (1UL<<3)  // model will not be rendered but shadows might
+#define RMF_INVERTED   (1UL<<4)  // stretch is inverted
+#define RMF_BBOXSET    (1UL<<5)  // bounding box has been calculated
+#define RMF_MIRROR     (1UL<<6)  // mirrored/warped projection
+#define RMF_INSIDE     (1UL<<7)  // doesn't need clipping to frustum
+#define RMF_INMIRROR   (1UL<<8)  // doesn't need clipping to mirror/warp plane
+#define RMF_WEAPON     (1UL<<9)  // TEMP: weapon model is rendering so don't use ATI's Truform!
+//안태훈 수정 시작	//(5th Closed beta)(0.2)
+#define RMF_OVERDRAW   (1UL<<10) //no depth test, & write
+//안태훈 수정 끝	//(5th Closed beta)(0.2)
 
 class ENGINE_API CRenderModel {
 public:
@@ -110,6 +114,7 @@ public:
 public:
   CRenderModel(void);
   ~CRenderModel(void);
+  void Clear(void);  // to make CStaticStackArray happy
   // set placement of the object
   void SetObjectPlacement(const CPlacement3D &pl);
   void SetObjectPlacement(const FLOAT3D &v, const FLOATmatrix3D &m);

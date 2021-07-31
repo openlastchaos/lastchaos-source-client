@@ -1,3 +1,8 @@
+/*
+ *  S-Cape3D 3D game engine library
+ *  Copyright (c) 1997, CroTeam. All rights reserved.
+ */
+
 class CLightRectangle {
 public:
   // the rectangle coordinates

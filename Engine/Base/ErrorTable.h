@@ -1,18 +1,20 @@
 #ifndef SE_INCL_ERRORTABLE_H
 #define SE_INCL_ERRORTABLE_H
 #ifdef PRAGMA_ONCE
-  #pragma once
+#pragma once
 #endif
 
-struct ErrorCode {
-  SLONG ec_Code;        // error code value
-  char *ec_Name;        // error code constant name (in .h files)
-  char *ec_Description; // error description (in help files)
+struct ErrorCode 
+{
+	SLONG ec_Code;        // error code value
+	char *ec_Name;        // error code constant name (in .h files)
+	char *ec_Description; // error description (in help files)
 };
 
-struct ErrorTable {
-  INDEX et_Count;               // number of errors
-  struct ErrorCode *et_Errors;  // array of error codes
+struct ErrorTable 
+{
+	INDEX et_Count;               // number of errors
+	struct ErrorCode *et_Errors;  // array of error codes
 };
 
 // macro for defining error codes

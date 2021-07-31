@@ -1,7 +1,7 @@
 #ifndef SE_INCL_ANIM_H
 #define SE_INCL_ANIM_H
 #ifdef PRAGMA_ONCE
-  #pragma once
+	#pragma once
 #endif
 
 #include <Engine/Base/Serial.h>
@@ -18,9 +18,9 @@ typedef char FILE_NAME[PATH_MAX];
  */
 class CAnimInfo {
 public:
-  NAME ai_AnimName;
-  TIME ai_SecsPerFrame;	    // speed of this animation
-  INDEX ai_NumberOfFrames;
+	NAME ai_AnimName;
+	TIME ai_SecsPerFrame;	    // speed of this animation
+	INDEX ai_NumberOfFrames;
 };
 
 /*
@@ -39,56 +39,59 @@ public:
  */
 class CAnimData : public CSerial {
 public:
-  INDEX ad_NumberOfAnims;
-  class COneAnim *ad_Anims;	    // array of animations
+	INDEX ad_NumberOfAnims;
+	class COneAnim *ad_Anims;	    // array of animations
 
 public:
 
-  // fill member variables with invalid data
+	// fill member variables with invalid data
 	ENGINE_API CAnimData();
 	// Free allocated data (ad_Anims array), check invalid data
 	ENGINE_API ~CAnimData();
-  // clears animation data object
-  ENGINE_API void Clear();
-  // check if this kind of objects is auto-freed
-  virtual BOOL IsAutoFreed(void);
-  // reference counting functions
-  virtual void RemReference_internal(void);
+	// clears animation data object
+	ENGINE_API void Clear();
+	// check if this kind of objects is auto-freed
+	virtual BOOL IsAutoFreed(void);
+	// reference counting functions
+	virtual void RemReference_internal(void);
 
-  // get amount of memory used by this object
-  SLONG GetUsedMemory(void);
+	// get amount of memory used by this object
+	SLONG GetUsedMemory(void);
 
-  // reference counting functions
-  void AddReference(void);
-  void RemReference(void);
+	// reference counting functions
+	void AddReference(void);
+	void RemReference(void);
 
-  // creates given number of default animations (1 frame, given name and apeed)
-  ENGINE_API void CreateAnimations( INDEX ctAnimations, CTString strName="None",
-                         INDEX iDefaultFrame=0,TIME tmSpeed=0.02f);
-  // replaces frames array with given one
-  ENGINE_API void SetFrames( INDEX iAnimation, INDEX ctFrames, INDEX *pNewFrames);
-  // replaces requested animation's name with given one
-  ENGINE_API void SetName( INDEX iAnimation, CTString strNewName);
-  // replaces requested animation's speed with given one
-  ENGINE_API void SetSpeed( INDEX iAnimation, TIME tmSpeed);
-  // obtains frame index for given place in array representing given animation
-  ENGINE_API INDEX GetFrame( INDEX iAnimation, INDEX iFramePlace);
-  // sets frame index for given place in array representing given animation
-  ENGINE_API void SetFrame( INDEX iAnimation, INDEX iFramePlace, INDEX iNewFrame);
-  // fill animation data object vith valid data containing one animation, one frame
+	// creates given number of default animations (1 frame, given name and apeed)
+	ENGINE_API void CreateAnimations( INDEX ctAnimations, CTString strName="None",
+												 INDEX iDefaultFrame=0,TIME tmSpeed=0.02f);
+	// replaces frames array with given one
+	ENGINE_API void SetFrames( INDEX iAnimation, INDEX ctFrames, INDEX *pNewFrames);
+	// replaces requested animation's name with given one
+	ENGINE_API void SetName( INDEX iAnimation, CTString strNewName);
+	// replaces requested animation's speed with given one
+	ENGINE_API void SetSpeed( INDEX iAnimation, TIME tmSpeed);
+//안태훈 수정 시작	//(Add Sun Moon Entity and etc)(0.1)
+	ENGINE_API TIME GetSpeed( INDEX iAnimation);
+//안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.1)
+	// obtains frame index for given place in array representing given animation
+	ENGINE_API INDEX GetFrame( INDEX iAnimation, INDEX iFramePlace);
+	// sets frame index for given place in array representing given animation
+	ENGINE_API void SetFrame( INDEX iAnimation, INDEX iFramePlace, INDEX iNewFrame);
+	// fill animation data object vith valid data containing one animation, one frame
 	ENGINE_API void DefaultAnimation();
-  /* Get animation's info. */
-  ENGINE_API void GetAnimInfo(INDEX iAnimNo, CAnimInfo &aiInfo) const;
-  /* Add animation */
-  ENGINE_API void AddAnimation(void);
-  /* Delete animation */
-  ENGINE_API void DeleteAnimation(INDEX iAnim);
-  /* Get number of animations. */
-  ENGINE_API INDEX GetAnimsCt(void) const;
+	/* Get animation's info. */
+	ENGINE_API void GetAnimInfo(INDEX iAnimNo, CAnimInfo &aiInfo) const;
+	/* Add animation */
+	ENGINE_API void AddAnimation(void);
+	/* Delete animation */
+	ENGINE_API void DeleteAnimation(INDEX iAnim);
+	/* Get number of animations. */
+	ENGINE_API INDEX GetAnimsCt(void) const;
 	// load list of frames from script file
-  ENGINE_API void LoadFromScript_t( CTStream *File, CListHead *FrameFileList); // throw char *
-  // print #define <animation name> lines for all animations into given file
-  void ExportAnimationNames_t( CTStream *ostrFile, CTString strAnimationPrefix);  // throw char *
+	ENGINE_API void LoadFromScript_t( CTStream *File, CListHead *FrameFileList); // throw char *
+	// print #define <animation name> lines for all animations into given file
+	void ExportAnimationNames_t( CTStream *ostrFile, CTString strAnimationPrefix);  // throw char *
 	void Read_t( CTStream *istrFile); // throw char *
 	void Write_t( CTStream *ostrFile); // throw char *
 };
@@ -104,104 +107,104 @@ public:
 
 class CAnimObject : public CChangeable {
 public:
-  TIME ao_tmAnimStart;      // time when current anim was started
-  INDEX ao_iCurrentAnim;	  // index of active animation
-  ULONG ao_ulFlags;         // flags
-  INDEX ao_iLastAnim;       // index of last animation (for smooth transition)
+	TIME ao_tmAnimStart;      // time when current anim was started
+	INDEX ao_iCurrentAnim;	  // index of active animation
+	ULONG ao_ulFlags;         // flags
+	INDEX ao_iLastAnim;       // index of last animation (for smooth transition)
 
-  /* Calculate frame that coresponds to given time. */
-  INDEX FrameInTime(TIME time) const;
-
-public:
-  CAnimData *ao_AnimData;
+	/* Calculate frame that coresponds to given time. */
+	INDEX FrameInTime(TIME time) const;
 
 public:
+	CAnimData *ao_AnimData;
 
-  // some of usual smart pointer functions are implemented, because AnimObjects
-  // behave as smart pointers to AnimData objects
-  /* Default constructor. */
-  ENGINE_API CAnimObject(void);
-  /* Destructor. */
-  ENGINE_API ~CAnimObject(void);
-  // copy from another object of same class
-  ENGINE_API void Copy(CAnimObject &aoOther);
-  // synchronize with another animation object (set same anim and frames)
-  ENGINE_API void Synchronize(CAnimObject &aoOther);
+public:
 
-  // copying of AnimObjects is not allowed
-  inline CAnimObject(const CAnimObject &aoOther) {
-    ASSERT(FALSE); };
-  inline const CAnimObject &operator=(const CAnimObject &aoOther) {
-    ASSERT(FALSE); return *this;};
+	// some of usual smart pointer functions are implemented, because AnimObjects
+	// behave as smart pointers to AnimData objects
+	/* Default constructor. */
+	ENGINE_API CAnimObject(void);
+	/* Destructor. */
+	ENGINE_API ~CAnimObject(void);
+	// copy from another object of same class
+	ENGINE_API void Copy(CAnimObject &aoOther);
+	// synchronize with another animation object (set same anim and frames)
+	ENGINE_API void Synchronize(CAnimObject &aoOther);
 
-  // clip frame index to be inside valid range (wrap around for looping anims)
-  INDEX ClipFrame(INDEX iFrame) const;
-  /* Loop anims forward */
-  ENGINE_API void NextAnim(void);
-  /* Loop anims backward */
-  ENGINE_API void PrevAnim(void);
-  /* Loop frames forward */
-  ENGINE_API void NextFrame(void);
-  /* Loop frames backward */
-  ENGINE_API void PrevFrame(void);
-  /* Select frame in given time offset */
-  ENGINE_API void SelectFrameInTime(TIME tmOffset);
-  /* Select first frame */
-  ENGINE_API void FirstFrame(void);
-  /* Select last frame */
-  ENGINE_API void LastFrame(void);
-  /* Test if some updateable object is up to date with this anim object. */
-  ENGINE_API BOOL IsUpToDate(const CUpdateable &ud) const;
+	// copying of AnimObjects is not allowed
+	inline CAnimObject(const CAnimObject &aoOther) {
+		ASSERT(FALSE); };
+	inline const CAnimObject &operator=(const CAnimObject &aoOther) {
+		ASSERT(FALSE); return *this;};
+
+	// clip frame index to be inside valid range (wrap around for looping anims)
+	INDEX ClipFrame(INDEX iFrame) const;
+	/* Loop anims forward */
+	ENGINE_API void NextAnim(void);
+	/* Loop anims backward */
+	ENGINE_API void PrevAnim(void);
+	/* Loop frames forward */
+	ENGINE_API void NextFrame(void);
+	/* Loop frames backward */
+	ENGINE_API void PrevFrame(void);
+	/* Select frame in given time offset */
+	ENGINE_API void SelectFrameInTime(TIME tmOffset);
+	/* Select first frame */
+	ENGINE_API void FirstFrame(void);
+	/* Select last frame */
+	ENGINE_API void LastFrame(void);
+	/* Test if some updateable object is up to date with this anim object. */
+	ENGINE_API BOOL IsUpToDate(const CUpdateable &ud) const;
 	void Read_t( CTStream *istrFile); // throw char *
 	void Write_t( CTStream *ostrFile); // throw char *
 
-  /* Get animation's info. */
-  ENGINE_API void GetAnimInfo(INDEX iAnimNo, CAnimInfo &aiInfo) const;
+	/* Get animation's info. */
+	ENGINE_API void GetAnimInfo(INDEX iAnimNo, CAnimInfo &aiInfo) const;
 
-  /* Attach data to this object. */
-  ENGINE_API void SetData(CAnimData *pAD);
-  // obtain animation and set it for this object
-  ENGINE_API void SetData_t(const CTFileName &fnmAnim); // throw char *
+	/* Attach data to this object. */
+	ENGINE_API void SetData(CAnimData *pAD);
+	// obtain animation and set it for this object
+	ENGINE_API void SetData_t(const CTFileName &fnmAnim); // throw char *
 
-  /* Get current anim data ptr. */
-  __forceinline CAnimData *GetData() { return ao_AnimData; };
+	/* Get current anim data ptr. */
+	__forceinline CAnimData *GetData() { return ao_AnimData; };
 
-  /* Get animation's length. */
-  ENGINE_API FLOAT GetCurrentAnimLength(void) const;
-  ENGINE_API FLOAT GetAnimLength(INDEX iAnim) const;
-  /* Get number of animations in current anim data */
-  ENGINE_API INDEX GetAnimsCt() const;
-  /* If animation has finished */
-  ENGINE_API BOOL IsAnimFinished(void) const;
-  /* Get passed time from start of animation */
-  ENGINE_API TIME GetPassedTime(void) const;
+	/* Get animation's length. */
+	ENGINE_API FLOAT GetCurrentAnimLength(void) const;
+	ENGINE_API FLOAT GetAnimLength(INDEX iAnim) const;
+	/* Get number of animations in current anim data */
+	ENGINE_API INDEX GetAnimsCt() const;
+	/* If animation has finished */
+	ENGINE_API BOOL IsAnimFinished(void) const;
+	/* Get passed time from start of animation */
+	ENGINE_API TIME GetPassedTime(void) const;
 
-  /* Start new animation -- obsolete. */
+	/* Start new animation -- obsolete. */
 	ENGINE_API void StartAnim(INDEX iNew);
-  /* Start playing an animation. */
+	/* Start playing an animation. */
 	ENGINE_API void PlayAnim(INDEX iNew, ULONG ulFlags);
-  /* Seamlessly continue playing another animation from same point. */
+	/* Seamlessly continue playing another animation from same point. */
 	ENGINE_API void SwitchToAnim(INDEX iNew);
-  /* Set new animation but doesn't starts it. */
+	/* Set new animation but doesn't starts it. */
 	ENGINE_API void SetAnim(INDEX iNew);
-  /* Reset anim (restart) */
-  ENGINE_API void ResetAnim();
-  /* Pauses current animation. */
+	/* Reset anim (restart) */
+	ENGINE_API void ResetAnim();
+	/* Pauses current animation. */
 	ENGINE_API void PauseAnim();
-  /* Continues paused animation. */
+	/* Continues paused animation. */
 	ENGINE_API void ContinueAnim();
-  /* Offsets the animation phase */
+	/* Offsets the animation phase */
 	ENGINE_API void OffsetPhase(TIME tm);
-  /* Retrieves paused flag */
-  ENGINE_API BOOL IsPaused(void);
-  /* Gets the number of current animation */
-  ENGINE_API INDEX GetAnim(void) const;
-  /* Gets the number of current frame. */
-  ENGINE_API INDEX GetFrame(void) const;
-  /* Gets number of frames in current anim. */
-  ENGINE_API INDEX GetFramesInCurrentAnim(void) const;
-  /* Get  information for linear interpolation beetween frames. */
-  ENGINE_API void GetFrame( INDEX &iFrame0, INDEX &iFrame1, FLOAT &fRatio) const;
+	/* Retrieves paused flag */
+	ENGINE_API BOOL IsPaused(void);
+	/* Gets the number of current animation */
+	ENGINE_API INDEX GetAnim(void) const;
+	/* Gets the number of current frame. */
+	ENGINE_API INDEX GetFrame(void) const;
+	/* Gets number of frames in current anim. */
+	ENGINE_API INDEX GetFramesInCurrentAnim(void) const;
+	/* Get  information for linear interpolation beetween frames. */
+	ENGINE_API void GetFrame( INDEX &iFrame0, INDEX &iFrame1, FLOAT &fRatio) const;
 };
 
 

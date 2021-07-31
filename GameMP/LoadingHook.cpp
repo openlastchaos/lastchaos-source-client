@@ -12,7 +12,6 @@ extern CGame *_pGame;
 #endif
 static CDrawPort *_pdpLoadingHook = NULL;  // drawport for loading hook
 extern BOOL _bUserBreakEnabled;
-extern BOOL map_bIsFirstEncounter;
 
 
 #define REFRESHTIME (0.2f)
@@ -40,6 +39,9 @@ void RemapLevelNames(INDEX &iLevel)
 
 static void LoadingHook_t(CProgressHookInfo *pphi)
 {
+  if (pphi->phi_phsStatus==PHS_NEWFILE) {
+    return;
+  }
   // if user presses escape
   ULONG ulCheckFlags = 0x8000;
   if (pphi->phi_fCompleted>0) {
@@ -77,8 +79,8 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
   // skip if cannot lock drawport
   CDrawPort *pdp = _pdpLoadingHook;                           
   ASSERT(pdp!=NULL);
-  CDrawPort dpHook(pdp, TRUE);
-  if( !dpHook.Lock()) return;
+  CDrawPort dpHook(pdp, 0);
+  dpHook.SetAsCurrent();
 
   // clear screen
   dpHook.Fill(C_BLACK|255);
@@ -86,13 +88,13 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
   // get session properties currently loading
   CSessionProperties *psp = (CSessionProperties *)_pNetwork->GetSessionProperties();
   ULONG ulLevelMask = psp->sp_ulLevelsMask;
+  INDEX iLevel = -1;
   if (psp->sp_bCooperative) {
     INDEX iLevel = -1;
     INDEX iLevelNext = -1;
     CTString strLevelName = _pNetwork->ga_fnmWorld.FileName();
     CTString strNextLevelName = _pNetwork->ga_fnmNextLevel.FileName();
     
-    // second encounter
     INDEX u, v;
     u = v = -1;
     strLevelName.ScanF("%01d_%01d_", &u, &v);
@@ -102,18 +104,9 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
     strNextLevelName.ScanF("%01d_%01d_", &u, &v);
     iLevelNext = u*10+v;
     RemapLevelNames(iLevelNext);
-
-    // first encounter
-    if(iLevel == -1) {
-      strLevelName.ScanF("%02d_", &iLevel);
-      strNextLevelName.ScanF("%02d_", &iLevelNext);
-
-      if(iLevel != -1) {
-        map_bIsFirstEncounter = TRUE;
-      }
-    } else {
-      map_bIsFirstEncounter = FALSE;
-    }
+    
+    //strLevelName.ScanF("%02d_", &iLevel);
+    //strNextLevelName.ScanF("%02d_", &iLevelNext);
    
     if (iLevel>0) {
       ulLevelMask|=1<<(iLevel-1);
@@ -123,19 +116,31 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
     }
   }
 
-  if (ulLevelMask!=0 && !_pNetwork->IsPlayingDemo()) {
+  /*if (ulLevelMask!=0 && !_pNetwork->IsPlayingDemo()) {
     // map hook
     extern void RenderMap( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi);
     RenderMap(&dpHook, ulLevelMask, pphi);
 
     // finish rendering
-    dpHook.Unlock();
     dpHook.dp_Raster->ra_pvpViewPort->SwapBuffers();
 
     // keep current time
     tvLast = _pTimer->GetHighPrecisionTimer();
     return;
-  }
+  }*/
+
+  // map hook
+  // by seo
+    extern void RenderLoading( CDrawPort *pdp, ULONG ulLevelMask, CProgressHookInfo *pphi);
+    RenderLoading(&dpHook, ulLevelMask, pphi);
+
+    // finish rendering
+    dpHook.dp_Raster->ra_pvpViewPort->SwapBuffers();
+
+    // keep current time
+    tvLast = _pTimer->GetHighPrecisionTimer();
+    return;
+  // end seo
 
   // get sizes
   PIX pixSizeI = dpHook.GetWidth();
@@ -172,81 +177,6 @@ static void LoadingHook_t(CProgressHookInfo *pphi)
     dpHook.PutTextC( TRANS( "PRESS ESC TO ABORT"), pixSizeI/2, pixSizeJ-pixBarSizeJ-2-pixCharSizeJ, colEsc);
   }
 
-/*  
-  //LCDPrepare(1.0f);
-  //LCDSetDrawport(&dpHook);
-  
-  // fill the box with background dirt and grid
-  //LCDRenderClouds1();
-  //LCDRenderGrid();
-
-  // draw progress bar
-  PIX pixBarCentI = pixBoxSizeI*1/2;
-  PIX pixBarCentJ = pixBoxSizeJ*3/4;
-  PIX pixBarSizeI = pixBoxSizeI*7/8;
-  PIX pixBarSizeJ = pixBoxSizeJ*3/8;
-  PIX pixBarMinI = pixBarCentI-pixBarSizeI/2;
-  PIX pixBarMaxI = pixBarCentI+pixBarSizeI/2;
-  PIX pixBarMinJ = pixBarCentJ-pixBarSizeJ/2;
-  PIX pixBarMaxJ = pixBarCentJ+pixBarSizeJ/2;
-
-  dpBox.Fill(pixBarMinI, pixBarMinJ, 
-    pixBarMaxI-pixBarMinI, pixBarMaxJ-pixBarMinJ, C_BLACK|255);
-  dpBox.Fill(pixBarMinI, pixBarMinJ, 
-    (pixBarMaxI-pixBarMinI)*pphi->phi_fCompleted, pixBarMaxJ-pixBarMinJ, C_GREEN|255);
-
-  // put more dirt
-  LCDRenderClouds2Light();
-
-  // draw borders
-  COLOR colBorders = LerpColor(C_GREEN, C_BLACK, 200);
-  LCDDrawBox(0,-1, PIXaabbox2D(
-    PIX2D(pixBarMinI, pixBarMinJ), 
-    PIX2D(pixBarMaxI, pixBarMaxJ)), 
-    colBorders|255);
-  LCDDrawBox(0,-1, PIXaabbox2D(
-    PIX2D(0,0), PIX2D(dpBox.GetWidth(), dpBox.GetHeight())), 
-    colBorders|255);
-
-  // print status text
-  dpBox.SetFont( _pfdDisplayFont);
-  dpBox.SetTextScaling( 1.0f);
-  dpBox.SetTextAspect( 1.0f);
-  // print status text
-  CTString strRes;
-  strRes.PrintF( "%s", pphi->phi_strDescription);
-  //strupr((char*)(const char*)strRes);
-  dpBox.PutTextC( strRes, 160, 17, C_GREEN|255);
-  strRes.PrintF( "%3.0f%%", pphi->phi_fCompleted*100);
-  dpBox.PutTextCXY( strRes, pixBarCentI, pixBarCentJ, C_GREEN|255);
-  dpBox.Unlock();
-
-  if( Flesh.gm_bFirstLoading) {
-#if USECUSTOMTEXT
-    FLOAT fScaling = (FLOAT)slSizeI/640.0f;
-    dpHook.Lock();
-    dpHook.SetFont( _pfdDisplayFont);
-    dpHook.SetTextScaling( fScaling);
-    dpHook.SetTextAspect( 1.0f);
-    //dpHook.Fill( 0, 0, slSizeI, pixCenterJ, C_vdGREEN|255, C_vdGREEN|255, C_vdGREEN|0, C_vdGREEN|0);
-    dpHook.PutTextC( TRANS( "SERIOUS SAM - TEST VERSION"), pixCenterI, 5*fScaling, C_WHITE|255);
-    dpHook.PutTextC( TRANS( "THIS IS NOT A DEMO VERSION, THIS IS A COMPATIBILITY TEST!"), pixCenterI, 25*fScaling, C_WHITE|255);
-    dpHook.PutTextC( TRANS( "Serious Sam (c) 2000 Croteam LLC, All Rights Reserved.\n"), pixCenterI, 45*fScaling, C_WHITE|255);
-    dpHook.PutText( _strCustomText, 1*fScaling, 85*fScaling, C_GREEN|255);
-    dpHook.Unlock();
-#endif
-  } else if (_bUserBreakEnabled) {
-    FLOAT fScaling = (FLOAT)slSizeI/640.0f;
-    dpHook.Lock();
-    dpHook.SetFont( _pfdDisplayFont);
-    dpHook.SetTextScaling( fScaling);
-    dpHook.SetTextAspect( 1.0f);
-    //dpHook.Fill( 0, 0, slSizeI, pixCenterJ, C_vdGREEN|255, C_vdGREEN|255, C_vdGREEN|0, C_vdGREEN|0);
-    dpHook.PutTextC( TRANS( "PRESS ESC TO ABORT"), pixCenterI, pixCenterJ+pixBoxSizeJ+5*fScaling, C_WHITE|255);
-  }
-  */
-
-  dpHook.Unlock();
   // finish rendering
   dpHook.dp_Raster->ra_pvpViewPort->SwapBuffers();
 

@@ -81,20 +81,20 @@
   #ifndef ASSERT
     #define ASSERT(expr) 				            \
       if(!(expr)) {				                  \
-        /*SAFEBREAKPOINT;*/                     \
+        SAFEBREAKPOINT;                     \
         _assert(#expr,__FILE__,__LINE__);		\
       } else NOTHING
   #endif
 
   #define ASSERTALWAYS(msg)			                \
     if (1) {					                          \
-      /*SAFEBREAKPOINT;*/                           \
+      SAFEBREAKPOINT;                           \
       _assert(msg,__FILE__,__LINE__); 	      	\
     } else NOTHING
 
   #define ASSERTMSG(expr, msg) 			            \
     if(!(expr)) {				                        \
-      /*SAFEBREAKPOINT;*/                           \
+      SAFEBREAKPOINT;                           \
       _assert(msg,__FILE__,__LINE__); 	        \
     } else NOTHING
   #define DEBUGSTRING(str) (str)

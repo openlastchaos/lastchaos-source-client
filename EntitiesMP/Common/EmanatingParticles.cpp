@@ -14,12 +14,12 @@ CEmittedParticle::CEmittedParticle(void)
   ep_fRotSpeed=0;
 }
 
-void CEmittedParticle::Write_t( CTStream &strm)
+void CEmittedParticle::Write_t( CTStream &strm,BOOL bNetwork)
 {
   strm.WriteRawChunk_t( this, sizeof(CEmittedParticle));
 }
 
-void CEmittedParticle::Read_t( CTStream &strm)
+void CEmittedParticle::Read_t( CTStream &strm,BOOL bNetwork)
 {
   strm.ReadRawChunk_t( this, sizeof(CEmittedParticle));
 }
@@ -119,24 +119,9 @@ void CEmiter::AnimateParticles(void)
 
 void CEmiter::RenderParticles(void)
 {
-  switch(em_etType)
-  {
-  case ET_AIR_ELEMENTAL:
-    Particles_AirElementalBlow(*(CEmiter*)this);
-    break;
-  case ET_SUMMONER_STAFF:
-    Particles_SummonerStaff(*(CEmiter*)this);
-    break;
-  case ET_FIREWORKS01:
-    Particles_Fireworks01(*(CEmiter*)this);
-    break;
-  default:
-    {
-    }
-  }
 }
 
-void CEmiter::Read_t( CTStream &strm)
+void CEmiter::Read_t( CTStream &strm,BOOL bNetwork)
 {
   if (strm.PeekID_t()!=CChunkID(ID_EMITER_VER)) return;
   strm.GetID_t();
@@ -159,11 +144,11 @@ void CEmiter::Read_t( CTStream &strm)
   for(INDEX i=0; i<em_aepParticles.Count(); i++)
   {
     CEmittedParticle &em=em_aepParticles[i];
-    em.Read_t(strm);
+    em.Read_t(strm,bNetwork);
   }
 }
 
-void CEmiter::Write_t( CTStream &strm)
+void CEmiter::Write_t( CTStream &strm,BOOL bNetwork)
 {
   if( !em_bInitialized) return;
   INDEX ctMaxParticles=em_aepParticles.Count();
@@ -180,7 +165,7 @@ void CEmiter::Write_t( CTStream &strm)
   for(INDEX i=0; i<em_aepParticles.Count(); i++)
   {
     CEmittedParticle &em=em_aepParticles[i];
-    em.Write_t(strm);
+    em.Write_t(strm,bNetwork);
   }
 }
 

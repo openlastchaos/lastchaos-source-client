@@ -1,45 +1,55 @@
 406
 %{
 #include "StdH.h"
+//0322
+#include <Engine/Build.h>
+//강동민 수정 시작 1차 버그 수정 작업	08.20
+#include <Engine/GlobalDefinition.h>
+#include "EntitiesMP/Common/CharacterDefinition.h"
+#include <Engine/JobInfo.h>
+//강동민 수정 끝 1차 버그 수정 작업		08.20
 
 #include "ModelsMP/Player/SeriousSam/Player.h"
 #include "ModelsMP/Player/SeriousSam/Body.h"
 #include "ModelsMP/Player/SeriousSam/Head.h"
 
-#include "Models/Weapons/Knife/KnifeItem.h"
-#include "Models/Weapons/Colt/ColtItem.h"
-#include "Models/Weapons/Colt/ColtMain.h"
-#include "Models/Weapons/SingleShotgun/SingleShotgunItem.h"
-#include "Models/Weapons/SingleShotgun/Barrels.h"
-#include "Models/Weapons/DoubleShotgun/DoubleShotgunItem.h"
-#include "Models/Weapons/DoubleShotgun/Dshotgunbarrels.h"
-#include "Models/Weapons/TommyGun/TommyGunItem.h"
-#include "Models/Weapons/TommyGun/Body.h"
-#include "Models/Weapons/MiniGun/MiniGunItem.h"
-#include "Models/Weapons/MiniGun/Body.h"
-#include "Models/Weapons/GrenadeLauncher/GrenadeLauncherItem.h"
-#include "Models/Weapons/RocketLauncher/RocketLauncherItem.h"
-#include "ModelsMP/Weapons/Sniper/SniperItem.h"
-#include "ModelsMP/Weapons/Sniper/Sniper.h"
+//nclude "Models/Weapons/Knife/KnifeItem.h"
+//#include "Models/Weapons/Colt/ColtItem.h"
+//nclude "Models/Weapons/Colt/ColtMain.h"
+//#include "Models/Weapons/SingleShotgun/SingleShotgunItem.h"
+//#include "Models/Weapons/SingleShotgun/Barrels.h"
+//#include "Models/Weapons/DoubleShotgun/DoubleShotgunItem.h"
+//#include "Models/Weapons/DoubleShotgun/Dshotgunbarrels.h"
+//#include "Models/Weapons/TommyGun/TommyGunItem.h"
+//#include "Models/Weapons/TommyGun/Body.h"
+//#include "Models/Weapons/MiniGun/MiniGunItem.h"
+//#include "Models/Weapons/MiniGun/Body.h"
+//#include "Models/Weapons/GrenadeLauncher/GrenadeLauncherItem.h"
+//#include "Models/Weapons/RocketLauncher/RocketLauncherItem.h"
+//#include "ModelsMP/Weapons/Sniper/SniperItem.h"
+//#include "ModelsMP/Weapons/Sniper/Sniper.h"
 //#include "Models/Weapons/Pipebomb/StickItem.h"
-#include "ModelsMP/Weapons/Flamer/FlamerItem.h"
-#include "ModelsMP/Weapons/Flamer/Body.h"
+//#include "ModelsMP/Weapons/Flamer/FlamerItem.h"
+//#include "ModelsMP/Weapons/Flamer/Body.h"
 //#include "ModelsMP/Weapons/Chainsaw/ChainsawItem.h"
-#include "ModelsMP/Weapons/Chainsaw/ChainsawForPlayer.h"
-#include "ModelsMP/Weapons/Chainsaw/BladeForPlayer.h"
-#include "ModelsMP/Weapons/Chainsaw/Body.h"
-#include "Models/Weapons/Laser/LaserItem.h"
+//nclude "ModelsMP/Weapons/Chainsaw/ChainsawForPlayer.h"
+//nclude "ModelsMP/Weapons/Chainsaw/BladeForPlayer.h"
+//nclude "ModelsMP/Weapons/Chainsaw/Body.h"
+//#include "Models/Weapons/Laser/LaserItem.h"
 //#include "Models/Weapons/GhostBuster/GhostBusterItem.h"
 //#include "Models/Weapons/GhostBuster/Effect01.h"
-#include "Models/Weapons/Cannon/Cannon.h"
+//nclude "Models/Weapons/Cannon/Cannon.h"
+#include <Engine/PetInfo.h>
 %}
 
 uses "EntitiesMP/Player";
 uses "EntitiesMP/PlayerWeapons";
+uses "EntitiesMP/Enemy";
+uses "EntitiesMP/PetBase";
 
 // input parameter for animator
 event EAnimatorInit {
-  CEntityPointer penPlayer,            // player owns it
+  CEntityID eidPlayer,            // player that owns it
 };
 
 %{
@@ -57,20 +67,18 @@ enum AnimatorAction {
 #define FLARE_REMOVE 1
 #define FLARE_ADD 2
 
+//#define	WEAPON	3
 
 extern FLOAT plr_fBreathingStrength;
 extern FLOAT plr_fViewDampFactor;
 extern FLOAT plr_fViewDampLimitGroundUp;
 extern FLOAT plr_fViewDampLimitGroundDn;
 extern FLOAT plr_fViewDampLimitWater;
-extern FLOAT wpn_fRecoilSpeed[17];
-extern FLOAT wpn_fRecoilLimit[17];
-extern FLOAT wpn_fRecoilDampUp[17];
-extern FLOAT wpn_fRecoilDampDn[17];
-extern FLOAT wpn_fRecoilOffset[17];
-extern FLOAT wpn_fRecoilFactorP[17];
-extern FLOAT wpn_fRecoilFactorZ[17];
 
+ENGINE_API extern INDEX idPlayerWhole_Animation[ANIM_TOTAL];
+
+
+//..
 
 void CPlayerAnimator_Precache(ULONG ulAvailable)
 {
@@ -87,17 +95,19 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
   pdec->PrecacheTexture(TEX_SPEC_STRONG          );
   pdec->PrecacheModel(MODEL_FLARE02);
   pdec->PrecacheTexture(TEXTURE_FLARE02);
-  pdec->PrecacheModel(MODEL_GOLDAMON);
-  pdec->PrecacheTexture(TEXTURE_GOLDAMON);
+  // deleted by seo below 2 lines
+  //pdec->PrecacheModel(MODEL_GOLDAMON);
+  //pdec->PrecacheTexture(TEXTURE_GOLDAMON);
   pdec->PrecacheTexture(TEX_REFL_GOLD01);
   pdec->PrecacheClass(CLASS_REMINDER);
 
   // precache shells that drop when firing
-  extern void CPlayerWeaponsEffects_Precache(void);
-  CPlayerWeaponsEffects_Precache();
+//  extern void CPlayerWeaponsEffects_Precache(void);
+//  CPlayerWeaponsEffects_Precache();
 
   // precache weapons player has
-  if ( ulAvailable&(1<<(WEAPON_KNIFE-1)) ) {
+  // deleted by seo
+  /*if ( ulAvailable&(1<<(WEAPON_KNIFE-1)) ) {
     pdec->PrecacheModel(MODEL_KNIFE                 );
     pdec->PrecacheTexture(TEXTURE_KNIFE);
   }
@@ -170,7 +180,7 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
     pdec->PrecacheModel(MODEL_GL_GRENADE            ); 
     pdec->PrecacheTexture(TEXTURE_GL_BODY           );   
     pdec->PrecacheTexture(TEXTURE_GL_MOVINGPART     );   
-  }
+  }*/
 
 /*
   if ( ulAvailable&(1<<(WEAPON_PIPEBOMB-1)) ) {
@@ -183,6 +193,7 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
     pdec->PrecacheTexture(TEXTURE_PB_BOMB           );  
   }
 */
+  /*
   if ( ulAvailable&(1<<(WEAPON_FLAMER-1)) ) {
     pdec->PrecacheModel(MODEL_FLAMER      );
     pdec->PrecacheModel(MODEL_FL_BODY     );
@@ -208,7 +219,7 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
     pdec->PrecacheModel(MODEL_LS_BARREL );
     pdec->PrecacheTexture(TEXTURE_LS_BODY  );  
     pdec->PrecacheTexture(TEXTURE_LS_BARREL);  
-  }
+  }*/
 /*
   if ( ulAvailable&(1<<(WEAPON_GHOSTBUSTER-1)) ) {
     pdec->PrecacheModel(MODEL_GHOSTBUSTER     );
@@ -222,14 +233,14 @@ void CPlayerAnimator_Precache(ULONG ulAvailable)
     pdec->PrecacheTexture(TEXTURE_GB_FLARE    );  
   }
 */
-  if ( ulAvailable&(1<<(WEAPON_IRONCANNON-1)) /*||
-       ulAvailable&(1<<(WEAPON_NUKECANNON-1)) */) {
-    pdec->PrecacheModel(MODEL_CANNON    );
-    pdec->PrecacheModel(MODEL_CN_BODY   );
+  //if ( ulAvailable&(1<<(WEAPON_IRONCANNON-1)) /*||
+  //   ulAvailable&(1<<(WEAPON_NUKECANNON-1)) */) {
+    //pdec->PrecacheModel(MODEL_CANNON    );
+    //pdec->PrecacheModel(MODEL_CN_BODY   );
 //    pdec->PrecacheModel(MODEL_CN_NUKEBOX);
 //    pdec->PrecacheModel(MODEL_CN_LIGHT);
-    pdec->PrecacheTexture(TEXTURE_CANNON);
-  }
+    //pdec->PrecacheTexture(TEXTURE_CANNON);
+  //}
 }
 %}
 
@@ -262,6 +273,9 @@ properties:
  21 FLOAT m_fEyesYLastOffset = 0.0f,                 // eyes offset from player position
  22 FLOAT m_fEyesYOffset = 0.0f,
  23 FLOAT m_fEyesYSpeed = 0.0f,                      // eyes speed
+//0105
+ 24 BOOL m_bMdl =FALSE,//TRUE,// 
+//..
  27 FLOAT m_fWeaponYLastOffset = 0.0f,                 // eyes offset from player position
  28 FLOAT m_fWeaponYOffset = 0.0f,
  29 FLOAT m_fWeaponYSpeed = 0.0f,                      // eyes speed
@@ -271,16 +285,31 @@ properties:
 // 26 FLOAT m_fRecoilSpeed = 0.0f,        // eyes speed
 
 // player banking when moving
- 30 BOOL m_bMoving = FALSE,
+ 30 BOOL m_bMoving = FALSE features(EPROPF_NETSEND),
  31 FLOAT m_fMoveLastBanking = 0.0f,
  32 FLOAT m_fMoveBanking = 0.0f,
- 33 BOOL m_iMovingSide = 0,
+ 33 BOOL m_iMovingSide = 0 features(EPROPF_NETSEND), 
  34 BOOL m_bSidestepBankingLeft = FALSE,
  35 BOOL m_bSidestepBankingRight = FALSE,
  36 FLOAT m_fSidestepLastBanking = 0.0f,
  37 FLOAT m_fSidestepBanking = 0.0f,
- 38 INDEX m_iWeaponLast = -1,
- 39 FLOAT m_fBodyAnimTime = -1.0f,
+ 38 INDEX m_iWeaponLast = -1 features(EPROPF_NETSEND),
+ 39 FLOAT m_fBodyAnimTime = -1.0f features(EPROPF_NETSEND),
+
+// ID of player entity that owns the animator - for init over net
+ 40 INDEX m_iPlayerID = -1 features(EPROPF_NETSEND),
+
+ 41 FLOAT m_fAttack1AnimTime = -1.0f,
+ 42 FLOAT m_fAttack2AnimTime = -1.0f,
+ 43 FLOAT m_fSkill1AnimTime = -1.0f,
+ 44 FLOAT m_fSkill2AnimTime = -1.0f,
+ 45 FLOAT m_fAttack3AnimTime = -1.0f,
+ 46 FLOAT m_fAttack4AnimTime = -1.0f,
+
+ 47 FLOAT m_fExtAttack1AnimTime = -1.0f,
+ 48 FLOAT m_fExtAttack2AnimTime = -1.0f,
+ 49 FLOAT m_fExtAttack3AnimTime = -1.0f,
+ 50 FLOAT m_fExtAttack4AnimTime = -1.0f,
 
 {
   CModelObject *pmoModel;
@@ -289,155 +318,165 @@ properties:
 components:
   1 class   CLASS_REMINDER              "Classes\\Reminder.ecl",
 // ************** KNIFE **************
- 20 model   MODEL_KNIFE                 "Models\\Weapons\\Knife\\KnifeItem.mdl",
- 22 texture TEXTURE_KNIFE               "Models\\Weapons\\Knife\\KnifeItem.tex",
+ // deleted by seo
+ /*20 model   MODEL_KNIFE                 "Data\\Models\\Weapons\\Knife\\KnifeItem.mdl",
+ 22 texture TEXTURE_KNIFE               "Data\\Models\\Weapons\\Knife\\KnifeItem.tex",
  
 // ************** COLT **************
- 30 model   MODEL_COLT                  "Models\\Weapons\\Colt\\ColtItem.mdl",
- 31 model   MODEL_COLTCOCK              "Models\\Weapons\\Colt\\ColtCock.mdl",
- 32 model   MODEL_COLTMAIN              "Models\\Weapons\\Colt\\ColtMain.mdl",
- 33 model   MODEL_COLTBULLETS           "Models\\Weapons\\Colt\\ColtBullets.mdl",
- 34 texture TEXTURE_COLTBULLETS         "Models\\Weapons\\Colt\\ColtBullets.tex",
- 35 texture TEXTURE_COLTMAIN            "Models\\Weapons\\Colt\\ColtMain.tex",
- 36 texture TEXTURE_COLTCOCK            "Models\\Weapons\\Colt\\ColtCock.tex",
+ 30 model   MODEL_COLT                  "Data\\Models\\Weapons\\Colt\\ColtItem.mdl",
+ 31 model   MODEL_COLTCOCK              "Data\\Models\\Weapons\\Colt\\ColtCock.mdl",
+ 32 model   MODEL_COLTMAIN              "Data\\Models\\Weapons\\Colt\\ColtMain.mdl",
+ 33 model   MODEL_COLTBULLETS           "Data\\Models\\Weapons\\Colt\\ColtBullets.mdl",
+ 34 texture TEXTURE_COLTBULLETS         "Data\\Models\\Weapons\\Colt\\ColtBullets.tex",
+ 35 texture TEXTURE_COLTMAIN            "Data\\Models\\Weapons\\Colt\\ColtMain.tex",
+ 36 texture TEXTURE_COLTCOCK            "Data\\Models\\Weapons\\Colt\\ColtCock.tex",
 
 // ************** SINGLE SHOTGUN ************
- 40 model   MODEL_SINGLESHOTGUN         "Models\\Weapons\\SingleShotgun\\SingleShotgunItem.mdl",
- 41 model   MODEL_SS_SLIDER             "Models\\Weapons\\SingleShotgun\\Slider.mdl",
- 42 model   MODEL_SS_HANDLE             "Models\\Weapons\\SingleShotgun\\Handle.mdl",
- 43 model   MODEL_SS_BARRELS            "Models\\Weapons\\SingleShotgun\\Barrels.mdl",
- 44 texture TEXTURE_SS_HANDLE           "Models\\Weapons\\SingleShotgun\\Handle.tex",
- 45 texture TEXTURE_SS_BARRELS          "Models\\Weapons\\SingleShotgun\\Barrels.tex",
+ 40 model   MODEL_SINGLESHOTGUN         "Data\\Models\\Weapons\\SingleShotgun\\SingleShotgunItem.mdl",
+ 41 model   MODEL_SS_SLIDER             "Data\\Models\\Weapons\\SingleShotgun\\Slider.mdl",
+ 42 model   MODEL_SS_HANDLE             "Data\\Models\\Weapons\\SingleShotgun\\Handle.mdl",
+ 43 model   MODEL_SS_BARRELS            "Data\\Models\\Weapons\\SingleShotgun\\Barrels.mdl",
+ 44 texture TEXTURE_SS_HANDLE           "Data\\Models\\Weapons\\SingleShotgun\\Handle.tex",
+ 45 texture TEXTURE_SS_BARRELS          "Data\\Models\\Weapons\\SingleShotgun\\Barrels.tex",
 
 // ************** DOUBLE SHOTGUN **************
- 50 model   MODEL_DOUBLESHOTGUN         "Models\\Weapons\\DoubleShotgun\\DoubleShotgunItem.mdl",
- 51 model   MODEL_DS_HANDLE             "Models\\Weapons\\DoubleShotgun\\Dshotgunhandle.mdl",
- 52 model   MODEL_DS_BARRELS            "Models\\Weapons\\DoubleShotgun\\Dshotgunbarrels.mdl",
- 54 model   MODEL_DS_SWITCH             "Models\\Weapons\\DoubleShotgun\\Switch.mdl",
- 56 texture TEXTURE_DS_HANDLE           "Models\\Weapons\\DoubleShotgun\\Handle.tex",
- 57 texture TEXTURE_DS_BARRELS          "Models\\Weapons\\DoubleShotgun\\Barrels.tex",
- 58 texture TEXTURE_DS_SWITCH           "Models\\Weapons\\DoubleShotgun\\Switch.tex",
+ 50 model   MODEL_DOUBLESHOTGUN         "Data\\Models\\Weapons\\DoubleShotgun\\DoubleShotgunItem.mdl",
+ 51 model   MODEL_DS_HANDLE             "Data\\Models\\Weapons\\DoubleShotgun\\Dshotgunhandle.mdl",
+ 52 model   MODEL_DS_BARRELS            "Data\\Models\\Weapons\\DoubleShotgun\\Dshotgunbarrels.mdl",
+ 54 model   MODEL_DS_SWITCH             "Data\\Models\\Weapons\\DoubleShotgun\\Switch.mdl",
+ 56 texture TEXTURE_DS_HANDLE           "Data\\Models\\Weapons\\DoubleShotgun\\Handle.tex",
+ 57 texture TEXTURE_DS_BARRELS          "Data\\Models\\Weapons\\DoubleShotgun\\Barrels.tex",
+ 58 texture TEXTURE_DS_SWITCH           "Data\\Models\\Weapons\\DoubleShotgun\\Switch.tex",
 
 // ************** TOMMYGUN **************
- 70 model   MODEL_TOMMYGUN              "Models\\Weapons\\TommyGun\\TommyGunItem.mdl",
- 71 model   MODEL_TG_BODY               "Models\\Weapons\\TommyGun\\Body.mdl",
- 72 model   MODEL_TG_SLIDER             "Models\\Weapons\\TommyGun\\Slider.mdl",
- 73 texture TEXTURE_TG_BODY             "Models\\Weapons\\TommyGun\\Body.tex",
+ 70 model   MODEL_TOMMYGUN              "Data\\Models\\Weapons\\TommyGun\\TommyGunItem.mdl",
+ 71 model   MODEL_TG_BODY               "Data\\Models\\Weapons\\TommyGun\\Body.mdl",
+ 72 model   MODEL_TG_SLIDER             "Data\\Models\\Weapons\\TommyGun\\Slider.mdl",
+ 73 texture TEXTURE_TG_BODY             "Data\\Models\\Weapons\\TommyGun\\Body.tex",
 
 // ************** MINIGUN **************
- 80 model   MODEL_MINIGUN               "Models\\Weapons\\MiniGun\\MiniGunItem.mdl",
- 81 model   MODEL_MG_BARRELS            "Models\\Weapons\\MiniGun\\Barrels.mdl",
- 82 model   MODEL_MG_BODY               "Models\\Weapons\\MiniGun\\Body.mdl",
- 83 model   MODEL_MG_ENGINE             "Models\\Weapons\\MiniGun\\Engine.mdl",
- 84 texture TEXTURE_MG_BODY             "Models\\Weapons\\MiniGun\\Body.tex",
- 99 texture TEXTURE_MG_BARRELS          "Models\\Weapons\\MiniGun\\Barrels.tex",
+ 80 model   MODEL_MINIGUN               "Data\\Models\\Weapons\\MiniGun\\MiniGunItem.mdl",
+ 81 model   MODEL_MG_BARRELS            "Data\\Models\\Weapons\\MiniGun\\Barrels.mdl",
+ 82 model   MODEL_MG_BODY               "Data\\Models\\Weapons\\MiniGun\\Body.mdl",
+ 83 model   MODEL_MG_ENGINE             "Data\\Models\\Weapons\\MiniGun\\Engine.mdl",
+ 84 texture TEXTURE_MG_BODY             "Data\\Models\\Weapons\\MiniGun\\Body.tex",
+ 99 texture TEXTURE_MG_BARRELS          "Data\\Models\\Weapons\\MiniGun\\Barrels.tex",
 
 // ************** ROCKET LAUNCHER **************
- 90 model   MODEL_ROCKETLAUNCHER        "Models\\Weapons\\RocketLauncher\\RocketLauncherItem.mdl",
- 91 model   MODEL_RL_BODY               "Models\\Weapons\\RocketLauncher\\Body.mdl",
- 92 texture TEXTURE_RL_BODY             "Models\\Weapons\\RocketLauncher\\Body.tex",
- 93 model   MODEL_RL_ROTATINGPART       "Models\\Weapons\\RocketLauncher\\RotatingPart.mdl",
- 94 texture TEXTURE_RL_ROTATINGPART     "Models\\Weapons\\RocketLauncher\\RotatingPart.tex",
- 95 model   MODEL_RL_ROCKET             "Models\\Weapons\\RocketLauncher\\Projectile\\Rocket.mdl",
- 96 texture TEXTURE_RL_ROCKET           "Models\\Weapons\\RocketLauncher\\Projectile\\Rocket.tex",
+ 90 model   MODEL_ROCKETLAUNCHER        "Data\\Models\\Weapons\\RocketLauncher\\RocketLauncherItem.mdl",
+ 91 model   MODEL_RL_BODY               "Data\\Models\\Weapons\\RocketLauncher\\Body.mdl",
+ 92 texture TEXTURE_RL_BODY             "Data\\Models\\Weapons\\RocketLauncher\\Body.tex",
+ 93 model   MODEL_RL_ROTATINGPART       "Data\\Models\\Weapons\\RocketLauncher\\RotatingPart.mdl",
+ 94 texture TEXTURE_RL_ROTATINGPART     "Data\\Models\\Weapons\\RocketLauncher\\RotatingPart.tex",
+ 95 model   MODEL_RL_ROCKET             "Data\\Models\\Weapons\\RocketLauncher\\Projectile\\Rocket.mdl",
+ 96 texture TEXTURE_RL_ROCKET           "Data\\Models\\Weapons\\RocketLauncher\\Projectile\\Rocket.tex",
 
 // ************** GRENADE LAUNCHER **************
-100 model   MODEL_GRENADELAUNCHER       "Models\\Weapons\\GrenadeLauncher\\GrenadeLauncherItem.mdl",
-101 model   MODEL_GL_BODY               "Models\\Weapons\\GrenadeLauncher\\Body.mdl",
-102 model   MODEL_GL_MOVINGPART         "Models\\Weapons\\GrenadeLauncher\\MovingPipe.mdl",
-103 model   MODEL_GL_GRENADE            "Models\\Weapons\\GrenadeLauncher\\GrenadeBack.mdl",
-104 texture TEXTURE_GL_BODY             "Models\\Weapons\\GrenadeLauncher\\Body.tex",
-105 texture TEXTURE_GL_MOVINGPART       "Models\\Weapons\\GrenadeLauncher\\MovingPipe.tex",
+100 model   MODEL_GRENADELAUNCHER       "Data\\Models\\Weapons\\GrenadeLauncher\\GrenadeLauncherItem.mdl",
+101 model   MODEL_GL_BODY               "Data\\Models\\Weapons\\GrenadeLauncher\\Body.mdl",
+102 model   MODEL_GL_MOVINGPART         "Data\\Models\\Weapons\\GrenadeLauncher\\MovingPipe.mdl",
+103 model   MODEL_GL_GRENADE            "Data\\Models\\Weapons\\GrenadeLauncher\\GrenadeBack.mdl",
+104 texture TEXTURE_GL_BODY             "Data\\Models\\Weapons\\GrenadeLauncher\\Body.tex",
+105 texture TEXTURE_GL_MOVINGPART       "Data\\Models\\Weapons\\GrenadeLauncher\\MovingPipe.tex",
 
 // ************** SNIPER **************
-110 model   MODEL_SNIPER                "ModelsMP\\Weapons\\Sniper\\Sniper.mdl",
-111 model   MODEL_SNIPER_BODY           "ModelsMP\\Weapons\\Sniper\\Body.mdl",
-112 texture TEXTURE_SNIPER_BODY         "ModelsMP\\Weapons\\Sniper\\Body.tex",
+110 model   MODEL_SNIPER                "Data\\ModelsMP\\Weapons\\Sniper\\Sniper.mdl",
+111 model   MODEL_SNIPER_BODY           "Data\\ModelsMP\\Weapons\\Sniper\\Body.mdl",
+112 texture TEXTURE_SNIPER_BODY         "Data\\ModelsMP\\Weapons\\Sniper\\Body.tex",*/
 
 /*
 // ************** PIPEBOMB **************
-110 model   MODEL_PIPEBOMB_STICK        "Models\\Weapons\\Pipebomb\\StickItem.mdl",
-112 model   MODEL_PB_BUTTON             "Models\\Weapons\\Pipebomb\\Button.mdl",
-113 model   MODEL_PB_SHIELD             "Models\\Weapons\\Pipebomb\\Shield.mdl",
-114 model   MODEL_PB_STICK              "Models\\Weapons\\Pipebomb\\Stick.mdl",
-115 model   MODEL_PB_BOMB               "Models\\Weapons\\Pipebomb\\Bomb.mdl",
-116 texture TEXTURE_PB_STICK            "Models\\Weapons\\Pipebomb\\Stick.tex",
-117 texture TEXTURE_PB_BOMB             "Models\\Weapons\\Pipebomb\\Bomb.tex",
+110 model   MODEL_PIPEBOMB_STICK        "Data\\Models\\Weapons\\Pipebomb\\StickItem.mdl",
+112 model   MODEL_PB_BUTTON             "Data\\Models\\Weapons\\Pipebomb\\Button.mdl",
+113 model   MODEL_PB_SHIELD             "Data\\Models\\Weapons\\Pipebomb\\Shield.mdl",
+114 model   MODEL_PB_STICK              "Data\\Models\\Weapons\\Pipebomb\\Stick.mdl",
+115 model   MODEL_PB_BOMB               "Data\\Models\\Weapons\\Pipebomb\\Bomb.mdl",
+116 texture TEXTURE_PB_STICK            "Data\\Models\\Weapons\\Pipebomb\\Stick.tex",
+117 texture TEXTURE_PB_BOMB             "Data\\Models\\Weapons\\Pipebomb\\Bomb.tex",
 */
 
 // ************** FLAMER **************
-130 model   MODEL_FLAMER                "ModelsMP\\Weapons\\Flamer\\FlamerItem.mdl",
-131 model   MODEL_FL_BODY               "ModelsMP\\Weapons\\Flamer\\Body.mdl",
-132 model   MODEL_FL_RESERVOIR          "ModelsMP\\Weapons\\Flamer\\FuelReservoir.mdl",
-133 model   MODEL_FL_FLAME              "ModelsMP\\Weapons\\Flamer\\Flame.mdl",
-134 texture TEXTURE_FL_BODY             "ModelsMP\\Weapons\\Flamer\\Body.tex",
-135 texture TEXTURE_FL_FLAME            "ModelsMP\\Effects\\Flame\\Flame.tex",
-136 texture TEXTURE_FL_FUELRESERVOIR    "ModelsMP\\Weapons\\Flamer\\FuelReservoir.tex",
+// deleted by seo
+/*130 model   MODEL_FLAMER                "Data\\ModelsMP\\Weapons\\Flamer\\FlamerItem.mdl",
+131 model   MODEL_FL_BODY               "Data\\ModelsMP\\Weapons\\Flamer\\Body.mdl",
+132 model   MODEL_FL_RESERVOIR          "Data\\ModelsMP\\Weapons\\Flamer\\FuelReservoir.mdl",
+133 model   MODEL_FL_FLAME              "Data\\ModelsMP\\Weapons\\Flamer\\Flame.mdl",
+134 texture TEXTURE_FL_BODY             "Data\\ModelsMP\\Weapons\\Flamer\\Body.tex",
+135 texture TEXTURE_FL_FLAME            "Data\\ModelsMP\\Effects\\Flame\\Flame.tex",
+136 texture TEXTURE_FL_FUELRESERVOIR    "Data\\ModelsMP\\Weapons\\Flamer\\FuelReservoir.tex",
 
 // ************** LASER **************
-140 model   MODEL_LASER                 "Models\\Weapons\\Laser\\LaserItem.mdl",
-141 model   MODEL_LS_BODY               "Models\\Weapons\\Laser\\Body.mdl",
-142 model   MODEL_LS_BARREL             "Models\\Weapons\\Laser\\Barrel.mdl",
-143 texture TEXTURE_LS_BODY             "Models\\Weapons\\Laser\\Body.tex",
-144 texture TEXTURE_LS_BARREL           "Models\\Weapons\\Laser\\Barrel.tex",
+140 model   MODEL_LASER                 "Data\\Models\\Weapons\\Laser\\LaserItem.mdl",
+141 model   MODEL_LS_BODY               "Data\\Models\\Weapons\\Laser\\Body.mdl",
+142 model   MODEL_LS_BARREL             "Data\\Models\\Weapons\\Laser\\Barrel.mdl",
+143 texture TEXTURE_LS_BODY             "Data\\Models\\Weapons\\Laser\\Body.tex",
+144 texture TEXTURE_LS_BARREL           "Data\\Models\\Weapons\\Laser\\Barrel.tex",
 
 // ************** CHAINSAW **************
-150 model   MODEL_CHAINSAW              "ModelsMP\\Weapons\\Chainsaw\\ChainsawForPlayer.mdl",
-151 model   MODEL_CS_BODY               "ModelsMP\\Weapons\\Chainsaw\\BodyForPlayer.mdl",
-152 model   MODEL_CS_BLADE              "ModelsMP\\Weapons\\Chainsaw\\Blade.mdl",
-153 model   MODEL_CS_TEETH              "ModelsMP\\Weapons\\Chainsaw\\Teeth.mdl",
-154 texture TEXTURE_CS_BODY             "ModelsMP\\Weapons\\Chainsaw\\Body.tex",
-155 texture TEXTURE_CS_BLADE            "ModelsMP\\Weapons\\Chainsaw\\Blade.tex",
-156 texture TEXTURE_CS_TEETH            "ModelsMP\\Weapons\\Chainsaw\\Teeth.tex",
-
+150 model   MODEL_CHAINSAW              "Data\\ModelsMP\\Weapons\\Chainsaw\\ChainsawForPlayer.mdl",
+151 model   MODEL_CS_BODY               "Data\\ModelsMP\\Weapons\\Chainsaw\\BodyForPlayer.mdl",
+152 model   MODEL_CS_BLADE              "Data\\ModelsMP\\Weapons\\Chainsaw\\Blade.mdl",
+153 model   MODEL_CS_TEETH              "Data\\ModelsMP\\Weapons\\Chainsaw\\Teeth.mdl",
+154 texture TEXTURE_CS_BODY             "Data\\ModelsMP\\Weapons\\Chainsaw\\Body.tex",
+155 texture TEXTURE_CS_BLADE            "Data\\ModelsMP\\Weapons\\Chainsaw\\Blade.tex",
+156 texture TEXTURE_CS_TEETH            "Data\\ModelsMP\\Weapons\\Chainsaw\\Teeth.tex",
+*/
 // ************** GHOSTBUSTER **************
 /*
-150 model   MODEL_GHOSTBUSTER           "Models\\Weapons\\GhostBuster\\GhostBusterItem.mdl",
-151 model   MODEL_GB_BODY               "Models\\Weapons\\GhostBuster\\Body.mdl",
-152 model   MODEL_GB_ROTATOR            "Models\\Weapons\\GhostBuster\\Rotator.mdl",
-153 model   MODEL_GB_EFFECT1            "Models\\Weapons\\GhostBuster\\Effect01.mdl",
-154 model   MODEL_GB_EFFECT1FLARE       "Models\\Weapons\\GhostBuster\\EffectFlare01.mdl",
-155 texture TEXTURE_GB_ROTATOR          "Models\\Weapons\\GhostBuster\\Rotator.tex",
-156 texture TEXTURE_GB_BODY             "Models\\Weapons\\GhostBuster\\Body.tex",
-157 texture TEXTURE_GB_LIGHTNING        "Models\\Weapons\\GhostBuster\\Lightning.tex",
-158 texture TEXTURE_GB_FLARE            "Models\\Weapons\\GhostBuster\\EffectFlare.tex",
+150 model   MODEL_GHOSTBUSTER           "Data\\Models\\Weapons\\GhostBuster\\GhostBusterItem.mdl",
+151 model   MODEL_GB_BODY               "Data\\Models\\Weapons\\GhostBuster\\Body.mdl",
+152 model   MODEL_GB_ROTATOR            "Data\\Models\\Weapons\\GhostBuster\\Rotator.mdl",
+153 model   MODEL_GB_EFFECT1            "Data\\Models\\Weapons\\GhostBuster\\Effect01.mdl",
+154 model   MODEL_GB_EFFECT1FLARE       "Data\\Models\\Weapons\\GhostBuster\\EffectFlare01.mdl",
+155 texture TEXTURE_GB_ROTATOR          "Data\\Models\\Weapons\\GhostBuster\\Rotator.tex",
+156 texture TEXTURE_GB_BODY             "Data\\Models\\Weapons\\GhostBuster\\Body.tex",
+157 texture TEXTURE_GB_LIGHTNING        "Data\\Models\\Weapons\\GhostBuster\\Lightning.tex",
+158 texture TEXTURE_GB_FLARE            "Data\\Models\\Weapons\\GhostBuster\\EffectFlare.tex",
 */
 // ************** CANNON **************
-170 model   MODEL_CANNON                "Models\\Weapons\\Cannon\\Cannon.mdl",
-171 model   MODEL_CN_BODY               "Models\\Weapons\\Cannon\\Body.mdl",
-173 texture TEXTURE_CANNON              "Models\\Weapons\\Cannon\\Body.tex",
-//174 model   MODEL_CN_NUKEBOX            "Models\\Weapons\\Cannon\\NukeBox.mdl",
-//175 model   MODEL_CN_LIGHT              "Models\\Weapons\\Cannon\\Light.mdl",
+// deleted by seo
+//170 model   MODEL_CANNON                "Data\\Models\\Weapons\\Cannon\\Cannon.mdl",
+//171 model   MODEL_CN_BODY               "Data\\Models\\Weapons\\Cannon\\Body.mdl",
+//173 texture TEXTURE_CANNON              "Data\\Models\\Weapons\\Cannon\\Body.tex",
+// end
+//174 model   MODEL_CN_NUKEBOX            "Data\\Models\\Weapons\\Cannon\\NukeBox.mdl",
+//175 model   MODEL_CN_LIGHT              "Data\\Models\\Weapons\\Cannon\\Light.mdl",
 
 // ************** AMON STATUE **************
-180 model   MODEL_GOLDAMON                "Models\\Ages\\Egypt\\Gods\\Amon\\AmonGold.mdl",
-181 texture TEXTURE_GOLDAMON              "Models\\Ages\\Egypt\\Gods\\Amon\\AmonGold.tex",
+// deleted by seo below 2 lines
+//180 model   MODEL_GOLDAMON                "Data\\Models\\Ages\\Egypt\\Gods\\Amon\\AmonGold.mdl",
+//181 texture TEXTURE_GOLDAMON              "Data\\Models\\Ages\\Egypt\\Gods\\Amon\\AmonGold.tex",
 
 // ************** REFLECTIONS **************
-200 texture TEX_REFL_BWRIPLES01         "Models\\ReflectionTextures\\BWRiples01.tex",
-201 texture TEX_REFL_BWRIPLES02         "Models\\ReflectionTextures\\BWRiples02.tex",
-202 texture TEX_REFL_LIGHTMETAL01       "Models\\ReflectionTextures\\LightMetal01.tex",
-203 texture TEX_REFL_LIGHTBLUEMETAL01   "Models\\ReflectionTextures\\LightBlueMetal01.tex",
-204 texture TEX_REFL_DARKMETAL          "Models\\ReflectionTextures\\DarkMetal.tex",
-205 texture TEX_REFL_PURPLE01           "Models\\ReflectionTextures\\Purple01.tex",
-206 texture TEX_REFL_GOLD01               "Models\\ReflectionTextures\\Gold01.tex",
+200 texture TEX_REFL_BWRIPLES01         "Data\\Models\\ReflectionTextures\\BWRiples01.tex",
+201 texture TEX_REFL_BWRIPLES02         "Data\\Models\\ReflectionTextures\\BWRiples02.tex",
+202 texture TEX_REFL_LIGHTMETAL01       "Data\\Models\\ReflectionTextures\\LightMetal01.tex",
+203 texture TEX_REFL_LIGHTBLUEMETAL01   "Data\\Models\\ReflectionTextures\\LightBlueMetal01.tex",
+204 texture TEX_REFL_DARKMETAL          "Data\\Models\\ReflectionTextures\\DarkMetal.tex",
+205 texture TEX_REFL_PURPLE01           "Data\\Models\\ReflectionTextures\\Purple01.tex",
+206 texture TEX_REFL_GOLD01               "Data\\Models\\ReflectionTextures\\Gold01.tex",
 
 // ************** SPECULAR **************
-210 texture TEX_SPEC_WEAK               "Models\\SpecularTextures\\Weak.tex",
-211 texture TEX_SPEC_MEDIUM             "Models\\SpecularTextures\\Medium.tex",
-212 texture TEX_SPEC_STRONG             "Models\\SpecularTextures\\Strong.tex",
+210 texture TEX_SPEC_WEAK               "Data\\Models\\SpecularTextures\\Weak.tex",
+211 texture TEX_SPEC_MEDIUM             "Data\\Models\\SpecularTextures\\Medium.tex",
+212 texture TEX_SPEC_STRONG             "Data\\Models\\SpecularTextures\\Strong.tex",
 
 // ************** FLARES **************
-250 model   MODEL_FLARE02               "Models\\Effects\\Weapons\\Flare02\\Flare.mdl",
-251 texture TEXTURE_FLARE02             "Models\\Effects\\Weapons\\Flare02\\Flare.tex",
+250 model   MODEL_FLARE02               "Data\\Models\\Effects\\Weapons\\Flare02\\Flare.mdl",
+251 texture TEXTURE_FLARE02             "Data\\Models\\Effects\\Weapons\\Flare02\\Flare.tex",
 
 
 functions:
+  // player animator is initialized through player.es
+  virtual void InitializeFromNet()
+  {
+    return;
+  }  
   
   /* Read from stream. */
-  void Read_t( CTStream *istr) // throw char *
+  void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   { 
-    CRationalEntity::Read_t(istr);
+    CRationalEntity::Read_t(istr,bNetwork);
   }
 
   void Precache(void)
@@ -514,6 +553,7 @@ functions:
     pmoModel = &(pmoModel->GetAttachmentModel(iAttachment)->amo_moModelObject);
   };
 
+  /*
   // synchronize any possible weapon attachment(s) with default appearance
   void SyncWeapon(void)
   {
@@ -548,10 +588,16 @@ functions:
       }
     }
   }
+  */
 
+  /*
   // set weapon
-  void SetWeapon(void) {
+  void SetWeapon(void) 
+  {  
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
+    if (m_iWeaponLast>WEAPON_NONE && m_iWeaponLast<WEAPON_LAST) {
+      RemoveWeapon();
+    }
     m_iWeaponLast = iWeapon;
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
@@ -669,7 +715,8 @@ functions:
         AddWeaponAttachment(GRENADELAUNCHERITEM_ATTACHMENT_BODY, MODEL_GL_BODY, TEXTURE_GL_BODY, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddWeaponAttachment(GRENADELAUNCHERITEM_ATTACHMENT_MOVING_PART, MODEL_GL_MOVINGPART, TEXTURE_GL_MOVINGPART, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddWeaponAttachment(GRENADELAUNCHERITEM_ATTACHMENT_GRENADE, MODEL_GL_GRENADE, TEXTURE_GL_MOVINGPART, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
-        break;
+        break;*/
+      // end seo
 
 /*    // *********** PIPEBOMB ***********
       case WEAPON_PIPEBOMB:
@@ -684,7 +731,7 @@ functions:
         break;
 */
     // *********** FLAMER ***********
-      case WEAPON_FLAMER:
+      /*case WEAPON_FLAMER:
         AddWeaponAttachment(BODY_ATTACHMENT_FLAMER, MODEL_FLAMER, TEXTURE_FL_BODY, 0, 0, 0);
         SetAttachment(BODY_ATTACHMENT_FLAMER);
         AddWeaponAttachment(FLAMERITEM_ATTACHMENT_BODY, MODEL_FL_BODY, TEXTURE_FL_BODY, TEX_REFL_BWRIPLES02, TEX_SPEC_MEDIUM, 0);
@@ -712,7 +759,8 @@ functions:
         AddWeaponAttachment(LASERITEM_ATTACHMENT_LEFTDOWN,  MODEL_LS_BARREL, TEXTURE_LS_BARREL, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddWeaponAttachment(LASERITEM_ATTACHMENT_RIGHTUP,   MODEL_LS_BARREL, TEXTURE_LS_BARREL, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
         AddWeaponAttachment(LASERITEM_ATTACHMENT_RIGHTDOWN, MODEL_LS_BARREL, TEXTURE_LS_BARREL, TEX_REFL_LIGHTMETAL01, TEX_SPEC_MEDIUM, 0);
-        break;
+        break;*/
+		// end seo
 
 /*
     // *********** GHOSTBUSTER ***********
@@ -740,7 +788,7 @@ functions:
         break; }
 */
     // *********** CANNON ***********
-      case WEAPON_IRONCANNON:
+      /*case WEAPON_IRONCANNON:
 //      case WEAPON_NUKECANNON:
         AddWeaponAttachment(BODY_ATTACHMENT_CANNON, MODEL_CANNON, TEXTURE_CANNON, 0, 0, 0);
         SetAttachment(BODY_ATTACHMENT_CANNON);
@@ -750,14 +798,15 @@ functions:
         break;
       default:
         ASSERTALWAYS("Unknown weapon.");
-    }
+    }*/
     // sync apperances
-    SyncWeapon();
-  };
+    //SyncWeapon();
+  //};
 
   // set item
   void SetItem(CModelObject *pmo) {
-    pmoModel = &(GetPlayer()->GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
+	// deleted by seo 40815
+    /*pmoModel = &(GetPlayer()->GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
     AddWeaponAttachment(BODY_ATTACHMENT_ITEM, MODEL_GOLDAMON,
                         TEXTURE_GOLDAMON, TEX_REFL_GOLD01, TEX_SPEC_MEDIUM, 0);
     if (pmo!=NULL) {
@@ -769,7 +818,7 @@ functions:
       pamo->amo_plRelative = CPlacement3D(FLOAT3D(0,0,0), ANGLE3D(0,0,0));
     }
     // sync apperances
-    SyncWeapon();
+    SyncWeapon();*/
   }
 
   // set player body animation
@@ -789,7 +838,7 @@ functions:
 /************************************************************
  *                      INITIALIZE                          *
  ************************************************************/
-  void Initialize(void) {
+  void InitializeProperties(void) {
     // set internal properties
     m_bReference = TRUE;
     m_bWaitJumpAnim = FALSE;
@@ -820,10 +869,14 @@ functions:
     m_bSidestepBankingRight = FALSE;
     m_fSidestepLastBanking = 0.0f;
     m_fSidestepBanking = 0.0f;
-
+//0105
+	if(m_bMdl)
+	{
     // weapon
-    SetWeapon();
+    //SetWeapon();
     SetBodyAnimation(BODY_ANIM_COLT_STAND, AOF_LOOPING|AOF_NORESTART);
+	}
+//..
   };
 
 
@@ -909,8 +962,11 @@ functions:
     if (pl.en_tmJumped>_pTimer->CurrentTick()-0.5f) {
       fRelY = ClampUp(fRelY, 0.0f);
     }
-    m_fEyesYOffset -= fRelY;
-    m_fWeaponYOffset -= ClampUp(fRelY, 0.0f);
+
+    if (!pl.m_bReferenceMovingInY) {
+      m_fEyesYOffset -= fRelY;
+      m_fWeaponYOffset -= ClampUp(fRelY, 0.0f);
+    }
 
     plr_fViewDampFactor      = Clamp(plr_fViewDampFactor      ,0.0f,1.0f);
     plr_fViewDampLimitGroundUp = Clamp(plr_fViewDampLimitGroundUp ,0.0f,2.0f);
@@ -932,38 +988,11 @@ functions:
     }
   };
 
-  /*
-  // animate view pitch (for recoil)
-  void AnimateRecoilPitch(void)
-  {
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    INDEX iWeapon = ((CPlayerWeapons&)*pl.m_penWeapons).m_iCurrentWeapon;
 
-    wpn_fRecoilDampUp[iWeapon] = Clamp(wpn_fRecoilDampUp[iWeapon],0.0f,1.0f);
-    wpn_fRecoilDampDn[iWeapon] = Clamp(wpn_fRecoilDampDn[iWeapon],0.0f,1.0f);
-
-    FLOAT fDamp;
-    if (m_fRecoilSpeed>0) {
-      fDamp = wpn_fRecoilDampUp[iWeapon];
-    } else {
-      fDamp = wpn_fRecoilDampDn[iWeapon];
-    }
-    m_fRecoilSpeed = (m_fRecoilSpeed - m_fRecoilOffset*fDamp)* (1.0f-fDamp);
-
-    m_fRecoilOffset += m_fRecoilSpeed;
-
-    if (m_fRecoilOffset<0.0f) {
-      m_fRecoilOffset = 0.0f;
-    }
-    if (m_fRecoilOffset>wpn_fRecoilLimit[iWeapon]) {
-      m_fRecoilOffset = wpn_fRecoilLimit[iWeapon];
-      m_fRecoilSpeed = 0.0f;
-    }
-  };
-  */
   // change view
-  void ChangeView(CPlacement3D &pl) {
-    TIME tmNow = _pTimer->GetLerpedCurrentTick();
+  void ChangeView(CPlacement3D &pl)
+  {
+    TIME tmNow = ((CMovableEntity*)(CEntity*)m_penPlayer)->en_tmEntityTime;
 
     if (!(GetPlayer()->GetSettings()->ps_ulFlags&PSF_NOBOBBING)) {
       // banking
@@ -973,20 +1002,6 @@ functions:
       fBanking = Clamp(fBanking, -5.0f, 5.0f);
       pl.pl_OrientationAngle(3) += fBanking;
     }
-
-/*
-    // recoil pitch
-    INDEX iWeapon = ((CPlayerWeapons&)*((CPlayer&)*m_penPlayer).m_penWeapons).m_iCurrentWeapon;
-    FLOAT fRecoil = Lerp(m_fRecoilLastOffset, m_fRecoilOffset, _pTimer->GetLerpFactor());
-    FLOAT fRecoilP = wpn_fRecoilFactorP[iWeapon]*fRecoil;
-    pl.pl_OrientationAngle(2) += fRecoilP;
-    // adjust recoil pitch handle
-    FLOAT fRecoilH = wpn_fRecoilOffset[iWeapon];
-    FLOAT fDY = fRecoilH*(1.0f-Cos(fRecoilP));
-    FLOAT fDZ = fRecoilH*Sin(fRecoilP);
-    pl.pl_PositionVector(2)-=fDY;
-    pl.pl_PositionVector(3)+=fDZ+wpn_fRecoilFactorZ[iWeapon]*fRecoil;
-    */
 
     // swimming
     if (m_bSwim) {
@@ -1029,214 +1044,1018 @@ functions:
     pamoHead->amo_plRelative.pl_OrientationAngle(3) = Clamp(pamoHead->amo_plRelative.pl_OrientationAngle(3), -fMaxBanking, fMaxBanking);
   };
 
-  // animate player
-  void AnimatePlayer(void) {
-    if (m_bDisableAnimating) {
-      return;
+  void WalkAnim()
+  {
+	CPlayer &pl = (CPlayer&)*m_penPlayer;
+	if(!_pNetwork->pMyCurrentWearing[WEAR_WEAPON])	
+	{
+		if(pl.m_bRide)
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}			
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+	else
+	{
+		if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange )
+		{
+			if(pl.m_bRide)
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}				
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+		}
+		else
+		{
+			if(pl.m_bRide)
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_WALK_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}				
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_WALK_2], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+		}
+	}
+  };
+
+  void RunAnim(float fRunSpeedMul)
+  {
+	CPlayer &pl = (CPlayer&)*m_penPlayer;
+	if( !_pNetwork->pMyCurrentWearing[WEAR_WEAPON] )					
+	{
+		if( pl.m_bRide )
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+			}			
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+		}
+	}
+	else
+	{
+		if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange )
+		{
+			if( pl.m_bRide )
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				}
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+			}
+		}
+		else
+		{
+			if( pl.m_bRide )
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+				}			
+				
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_RUN_2], AN_LOOPING|AN_NORESTART, 0.2f, fRunSpeedMul);
+			}
+		}
+	}								
+  };
+
+  void PickAnim()
+  {
+	CPlayer &pl = (CPlayer&)*m_penPlayer;
+	if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange)
+	{
+		if( pl.m_bRide )
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f);
+			}		
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_PICK], AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+	// 로그 및 전직...
+	else
+	{
+		if( pl.m_bRide )
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_PICK], AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_PICK], AN_NORESTART, 0.2f, 1.0f);
+			}			
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_PICK], AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+  };
+
+  void IdleAnim()
+  {
+	CPlayer &pl = (CPlayer&)*m_penPlayer;
+	if( _pNetwork->pMyCurrentWearing[WEAR_WEAPON] )
+	{						
+		pl.DeleteWearingWeapon(TRUE);
+		if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange )
+		{
+			if(pl.m_bRide)
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+		}
+		else
+		{
+			if(pl.m_bRide)
+			{
+				if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+				else
+				{
+					SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+				}
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+		}
+	}
+	else
+	{
+		pl.DeleteWearingWeapon(TRUE);
+		if(pl.m_bRide)
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_IDLE_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+			}						
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+  };
+
+  void DamageAnim()
+  {
+	CPlayer &pl = (CPlayer&)*m_penPlayer;
+	if( !_pNetwork->MyCharacterInfo.bExtension || pl.m_bMobChange )
+	{
+		if(pl.m_bRide)
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			}						
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+	else
+	{
+		if(pl.m_bRide)
+		{
+			if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			}
+			else
+			{
+				SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+			}
+		}
+		else
+		{
+			SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_DAMAGE], AN_NORESTART, 0.2f, 1.0f);
+		}
+	}
+  };
+
+  void AnimatePlayer(void) 
+  {
+	if (m_bDisableAnimating) 
+	{
+		return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-
+	
     FLOAT3D vDesiredTranslation = pl.en_vDesiredTranslationRelative;
     FLOAT3D vCurrentTranslation = pl.en_vCurrentTranslationAbsolute * !pl.en_mRotation;
     ANGLE3D aDesiredRotation = pl.en_aDesiredRotationRelative;
     ANGLE3D aCurrentRotation = pl.en_aCurrentRotationAbsolute;
-
+	
     // if player is moving
-    if (vDesiredTranslation.ManhattanNorm()>0.01f
-      ||aDesiredRotation.ManhattanNorm()>0.01f) {
-      // prevent idle weapon animations
-      m_fLastActionTime = _pTimer->CurrentTick();
+    if ( vDesiredTranslation.ManhattanNorm() > 0.01f ||
+		 aDesiredRotation.ManhattanNorm() > 0.01f )
+	{
+		// prevent idle weapon animations
+		m_fLastActionTime = _pTimer->CurrentTick();
     }
+	
+	if (m_bReference) 
+	{
+		if ( !m_bWaitJumpAnim && m_iCrouchDownWait==0 && m_iRiseUpWait==0 )
+		{
+			// standing
+			if( !m_bCrouch )
+			{
+				const int iJob	= pl.en_pcCharacter.pc_iPlayerType;
 
-    // swimming
-    if (m_bSwim) {
-      if (vDesiredTranslation.Length()>1.0f && vCurrentTranslation.Length()>1.0f) {
-        pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
-      } else {
-        pl.StartModelAnim(PLAYER_ANIM_SWIMIDLE, AOF_LOOPING|AOF_NORESTART);
+				static int cnt=0;
+				if(pl.m_bStartAttack)
+				{
+/////////////////////////////////////////////////////////////
+					extern FLOAT _fAttackLengthMul;
+					extern FLOAT _fAttackSpeedMul;
+
+					int Speed = _pNetwork->MyCharacterInfo.attackspeed;
+					CPlayer &pl = (CPlayer&)*m_penPlayer;
+
+					// 해당하는 에너미가 권좌라면... 공속 1.2초
+					if( pl.m_penAttackingEnemy != NULL )
+					{
+						if(pl.m_penAttackingEnemy->IsEnemy())
+						{
+							const INDEX iMobIndex = ((CEnemy*)((CEntity*)pl.m_penAttackingEnemy))->m_nMobDBIndex;
+							if(iMobIndex == LORD_SYMBOL_INDEX)
+							{
+								// 권좌 공격속도는 1.2초.
+								Speed = 12;
+							}
+						}
+					}
+
+					CModelInstance* pMI = GetPlayer()->GetModelInstance();
+					float fLength		= pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1]) * 10;
+					
+					if( _pNetwork->pMyCurrentWearing[WEAR_WEAPON] && _pNetwork->MyCharacterInfo.bExtension )
+					{
+						fLength = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1]) * 10;
+					}					
+
+					_fAttackSpeedMul	= (float)fLength / Speed;
+					_fAttackLengthMul	= (float)Speed / fLength;
+					
+///////////////////////////////////////////////////////////////
+					static float startTime = 0.0f;
+					if(	iJob == TITAN || 
+						iJob == HEALER || 
+						iJob == KNIGHT || 
+						iJob == MAGE || 
+						iJob == ROGUE ||
+						iJob == SORCERER )//0722
+					{
+						//0611 kwon 추가.
+//						extern FLOAT _fAttackLengthMul;//1009
+//						extern FLOAT _fAttackSpeedMul;
+					
+						CModelInstance* pMI = GetPlayer()->GetModelInstance();
+						ASSERT( pMI != NULL && "Invalid Model Instance!" );
+
+						float frandom = FRnd();
+						
+						// FIXME : 무슨 루틴인지 파악이 안됨.
+						// FIXME : 아래 코드는 매우 많이 정리가 필요한 부분.
+						if( !_pNetwork->MyCharacterInfo.bExtension )
+						{
+							if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
+								&& (m_fAttack2AnimTime != 0.0f) && (m_fAttack2AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								//attack1이 애니메이션중이 아니고, attack2가 실행중인데 끝났다면...
+								if(frandom < 0.33f)
+								{
+									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;//0.8f;//1009
+									m_fAttack2AnimTime = 0.0f;
+									m_fAttack3AnimTime = 0.0f;
+									m_fAttack4AnimTime = 0.0f;
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;
+									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;							
+									m_fAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;					
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
+								}
+								startTime = _pTimer->CurrentTick();
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
+								&& (m_fAttack1AnimTime != 0.0f) &&(m_fAttack1AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;
+									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;							
+									m_fAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;					
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
+								}
+								
+								startTime = _pTimer->CurrentTick();							
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_4])
+								&& (m_fAttack3AnimTime != 0.0f) &&(m_fAttack3AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;				
+									m_fAttack2AnimTime = 0.0f;	
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
+									m_fAttack3AnimTime = 0.0f;							
+									m_fAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;					
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_4])*_fAttackLengthMul;			
+								}
+							
+								startTime = _pTimer->CurrentTick();							
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_1]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_2])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_ATTACK_3])
+								&& (m_fAttack4AnimTime != 0.0f) &&(m_fAttack4AnimTime-0.1f < _pTimer->CurrentTick() - startTime) && !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;				
+									m_fAttack2AnimTime = 0.0f;	
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
+									m_fAttack3AnimTime = 0.0f;							
+									m_fAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;					
+									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;								
+									m_fAttack4AnimTime = 0.0f;
+								}							
+								startTime = _pTimer->CurrentTick();							
+							}
+							else if( m_fAttack1AnimTime == -1.0f && m_fAttack2AnimTime == -1.0f && m_fAttack3AnimTime == -1.0f && m_fAttack4AnimTime == -1.0f )
+							{
+								if(frandom < 0.33f)
+								{
+									m_fAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_1])*_fAttackLengthMul;
+									m_fAttack2AnimTime = 0.0f;	
+									m_fAttack3AnimTime = 0.0f;					
+									m_fAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_2])*_fAttackLengthMul;				
+									m_fAttack3AnimTime = 0.0f;
+									m_fAttack4AnimTime = 0.0f;
+								}								
+								else
+								{
+									m_fAttack1AnimTime = 0.0f;
+									m_fAttack2AnimTime = 0.0f;					
+									m_fAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_ATTACK_3])*_fAttackLengthMul;								
+									m_fAttack4AnimTime = 0.0f;
+								}								
+								startTime = _pTimer->CurrentTick();							
+							}
+
+							if(m_fAttack1AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);//1009
+							}
+							else if(m_fAttack2AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_2],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}															
+							else if(m_fAttack3AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_3],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}		
+							else if(m_fAttack4AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_4],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}
+						}
+						else
+						{						
+							if( !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
+								&& (m_fExtAttack2AnimTime != 0.0f) && (m_fExtAttack2AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								//attack1이 애니메이션중이 아니고, attack2가 실행중인데 끝났다면...
+								if(frandom < 0.33f)
+								{
+									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;//0.8f;//1009
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = 0.0f;
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;							
+									m_fExtAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;					
+									m_fExtAttack3AnimTime = 0.0f;					
+									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;			
+								}
+								startTime = _pTimer->CurrentTick();
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
+								&& (m_fExtAttack1AnimTime != 0.0f) &&(m_fExtAttack1AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
+									m_fExtAttack3AnimTime = 0.0f;					
+									m_fExtAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
+									m_fExtAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;
+								}
+								
+								startTime = _pTimer->CurrentTick();							
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])
+								&& (m_fExtAttack3AnimTime != 0.0f) &&(m_fExtAttack3AnimTime-0.1f < _pTimer->CurrentTick() - startTime)&& !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;				
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = 0.0f;
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;				
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = 0.0f;
+								}
+								else
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4])*_fAttackLengthMul;
+								}
+							
+								startTime = _pTimer->CurrentTick();
+							}
+							else if(!pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2]) 
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])
+								&& !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])
+								&& (m_fExtAttack4AnimTime != 0.0f) &&(m_fExtAttack4AnimTime-0.1f < _pTimer->CurrentTick() - startTime) && !GetPlayer()->m_bLockMove)
+							{
+								if(frandom < 0.33f)
+								{
+									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;
+									m_fExtAttack2AnimTime = 0.0f;	
+									m_fExtAttack3AnimTime = 0.0f;					
+									m_fExtAttack4AnimTime = 0.0f;					
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = 0.0f;
+								}								
+								else
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;					
+									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
+									m_fExtAttack4AnimTime = 0.0f;
+								}							
+								startTime = _pTimer->CurrentTick();							
+							}
+							else if( m_fExtAttack1AnimTime == -1.0f && m_fExtAttack2AnimTime == -1.0f && m_fExtAttack3AnimTime == -1.0f && m_fExtAttack4AnimTime == -1.0f )
+							{
+								if(frandom < 0.33f)
+								{
+									m_fExtAttack1AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1])*_fAttackLengthMul;
+									m_fExtAttack2AnimTime = 0.0f;
+									m_fExtAttack3AnimTime = 0.0f;
+									m_fExtAttack4AnimTime = 0.0f;
+								}
+								else if(frandom < 0.66f)
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2])*_fAttackLengthMul;
+									m_fExtAttack3AnimTime = 0.0f;							
+									m_fExtAttack4AnimTime = 0.0f;					
+								}								
+								else
+								{
+									m_fExtAttack1AnimTime = 0.0f;
+									m_fExtAttack2AnimTime = 0.0f;					
+									m_fExtAttack3AnimTime = pMI->GetAnimLength(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3])*_fAttackLengthMul;
+									m_fExtAttack4AnimTime = 0.0f;
+								}								
+								startTime = _pTimer->CurrentTick();							
+							}
+
+							//--------------------- 전직 및 로그 ---------------------------
+							if(m_fExtAttack1AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}
+							else if(m_fExtAttack2AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_2],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}
+							else if(m_fExtAttack3AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_3],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}
+							else if(m_fExtAttack4AnimTime != 0.0f)
+							{
+								SetWholeAnimation(idPlayerWhole_Animation[ANIM_EXT_ATTACK_4],  AN_LOOPING|AN_NORESTART, 0.2f, _fAttackSpeedMul);
+							}
+						}
+					}
+					else
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_ATTACK_1],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					}
+					m_fLastActionTime = _pTimer->CurrentTick();
+				}
+				// running anim
+				else if (vDesiredTranslation.Length() > 3.0f && vCurrentTranslation.Length() > 3.0f) 
+				{
+					FLOAT fRunSpeedMul =1.0f;
+
+					const int iJob = pl.en_pcCharacter.pc_iPlayerType;
+
+					BOOL bSpeedUp = FALSE;
+					if(_pNetwork->MyCharacterInfo.runspeed >= 8.0f)
+					{
+						// FIXME : 왜 갑자기 1.3이 나온건지 모르겠음...-_-;
+						fRunSpeedMul = 1.3f;
+					}					
+					RunAnim( fRunSpeedMul );					
+					m_fLastActionTime = _pTimer->CurrentTick();
+				// walking anim
+				}
+				else if ( vDesiredTranslation.Length() > 1.4f && vCurrentTranslation.Length() > 1.4f ) 
+				{
+					WalkAnim();	
+					m_fLastActionTime = _pTimer->CurrentTick();
+					// left rotation anim
+				} 
+				else if ( aDesiredRotation(1) > 0.5f ) 
+				{
+					WalkAnim();	
+					m_fLastActionTime = _pTimer->CurrentTick();
+					// right rotation anim
+				} 
+				else if ( aDesiredRotation(1) < -0.5f ) 
+				{
+					WalkAnim();	
+					m_fLastActionTime = _pTimer->CurrentTick();
+					// standing anim
+				}
+				else 
+				{				
+					if( pl.m_bPlayAction && pl.m_nPlayActionNum != -1)
+					{
+						if(	pl.m_nPlayActionNum == ACTION_NUM_SITDOWN ||	// 앉기서기.							
+							pl.m_nPlayActionNum == ACTION_NUM_SELL )		// 개인상점에서 팔기~
+						{
+							switch(pl.m_nActionSit)
+							{
+								case 1:
+									{
+										if( pl.m_bRide )
+										{											
+											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT], AN_NORESTART, 0.2f, 1.0f);
+											}
+											else
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT], AN_NORESTART, 0.2f, 1.0f);
+											}
+										}
+										else
+										{
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT], AN_NORESTART, 0.2f, 1.0f);
+										}
+										break;
+									}
+								case 3:
+									{
+										if( pl.m_bRide )
+										{
+											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_STANDUP], AN_NORESTART, 0.2f, 1.0f);
+											}
+											else 
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_STANDUP], AN_NORESTART, 0.2f, 1.0f);
+											}											
+										}
+										else
+										{
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_STANDUP], AN_NORESTART, 0.2f, 1.0f);							
+										}
+										break;
+									}
+								case 2:
+									{
+										if( pl.m_bRide )
+										{
+											if( pl.m_iRideType%2 == CPetInfo::PET_HORSE )
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_HORSE_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);
+											}
+											else 
+											{
+												SetWholeAnimation(idPlayerWhole_Animation[ANIM_RIDE_DRAGON_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);
+											}											
+										}
+										else
+										{
+											SetWholeAnimation(idPlayerWhole_Animation[ANIM_SIT_CONTINUE], AN_NORESTART, 0.2f, 1.0f);							
+										}
+										break;
+									}
+								break;
+							}
+						}						
+						else if(pl.m_nPlayActionNum == ACTION_NUM_PICKITEM)
+						{
+							PickAnim();							
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_GREET)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_0], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_SMILE)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_1], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_CRY)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_2], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_NUMBER_ONE)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_3], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_HANDCLAP)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_4], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_REFUSE)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_5], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if( pl.m_nPlayActionNum == ACTION_NUM_GOOD_LOOKS || 
+								pl.m_nPlayActionNum == ACTION_NUM_GOOD_LOOKS2 )
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_6], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_BANTER)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_7], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_CHEER)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_8], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_COMBAT)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_9], AN_NORESTART, 0.2f, 1.0f);
+						}
+						else if(pl.m_nPlayActionNum == ACTION_NUM_SUBMISSION)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_10], AN_NORESTART, 0.2f, 1.0f);
+						}							
+						else if(pl.m_nPlayActionNum == ACTION_NUM_WATER_SPREAD)
+						{
+							SetWholeAnimation(idPlayerWhole_Animation[ANIM_SOCIAL_11], AN_NORESTART, 0.2f, 1.0f);
+						}
+					}
+					else if(!pl.m_bRide && pl.m_bProduction && pl.m_nProductionNum != -1)//1128
+					{
+//						if( !pMI->IsAnimationPlaying(idPlayerWhole_Animation[ANIM_GATHER]) )
+						{
+							switch(pl.m_nProductionNum)
+							{
+								case 1://채굴
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_MINE],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									break;
+								case 2://채집
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									break;
+								case 3://차지
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									break;
+								case 4://수집
+									SetWholeAnimation(idPlayerWhole_Animation[ANIM_COLLECT],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+									break;
+								//break;
+							}
+						}
+					}
+					// WSS_DRATAN_SEIGEWARFARE 2007/08/01
+					else if( _pNetwork->MyCharacterInfo.bConsensus)
+					{
+						SetWholeAnimation(idPlayerWhole_Animation[ANIM_GATHER],  AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+					}
+					else
+					{
+						IdleAnim();
+					}					
+				}
+			}
+		}
+		// no reference (in air)
       }
-      BodyStillAnimation();
-
-    // stand
-    } else {
-      // has reference (floor)
-      if (m_bReference) {
-        // jump
-        if (pl.en_tmJumped+_pTimer->TickQuantum>=_pTimer->CurrentTick() &&
-            pl.en_tmJumped<=_pTimer->CurrentTick()) {
-          m_bReference = FALSE;
-          pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
-          BodyStillAnimation();
-          m_fLastActionTime = _pTimer->CurrentTick();
-
-        // not in jump anim and in stand mode change
-        } else if (!m_bWaitJumpAnim && m_iCrouchDownWait==0 && m_iRiseUpWait==0) {
-          // standing
-          if (!m_bCrouch) {
-            // running anim
-            if (vDesiredTranslation.Length()>5.0f && vCurrentTranslation.Length()>5.0f) {
-              if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_RUN, AOF_LOOPING|AOF_NORESTART);
-              } else {
-                pl.StartModelAnim(PLAYER_ANIM_BACKPEDALRUN, AOF_LOOPING|AOF_NORESTART);
-              }
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // walking anim
-            } else if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
-              if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_NORMALWALK, AOF_LOOPING|AOF_NORESTART);
-              } else {
-                pl.StartModelAnim(PLAYER_ANIM_BACKPEDAL, AOF_LOOPING|AOF_NORESTART);
-              }
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // left rotation anim
-            } else if (aDesiredRotation(1)>0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // right rotation anim
-            } else if (aDesiredRotation(1)<-0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // standing anim
-            } else {
-              pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-            }
-          // crouch
-          } else {
-            // walking anim
-            if (vDesiredTranslation.Length()>2.0f && vCurrentTranslation.Length()>2.0f) {
-              if (vCurrentTranslation(3)<0) {
-                pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALK, AOF_LOOPING|AOF_NORESTART);
-              } else {
-                pl.StartModelAnim(PLAYER_ANIM_CROUCH_WALKBACK, AOF_LOOPING|AOF_NORESTART);
-              }
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // left rotation anim
-            } else if (aDesiredRotation(1)>0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNLEFT, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // right rotation anim
-            } else if (aDesiredRotation(1)<-0.5f) {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_TURNRIGHT, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-              m_fLastActionTime = _pTimer->CurrentTick();
-            // standing anim
-            } else {
-              pl.StartModelAnim(PLAYER_ANIM_CROUCH_IDLE, AOF_LOOPING|AOF_NORESTART);
-              BodyStillAnimation();
-            }
-          }
-
-        }
-
-      // no reference (in air)
-      } else {                           
-        // touched reference
-        if (pl.en_penReference!=NULL) {
-          m_bReference = TRUE;
-          pl.StartModelAnim(PLAYER_ANIM_JUMPEND, AOF_NORESTART);
-          BodyStillAnimation();
-          SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_JUMPEND), (INDEX) AA_JUMPDOWN);
-          m_bWaitJumpAnim = TRUE;
-        }
-      }
-    }
-
-    // boring weapon animation
-    if (_pTimer->CurrentTick()-m_fLastActionTime > 10.0f) {
-      m_fLastActionTime = _pTimer->CurrentTick();
-      ((CPlayerWeapons&)*pl.m_penWeapons).SendEvent(EBoringWeapon());
-    }
-
-    // moving view change
-    // translating -> change banking
-    if (m_bReference != NULL && vDesiredTranslation.Length()>1.0f && vCurrentTranslation.Length()>1.0f) {
-      m_bMoving = TRUE;
-      // sidestep banking
-      FLOAT vSidestepSpeedDesired = vDesiredTranslation(1);
-      FLOAT vSidestepSpeedCurrent = vCurrentTranslation(1);
-      // right
-      if (vSidestepSpeedDesired>1.0f && vSidestepSpeedCurrent>1.0f) {
-        m_bSidestepBankingRight = TRUE;
-        m_bSidestepBankingLeft = FALSE;
-      // left
-      } else if (vSidestepSpeedDesired<-1.0f && vSidestepSpeedCurrent<-1.0f) {
-        m_bSidestepBankingLeft = TRUE;
-        m_bSidestepBankingRight = FALSE;
-      // none
-      } else {
-        m_bSidestepBankingLeft = FALSE;
-        m_bSidestepBankingRight = FALSE;
-      }
-    // in air (space) or not moving
-    } else {
-      m_bMoving = FALSE;
-      m_bSidestepBankingLeft = FALSE;
-      m_bSidestepBankingRight = FALSE;
-    }
-  };
-
-  // crouch
-  void Crouch(void) {
-    if (m_bDisableAnimating) {
-      return;
-    }
-    CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_CROUCH, AOF_NORESTART);
-    SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_CROUCH), (INDEX) AA_CROUCH);
-    m_iCrouchDownWait++;
-    m_bCrouch = TRUE;
+	  else 
+	  {
+		  m_bReference = TRUE;
+      }	  
+	  
+	  // boring weapon animation
+	  if (_pTimer->CurrentTick()-m_fLastActionTime > 10.0f)
+	  {
+		  m_fLastActionTime = _pTimer->CurrentTick();
+		  ((CPlayerWeapons&)*pl.m_penWeapons).SendEvent(EBoringWeapon());
+	  }
+	  
+	  // moving view change
+	  // translating -> change banking
+	  if (m_bReference != NULL && vDesiredTranslation.Length()>1.0f && vCurrentTranslation.Length()>1.0f) 
+	  {
+		  m_bMoving = TRUE;
+		  // sidestep banking
+		  FLOAT vSidestepSpeedDesired = vDesiredTranslation(1);
+		  FLOAT vSidestepSpeedCurrent = vCurrentTranslation(1);
+		  // right
+		  if (vSidestepSpeedDesired>1.0f && vSidestepSpeedCurrent>1.0f) 
+		  {
+			  m_bSidestepBankingRight = TRUE;
+			  m_bSidestepBankingLeft = FALSE;
+			  // left
+		  } 
+		  else if (vSidestepSpeedDesired<-1.0f && vSidestepSpeedCurrent<-1.0f) 
+		  {
+			  m_bSidestepBankingLeft = TRUE;
+			  m_bSidestepBankingRight = FALSE;
+			  // none
+		  } 
+		  else 
+		  {
+			  m_bSidestepBankingLeft = FALSE;
+			  m_bSidestepBankingRight = FALSE;
+		  }
+		  // in air (space) or not moving
+	  } 
+	  else 
+	  {
+		  m_bMoving = FALSE;
+		  m_bSidestepBankingLeft = FALSE;
+		  m_bSidestepBankingRight = FALSE;
+	  }
   };
 
   // rise
-  void Rise(void) {
-    if (m_bDisableAnimating) {
+  void Rise(void) 
+  {
+	  if (m_bDisableAnimating) 
+	  {
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     pl.StartModelAnim(PLAYER_ANIM_RISE, AOF_NORESTART);
     SpawnReminder(this, pl.GetModelObject()->GetAnimLength(PLAYER_ANIM_RISE), (INDEX) AA_RISE);
     m_iRiseUpWait++;
-    m_bCrouch = FALSE;
+	  
+	  // 쓸모없는 부분.
+	  //m_bCrouch = FALSE;
   };
 
   // fall
-  void Fall(void) {
-    if (m_bDisableAnimating) {
+  void Fall(void) 
+  {
+	  if (m_bDisableAnimating) 
+	  {
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
-    if (_pNetwork->ga_ulDemoMinorVersion>6) { m_bCrouch = FALSE; }
+
+	  //0105
+	  if(m_bMdl)
+	  {
+		pl.StartModelAnim(PLAYER_ANIM_JUMPSTART, AOF_NORESTART);
+	  }
+	  else
+	  {
+		//SetWholeAnimation(idPlayerWhole_Animation[Attack3, AN_NORESTART, 0.2f, 1.0f);
+	}
+	  //..
+	  
+	  // 쓸모없는 부분.
+	  //m_bCrouch = FALSE;
     m_bReference = FALSE;
   };
 
   // swim
-  void Swim(void) {
-    if (m_bDisableAnimating) {
+  void Swim(void) 
+  {
+	  if (m_bDisableAnimating) 
+	  {
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
-    if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
+	  //0105
+	  if(m_bMdl)
+	  {
+		pl.StartModelAnim(PLAYER_ANIM_SWIM, AOF_LOOPING|AOF_NORESTART);
+	  }
+	  else
+	  {
+		SetWholeAnimation(idPlayerWhole_Animation[ANIM_RUN_1], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+	}
+	  //..
+	  // 쓸모없는 부분.
+	  //m_bCrouch = FALSE;
     m_bSwim = TRUE;
   };
 
   // stand
-  void Stand(void) {
-    if (m_bDisableAnimating) {
+  void Stand(void) 
+  {
+	  if (m_bDisableAnimating) 
+	  {
       return;
     }
     CPlayer &pl = (CPlayer&)*m_penPlayer;
-    pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
-    if (_pNetwork->ga_ulDemoMinorVersion>2) { m_bCrouch = FALSE; }
+	  //0105
+	  if(m_bMdl)
+	  {
+		pl.StartModelAnim(PLAYER_ANIM_STAND, AOF_LOOPING|AOF_NORESTART);
+	  }
+	  else
+	  {
+		IdleAnim();
+		//SetWholeAnimation(idPlayerWhole_Animation[ANIM_IDLE], AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+	}
+	  //..
+	  // 쓸모없는 부분.
+	  //m_bCrouch = FALSE;
     m_bSwim = FALSE;
   };
 
@@ -1247,28 +2066,43 @@ functions:
       switch (iWeapon) {
         case WEAPON_NONE:
           break;
-        case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: //case WEAPON_PIPEBOMB:
+        case WEAPON_KNIFE: 
+			/*
+		case WEAPON_COLT: 
+		case WEAPON_DOUBLECOLT: //case WEAPON_PIPEBOMB:
           iAnim += BODY_ANIM_COLT_SWIM_STAND-BODY_ANIM_COLT_STAND;
           break;
-        case WEAPON_SINGLESHOTGUN: case WEAPON_DOUBLESHOTGUN: case WEAPON_TOMMYGUN:
-        case WEAPON_SNIPER: case WEAPON_LASER: case WEAPON_FLAMER: //case WEAPON_GHOSTBUSTER:
-          iAnim += BODY_ANIM_SHOTGUN_SWIM_STAND-BODY_ANIM_SHOTGUN_STAND;
-          break;
-        case WEAPON_MINIGUN: case WEAPON_ROCKETLAUNCHER: case WEAPON_GRENADELAUNCHER:
-        case WEAPON_IRONCANNON: case WEAPON_CHAINSAW: // case WEAPON_NUKECANNON:
+		  */
+        //case WEAPON_SINGLESHOTGUN: case WEAPON_DOUBLESHOTGUN: 
+		//case WEAPON_TOMMYGUN:
+        //case WEAPON_SNIPER: case WEAPON_LASER: case WEAPON_FLAMER: //case WEAPON_GHOSTBUSTER:
+		//iAnim += BODY_ANIM_SHOTGUN_SWIM_STAND-BODY_ANIM_SHOTGUN_STAND;
+        //  break;
+        //case WEAPON_MINIGUN: 
+		//case WEAPON_ROCKETLAUNCHER: case WEAPON_GRENADELAUNCHER:
+        //case WEAPON_IRONCANNON: 
+		case WEAPON_CHAINSAW: // case WEAPON_NUKECANNON:
           iAnim += BODY_ANIM_MINIGUN_SWIM_STAND-BODY_ANIM_MINIGUN_STAND;
           break;
       }
     }
     m_bAttacking = FALSE;
     m_bChangeWeapon = FALSE;
-    SetBodyAnimation(iAnim, ulFlags);
+//0105
+	if(m_bMdl){
+		SetBodyAnimation(iAnim, ulFlags);
+	}
+//..
     if (!(ulFlags&AOF_LOOPING)) {
       SpawnReminder(this, m_fBodyAnimTime, (INDEX) AA_ATTACK);
       m_tmAttackingDue = _pTimer->CurrentTick()+m_fBodyAnimTime;
     }
     m_bAttacking = TRUE;
+//0105 잠시 어택플래그 끄기.
+	FireAnimationOff();
+//..
   };
+
   void FireAnimationOff(void) {
     m_bAttacking = FALSE;
   };
@@ -1278,8 +2112,10 @@ functions:
 /************************************************************
  *                  CHANGE BODY ANIMATION                   *
  ************************************************************/
+  /*
   // body animation template
-  void BodyAnimationTemplate(INDEX iNone, INDEX iColt, INDEX iShotgun, INDEX iMinigun, ULONG ulFlags) {
+  void BodyAnimationTemplate(INDEX iNone, INDEX iColt, INDEX iShotgun, INDEX iMinigun, ULONG ulFlags) 
+  {
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
     switch (iWeapon) {
       case WEAPON_NONE:
@@ -1287,51 +2123,88 @@ functions:
         break;
       case WEAPON_KNIFE: case WEAPON_COLT: case WEAPON_DOUBLECOLT: // case WEAPON_PIPEBOMB:
         if (m_bSwim) { iColt += BODY_ANIM_COLT_SWIM_STAND-BODY_ANIM_COLT_STAND; }
-        SetBodyAnimation(iColt, ulFlags);
+//0105
+        if(m_bMdl){
+			SetBodyAnimation(iColt, ulFlags);
+		}else{
+			SetWholeAnimation(idPlayerWhole_Animation[Attack1, AN_LOOPING|AN_NORESTART, 0.2f, 1.0f);
+		}
+//..
         break;
-      case WEAPON_SINGLESHOTGUN: case WEAPON_DOUBLESHOTGUN: case WEAPON_TOMMYGUN:
+      case WEAPON_SINGLESHOTGUN: case WEAPON_DOUBLESHOTGUN: 
+	  case WEAPON_TOMMYGUN:
       case WEAPON_SNIPER: case WEAPON_LASER: case WEAPON_FLAMER: //case WEAPON_GHOSTBUSTER:
         if (m_bSwim) { iShotgun += BODY_ANIM_SHOTGUN_SWIM_STAND-BODY_ANIM_SHOTGUN_STAND; }
         SetBodyAnimation(iShotgun, ulFlags);
         break;
       case WEAPON_MINIGUN: case WEAPON_ROCKETLAUNCHER: case WEAPON_GRENADELAUNCHER:
-      case WEAPON_IRONCANNON: case WEAPON_CHAINSAW: // case WEAPON_NUKECANNON:
+      //case WEAPON_IRONCANNON: 
+	  case WEAPON_CHAINSAW: // case WEAPON_NUKECANNON:
         if (m_bSwim) { iMinigun+=BODY_ANIM_MINIGUN_SWIM_STAND-BODY_ANIM_MINIGUN_STAND; }
         SetBodyAnimation(iMinigun, ulFlags);
         break;
       default: ASSERTALWAYS("Player Animator - Unknown weapon");
     }
   };
+  */
 
   // walk
-  void BodyWalkAnimation() {
+  void BodyWalkAnimation() 
+  {
+	  /*
     BodyAnimationTemplate(BODY_ANIM_NORMALWALK, 
       BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
       AOF_LOOPING|AOF_NORESTART);
+	  */
   };
 
   // stand
   void BodyStillAnimation() {
-    BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
-      AOF_LOOPING|AOF_NORESTART);
+//0105
+    if(m_bMdl)
+	{
+		/*
+		  BodyAnimationTemplate(BODY_ANIM_WAIT, 
+			  BODY_ANIM_COLT_STAND, BODY_ANIM_SHOTGUN_STAND, BODY_ANIM_MINIGUN_STAND, 
+			  AOF_LOOPING|AOF_NORESTART);
+			  */
+    }
+//..
   };
 
+//0105 함수추가
+  // set player body animation
+  void SetWholeAnimation(INDEX iAnimation, ULONG ulFlags, FLOAT fBlendTime, FLOAT fSpeed) 
+  {
+
+    // on weapon change skip anim
+    if (m_bChangeWeapon) { return; }
+    // on firing skip anim
+    if (m_bAttacking) { return; }
+    // play body anim
+    GetPlayer()->ChangeWholeAnim(iAnimation, ulFlags, 1.0f, fBlendTime, fSpeed);
+    m_fBodyAnimTime = GetPlayer()->GetModelInstance()->GetAnimLength(iAnimation); // anim length		
+  };  
+  //..
+
   // push weapon
-  void BodyPushAnimation() {
+  void BodyPushAnimation() 
+  {
     m_bAttacking = FALSE;
     m_bChangeWeapon = FALSE;
-    BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_REDRAW, BODY_ANIM_SHOTGUN_REDRAW, BODY_ANIM_MINIGUN_REDRAW, 0);
+//	  BodyAnimationTemplate(BODY_ANIM_WAIT, 
+//		  BODY_ANIM_COLT_REDRAW, BODY_ANIM_SHOTGUN_REDRAW, BODY_ANIM_MINIGUN_REDRAW, 0);
     m_bChangeWeapon = TRUE;
   };
 
+  /*
   // remove weapon attachment
   void RemoveWeapon(void) 
   {
     CPlayer &pl = (CPlayer&)*m_penPlayer;
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
-    switch (m_iWeaponLast) {
+	  switch (m_iWeaponLast) 
+	  {
       case WEAPON_NONE:
       case WEAPON_KNIFE:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_KNIFE);
@@ -1364,12 +2237,12 @@ functions:
       case WEAPON_GRENADELAUNCHER:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_GRENADE_LAUNCHER);
         break;
-/*    case WEAPON_PIPEBOMB:
+		  case WEAPON_PIPEBOMB:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_COLT_RIGHT);
         // reset to player body
         pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_COLT_LEFT);
-        break;      */
+		  break;
       case WEAPON_FLAMER:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_FLAMER);
         break;
@@ -1379,11 +2252,11 @@ functions:
       case WEAPON_LASER:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LASER);
         break;
-/*    case WEAPON_GHOSTBUSTER:
+		  case WEAPON_GHOSTBUSTER:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_LASER);
-        break;      */
+		  break;
       case WEAPON_IRONCANNON:
-//      case WEAPON_NUKECANNON:
+		  //      case WEAPON_NUKECANNON:
         pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_CANNON);
         break;
       default:
@@ -1392,32 +2265,33 @@ functions:
     // sync apperances
     SyncWeapon();
   }
+  */
 
   // pull weapon
   void BodyPullAnimation() {
     // remove old weapon
-    RemoveWeapon();
+//    RemoveWeapon();
 
     // set new weapon
-    SetWeapon();
+    //SetWeapon();
 
     // pull weapon
     m_bChangeWeapon = FALSE;
-    BodyAnimationTemplate(BODY_ANIM_WAIT, 
-      BODY_ANIM_COLT_DRAW, BODY_ANIM_SHOTGUN_DRAW, BODY_ANIM_MINIGUN_DRAW, 0);
+//    BodyAnimationTemplate(BODY_ANIM_WAIT, 
+//      BODY_ANIM_COLT_DRAW, BODY_ANIM_SHOTGUN_DRAW, BODY_ANIM_MINIGUN_DRAW, 0);
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
     if (iWeapon!=WEAPON_NONE) {
       m_bChangeWeapon = TRUE;
       SpawnReminder(this, m_fBodyAnimTime, (INDEX) AA_PULLWEAPON);
     }
     // sync apperances
-    SyncWeapon();
+//    SyncWeapon();
   };
 
   // pull item
   void BodyPullItemAnimation() {
     // remove old weapon
-    RemoveWeapon();
+//    RemoveWeapon();
 
     // pull item
     m_bChangeWeapon = FALSE;
@@ -1425,13 +2299,13 @@ functions:
     m_bChangeWeapon = TRUE;
     SpawnReminder(this, m_fBodyAnimTime, (INDEX) AA_PULLWEAPON);
     // sync apperances
-    SyncWeapon();
+//    SyncWeapon();
   };
 
   // pick item
   void BodyPickItemAnimation() {
     // remove old weapon
-    RemoveWeapon();
+    //RemoveWeapon();
 
     // pick item
     m_bChangeWeapon = FALSE;
@@ -1439,7 +2313,7 @@ functions:
     m_bChangeWeapon = TRUE;
     SpawnReminder(this, m_fBodyAnimTime, (INDEX) AA_PULLWEAPON);
     // sync apperances
-    SyncWeapon();
+//    SyncWeapon();
   };
 
   // remove item
@@ -1448,7 +2322,7 @@ functions:
     pmoModel = &(pl.GetModelObject()->GetAttachmentModel(PLAYER_ATTACHMENT_TORSO)->amo_moModelObject);
     pmoModel->RemoveAttachmentModel(BODY_ATTACHMENT_ITEM);
     // sync apperances
-    SyncWeapon();
+//    SyncWeapon();
   };
 
 
@@ -1456,11 +2330,13 @@ functions:
  *                      FIRE FLARE                          *
  ************************************************************/
   void OnPreRender(void) {
-    ControlFlareAttachment();
+//    ControlFlareAttachment();
 
     // Minigun Specific
     CPlayerWeapons &plw = (CPlayerWeapons&)*(((CPlayer&)*m_penPlayer).m_penWeapons);
-    if (plw.m_iCurrentWeapon==WEAPON_MINIGUN) {
+	/*
+    if (plw.m_iCurrentWeapon==WEAPON_MINIGUN) 
+	{
       ANGLE aAngle = Lerp(plw.m_aMiniGunLast, plw.m_aMiniGun, _pTimer->GetLerpFactor());
       // rotate minigun barrels
       CPlayer &pl = (CPlayer&)*m_penPlayer;
@@ -1470,6 +2346,7 @@ functions:
         pamo->amo_plRelative.pl_OrientationAngle(3) = aAngle;
       }
     }
+	*/
   };
 
   // show flare
@@ -1495,16 +2372,15 @@ functions:
     }
   };
 
+  /*
   // flare attachment
   void ControlFlareAttachment(void) 
   {
-/*    if(!IsPredictionHead()) {
+    if(!IsPredictionHead()) {
       return;
     }
-    */
 
-    // get your prediction tail
-    CPlayerAnimator *pen = (CPlayerAnimator *)GetPredictionTail();
+    CPlayerAnimator *pen = this;
 
     INDEX iWeapon = ((CPlayerWeapons&)*(((CPlayer&)*pen->m_penPlayer).m_penWeapons)).m_iCurrentWeapon;
     // second colt only
@@ -1568,18 +2444,43 @@ functions:
       }
     }
   };
-
+  */
 
 
 /************************************************************
  *                      PROCEDURES                          *
  ************************************************************/
 procedures:
-  ReminderAction(EReminder er) {
-    switch (er.iValue) {
+  ReminderAction(EReminder er) 
+  {
+    switch (er.iValue) 
+	{
       case AA_JUMPDOWN: m_bWaitJumpAnim = FALSE; break;
-      case AA_CROUCH: m_iCrouchDownWait--; ASSERT(m_iCrouchDownWait>=0); break;
-      case AA_RISE: m_iRiseUpWait--; ASSERT(m_iRiseUpWait>=0); break;
+		  // 쓸모없는 부분.
+		  /*
+      case AA_CROUCH: 
+		  {
+          m_iCrouchDownWait--; 
+          if (_pNetwork->IsServer())
+		  {
+            ASSERT(m_iCrouchDownWait>=0); 
+          } 
+		  else if (m_iCrouchDownWait<0) 
+		  {
+            m_iCrouchDownWait=0;
+          }
+          break;
+        }
+		*/
+      case AA_RISE: {
+          m_iRiseUpWait--; 
+          if (_pNetwork->IsServer()) {
+            ASSERT(m_iRiseUpWait>=0); 
+          } else if (m_iRiseUpWait<0) {
+            m_iRiseUpWait=0;
+          }
+          break;
+        }      
       case AA_PULLWEAPON: m_bChangeWeapon = FALSE; break;
       case AA_ATTACK: if(m_tmAttackingDue<=_pTimer->CurrentTick()) { m_bAttacking = FALSE; } break;
       default: ASSERTALWAYS("Animator - unknown reminder action.");
@@ -1589,8 +2490,9 @@ procedures:
 
   Main(EAnimatorInit eInit) {
     // remember the initial parameters
-    ASSERT(eInit.penPlayer!=NULL);
-    m_penPlayer = eInit.penPlayer;
+    ASSERT((CEntity*)eInit.eidPlayer!=NULL);
+    m_penPlayer = eInit.eidPlayer;
+    m_iPlayerID = ((CEntity*)m_penPlayer)->en_ulID;
 
     // declare yourself as a void
     InitAsVoid();
@@ -1608,7 +2510,7 @@ procedures:
     }
 
     // cease to exist
-    Destroy();
+    Destroy(FALSE);
 
     return;
   };

@@ -1,18 +1,22 @@
 #ifndef SE_INCL_IMAGEINFO_H
 #define SE_INCL_IMAGEINFO_H
 #ifdef PRAGMA_ONCE
-  #pragma once
+#pragma once
 #endif
 
 /*
- * class of CroTeam RAW image description (bitmap) and several image manipulation routines
- */
+* class of CroTeam RAW image description (bitmap) and several image manipulation routines
+*/
 
 #define UNSUPPORTED_FILE 0L
 #define PCX_FILE         1L
 #define TGA_FILE         2L
+//강동민 수정 시작 다중 공격 작업	09.06
+#define JPG_FILE		 3L
+//강동민 수정 끝 다중 공격 작업		09.06
 
-class ENGINE_API CImageInfo {
+class ENGINE_API CImageInfo 
+{
 public:
   PIX    ii_Width;	           // width of image in pixels
   PIX    ii_Height;	           // height of image in pixels
@@ -49,6 +53,9 @@ public:
 
   // converts image info structure and content to PCX or TGA format and saves it to file
   void SaveTGA_t( const CTFileName &strFileName) const; // throw char *
+//강동민 수정 시작 다중 공격 작업	09.06
+	void SaveJPG_t( const CTFileName &strFileName) const; // throw char *
+//강동민 수정 끝 다중 공격 작업		09.06
 };
 
 

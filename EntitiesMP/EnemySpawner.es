@@ -1,6 +1,9 @@
 304
 %{
 #include "StdH.h"
+#include "EntitiesMP/TacticsHolder.h"
+#include <Engine/GlobalDefinition.h>
+#include <Engine/Network/MessageDefine.h>
 %}
 
 
@@ -18,6 +21,12 @@ enum EnemySpawnerType {
   7 EST_RESPAWNGROUP    "RespawnerByGroup", // respawn the whole group when it's destroyed
 };
 
+event ENetSpawnEntity {
+  ULONG ulEntityID,
+  BOOL  bCopy,
+  FLOAT3D vPosition,
+  ANGLE3D vOrientation,
+};
 
 class CEnemySpawner: CRationalEntity {
 name      "Enemy Spawner";
@@ -36,28 +45,33 @@ properties:
  16 FLOAT m_tmSingleWait        "Delay single" 'O' = 0.1f,    // delay inside one group
   5 FLOAT m_tmGroupWait         "Delay group" 'G' = 0.1f,     // delay between two groups
  17 INDEX m_ctGroupSize         "Count group"  = 1,
-  8 INDEX m_ctTotal             "Count total" 'C' = 1,        // max. number of spawned enemies
+  8 INDEX m_ctTotal             "Count total" 'C' = 1 features(EPROPF_NETSEND),        // max. number of spawned enemies
  13 CEntityPointer m_penPatrol  "Patrol target" 'P'  COLOR(C_lGREEN|0xFF),          // for spawning patrolling 
  15 enum EnemySpawnerType m_estType "Type"  'Y' = EST_SIMPLE,      // type of spawner
  18 BOOL m_bTelefrag "Telefrag" 'F' = FALSE,                  // telefrag when spawning
  19 BOOL m_bSpawnEffect "SpawnEffect" 'S' = TRUE, // show effect and play sound
  20 BOOL m_bDoubleInSerious "Double in serious mode" = FALSE,
  21 CEntityPointer m_penSeriousTarget  "Template for Serious"  COLOR(C_RED|0x20),
- 22 BOOL m_bFirstPass = TRUE,
+ 22 BOOL m_bFirstPass = TRUE features(EPROPF_NETSEND),
  
  50 CSoundObject m_soSpawn,    // sound channel
- 51 INDEX m_iInGroup=0,        // in group counter for loops
- 52 INDEX m_iEnemiesTriggered=0,  // number of times enemies triggered the spawner on death
+ 51 INDEX m_iInGroup=0 features(EPROPF_NETSEND),        // in group counter for loops
+ 52 INDEX m_iEnemiesTriggered=0 features(EPROPF_NETSEND),  // number of times enemies triggered the spawner on death
 
  60 CEntityPointer m_penTacticsHolder  "Tactics Holder",
  61 BOOL m_bTacticsAutostart           "Tactics autostart" = TRUE,
+//강동민 수정 시작 싱글 던젼 작업	07.23
+ 80	INDEX	m_iMobType				   "Mob Type"	= 0,
+ 81 BOOL	m_bAngleFix					"Angle Fix" = FALSE,
+ 82 BOOL	m_bShowSpawnEffect		"Show Spawn Effect" = FALSE,
+//강동민 수정 끝 싱글 던젼 작업		07.23
 
  
 
 components:
 
-  1 model   MODEL_ENEMYSPAWNER     "Models\\Editor\\EnemySpawner.mdl",
-  2 texture TEXTURE_ENEMYSPAWNER   "Models\\Editor\\EnemySpawner.tex",
+  1 editor model   MODEL_ENEMYSPAWNER     "Data\\Models\\Editor\\EnemySpawner.mdl",
+  2 editor texture TEXTURE_ENEMYSPAWNER   "Data\\Models\\Editor\\EnemySpawner.tex",
   3 class   CLASS_BASIC_EFFECT  "Classes\\BasicEffect.ecl",
 
 
@@ -72,9 +86,11 @@ functions:
   const CTString &GetDescription(void) const
   {
     ((CTString&)m_strDescription).PrintF("-><none>");
-    if (m_penTarget!=NULL) {
+		if (m_penTarget!=NULL) 
+		{
       ((CTString&)m_strDescription).PrintF("->%s", m_penTarget->GetName());
-      if (m_penSeriousTarget!=NULL) {
+			if (m_penSeriousTarget!=NULL) 
+			{
         ((CTString&)m_strDescription).PrintF("->%s, %s", 
           m_penTarget->GetName(), m_penSeriousTarget->GetName());
       }
@@ -88,7 +104,7 @@ functions:
   // check if one template is valid for this spawner
   BOOL CheckTemplateValid(CEntity *pen)
   {
-    if (pen==NULL || !IsDerivedFromClass(pen, "Enemy Base")) {
+    if (pen==NULL || !IsDerivedFromClass(pen, &CEnemyBase_DLLClass)) {
       return FALSE;
     }
     if (m_estType==EST_TELEPORTER) {
@@ -106,7 +122,7 @@ functions:
     }
     else if( slPropertyOffset == offsetof(CEnemySpawner, m_penPatrol))
     {
-      return (penTarget!=NULL && IsDerivedFromClass(penTarget, "Enemy Marker"));
+      return (penTarget!=NULL && IsDerivedFromClass(penTarget, &CEnemyMarker_DLLClass));
     }
     else if( slPropertyOffset == offsetof(CEnemySpawner, m_penSeriousTarget))
     {
@@ -114,8 +130,7 @@ functions:
     }   
     else if( slPropertyOffset == offsetof(CEnemySpawner, m_penTacticsHolder))
     {
-      if (IsOfClass(penTarget, "TacticsHolder")) { return TRUE; }
-      else { return FALSE; }
+      return IsOfClass( penTarget, &CTacticsHolder_DLLClass);
     }   
     return CEntity::IsTargetValid(slPropertyOffset, penTarget);
   }
@@ -134,52 +149,214 @@ functions:
     return TRUE;
   }
 
-  // spawn new entity
-  void SpawnEntity(BOOL bCopy) {
-    // spawn new entity if of class basic enemy
-    if (CheckTemplateValid(m_penTarget)) {
+  virtual BOOL IsEnemySpawner(void) const
+  {
+	return TRUE;
+  }
 
+  // spawn new entity
+	// 새로운 엔티티 생성.
+	void SpawnEntity(BOOL bCopy) 
+	{
+		SetFlagOn(ENF_PROPSCHANGED);
+		if (!_pNetwork->IsServer()) 
+		{
+			return;
+		}
+		
+		// 싱글 모드 일때...
+		if(_pNetwork->m_bSingleMode && m_iMobType != 0 && _cmiComm. IsNetworkOn())
+		{
+			FLOAT fOuterCircle = ClampDn(m_fOuterCircle, 0.0f);
+			FLOAT fInnerCircle = ClampUp(m_fInnerCircle, fOuterCircle);
+			
+			// calculate new position
+			// 새로운 좌표를 계산함.
+			FLOAT fR = fInnerCircle + FRnd()*(fOuterCircle-fInnerCircle);
+			FLOAT fA = FRnd()*360.0f;
+			CPlacement3D pl(FLOAT3D(CosFast(fA)*fR, 0.05f, SinFast(fA)*fR), ANGLE3D(0, 0, 0));
+			pl.RelativeToAbsolute(GetPlacement());
+			CPlacement3D plSpawner = GetPlacement();
+			
+			// teleport back
+			//pen->Teleport(pl, m_bTelefrag);
+			
+			CEntity *penEntity = NULL;
+			
+			penEntity			= _pNetwork->ga_World.CreateEntity_t(pl, CLASS_ENEMY, -1, TRUE);
+			penEntity->InitAsSkaModel();
+			//mt.mob_iClientIndex	= penEntity->en_ulID;
+			//penEntity->SetSkaModel(MD.GetMobSmcFileName());				
+			
+			INDEX iEntityID = penEntity->en_ulID;
+			
+			CEnemyBase *peb = ((CEnemyBase*)penEntity);
+			AddEnemyKillData(peb, this);
+			MarkSpawnerSpawned(this);
+			
+			if (m_estType==EST_RESPAWNER || m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP) 
+			{
+				peb->m_penSpawnerTarget = this;
+			}
+			
+			// Mob Respawn Message
+			if(_cmiComm. IsNetworkOn())
+			{
+				CNetworkMessage nmMobSpawn(MSG_NPC_REGEN);
+				INDEX iIndex	= -1;
+				INDEX iYLayer	= 0;
+				INDEX iMobType	= m_iMobType;
+				nmMobSpawn << iIndex;						// Index
+				nmMobSpawn << iMobType;						// DB Index
+				nmMobSpawn << pl.pl_PositionVector(1);		// Pos X
+				nmMobSpawn << pl.pl_PositionVector(3);		// Pos Z
+				nmMobSpawn << pl.pl_PositionVector(2);		// Pos H
+				if(m_bAngleFix)
+				{
+					nmMobSpawn << plSpawner.pl_OrientationAngle(1);	// Angle
+				}
+				else
+				{
+					nmMobSpawn << pl.pl_OrientationAngle(1);	// Angle
+				}
+				nmMobSpawn << iYLayer;						// Y Layer
+				nmMobSpawn << iEntityID;					// EntityID
+				_pNetwork->SendToServerNew(nmMobSpawn);
+
+				// spawn teleport effect
+				if (m_bShowSpawnEffect) 
+				{
+					ESpawnEffect ese;
+					ese.colMuliplier = C_WHITE|CT_OPAQUE;
+					ese.betType = BET_TELEPORT;
+					ese.vNormal = FLOAT3D(0,1,0);					
+					FLOAT fEntitySize = 3.0f;
+					ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
+					CEntityPointer penEffect = CreateEntity(pl, CLASS_BASIC_EFFECT, WLD_AUTO_ENTITY_ID,FALSE);
+					penEffect->Initialize(ese,FALSE);
+				}
+			}
+		}
+		// 싱글 모드가 아닐때...		
+		else
+		{
+			extern BOOL _bWorldEditorApp;
+			if(m_iMobType != 0 && _bWorldEditorApp)
+			{
+				CEntity *penEntity;
+				CMobData& MD = _pNetwork->GetMobData(m_iMobType);
+
+				FLOAT fOuterCircle = ClampDn(m_fOuterCircle, 0.0f);
+				FLOAT fInnerCircle = ClampUp(m_fInnerCircle, fOuterCircle);
+
+				// calculate new position
+				// 새로운 좌표를 계산함.
+				FLOAT fR = fInnerCircle + FRnd()*(fOuterCircle-fInnerCircle);
+				FLOAT fA = FRnd()*360.0f;
+				CPlacement3D pl(FLOAT3D(CosFast(fA)*fR, 0.05f, SinFast(fA)*fR), ANGLE3D(0, 0, 0));
+				pl.RelativeToAbsolute(GetPlacement());
+
+				penEntity			= _pNetwork->ga_World.CreateEntity_t(pl, CLASS_ENEMY, -1, TRUE);
+				penEntity->InitAsSkaModel();
+
+				// FIXME : NPC 리젠과 중복되는 부분.
+				penEntity->SetSkaModel(MD.GetMobSmcFileName());
+			
+				CMobData::SetMobDataToNPC(penEntity, MD, _pNetwork->GetMobName(m_iMobType));
+
+				// 생성될때 애니메이션이 필요한 에너미들...
+				const int iWanderingZombie	= 35;		// 방황하는 좀비
+				const int iZombie			= 51;		// 좀비
+				const int iDamd				= 142;		// 뎀드(스펠링 맞나???)
+				// FIXME : 임시적으로 작업한 부분.
+				if( m_iMobType == iWanderingZombie || m_iMobType == iZombie || m_iMobType == iDamd )		// 좀비 & 뎀드
+				{
+					CEntityProperty &epPropertyStart = *(penEntity->PropertyForTypeAndID(CEntityProperty::EPT_INDEX, 99));	// Walk Animation
+					ENTITYPROPERTY( &*penEntity, epPropertyStart.ep_slOffset, INDEX)		= ska_GetIDFromStringTable("m_zm_up01");
+				}
+				penEntity->Initialize();
+
+				CEnemyBase *peb = ((CEnemyBase*)penEntity);
+				AddEnemyKillData(peb, this);
+				MarkSpawnerSpawned(this);
+
+				if (m_estType==EST_RESPAWNER || m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP) 
+				{
+					peb->m_penSpawnerTarget = this;
+				}
+			}
+			else
+			{
+		if (((CEntity*)m_penTarget) == NULL) 
+		{
+      return;
+    }
+
+    // spawn new entity if of class basic enemy
+		if (CheckTemplateValid(m_penTarget)) 
+		{
       CEntity *pen = NULL;
-      if (bCopy) {
+			if (bCopy) 
+			{
         // copy template entity
+				// 엔티티를 복사해서...
         pen = GetWorld()->CopyEntityInWorld( *m_penTarget,
-          CPlacement3D(FLOAT3D(-32000.0f+FRnd()*200.0f, -32000.0f+FRnd()*200.0f, 0), ANGLE3D(0, 0, 0)) );
+          CPlacement3D(FLOAT3D(-32000.0f+FRnd()*200.0f, -32000.0f+FRnd()*200.0f, 0), ANGLE3D(0, 0, 0)),TRUE,WLD_AUTO_ENTITY_ID,FALSE );
 
         // change needed properties
         pen->End();
         CEnemyBase *peb = ((CEnemyBase*)pen);
+
+        AddEnemyKillData(peb, this);
+        MarkSpawnerSpawned(this);
+
         peb->m_bTemplate = FALSE;
         if (m_estType==EST_RESPAWNER /*|| m_estType==EST_RESPAWNERBYONE*/
-         || m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP) {
+				 || m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP) 
+				 {
           peb->m_penSpawnerTarget = this;
         }
-        if (m_penPatrol!=NULL) {
+				if (m_penPatrol!=NULL) 
+				{
           peb->m_penMarker = m_penPatrol;
         }
-        pen->Initialize();
-      } else {
+        pen->Initialize(EVoid(),FALSE);
+			} 
+			else 
+			{
         pen = m_penTarget;
         m_penTarget = NULL;
       }
       
       // adjust circle radii to account for enemy size
       FLOAT fEntityR = 0;
-      if (pen->en_pciCollisionInfo!=NULL) {
+			if (pen->en_pciCollisionInfo!=NULL) 
+			{
         fEntityR = pen->en_pciCollisionInfo->GetMaxFloorRadius();
       }
       FLOAT fOuterCircle = ClampDn(m_fOuterCircle-fEntityR, 0.0f);
       FLOAT fInnerCircle = ClampUp(m_fInnerCircle+fEntityR, fOuterCircle);
+
       // calculate new position
+			// 새로운 좌표를 계산함.
       FLOAT fR = fInnerCircle + FRnd()*(fOuterCircle-fInnerCircle);
       FLOAT fA = FRnd()*360.0f;
       CPlacement3D pl(FLOAT3D(CosFast(fA)*fR, 0.05f, SinFast(fA)*fR), ANGLE3D(0, 0, 0));
       pl.RelativeToAbsolute(GetPlacement());
+//강동민 수정 시작 싱글 던젼 작업	07.29
+				if(m_bAngleFix)
+			{
+					CPlacement3D plSpawner = GetPlacement();
+					pl.pl_OrientationAngle(1) = plSpawner.pl_OrientationAngle(1);
+			}
+//강동민 수정 끝 싱글 던젼 작업		07.29
 
       // teleport back
       pen->Teleport(pl, m_bTelefrag);
 
       // spawn teleport effect
-      if (m_bSpawnEffect) {
+			if (m_bSpawnEffect) 
+			{
         ESpawnEffect ese;
         ese.colMuliplier = C_WHITE|CT_OPAQUE;
         ese.betType = BET_TELEPORT;
@@ -188,24 +365,81 @@ functions:
         pen->GetBoundingBox(box);
         FLOAT fEntitySize = box.Size().MaxNorm()*2;
         ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
-        CEntityPointer penEffect = CreateEntity(pl, CLASS_BASIC_EFFECT);
-        penEffect->Initialize(ese);
+        CEntityPointer penEffect = CreateEntity(pl, CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+        penEffect->Initialize(ese,FALSE);
       }
 
-      // initialize tactics
-      if (m_penTacticsHolder!=NULL) {
-        if (IsOfClass(m_penTacticsHolder, "TacticsHolder")) {
-          CEnemyBase *peb = ((CEnemyBase*)pen);
-          peb->m_penTacticsHolder = m_penTacticsHolder;
-          if (m_bTacticsAutostart) {
-            // start tactics
-            peb->StartTacticsNow();
-          }
-        }
+      // tell clients to spawn an entity with a given id
+      ENetSpawnEntity eNetSpawn;
+      eNetSpawn.ulEntityID = pen->en_ulID;
+      eNetSpawn.bCopy = bCopy;
+      eNetSpawn.vPosition = pl.pl_PositionVector;
+      eNetSpawn.vOrientation = pl.pl_OrientationAngle;
+      SendEvent(eNetSpawn,TRUE);
+    }    
+			}
+		}
+  };
+
+  // spawn new entity
+	void SpawnEntity_net(ENetSpawnEntity eNetSpawn) 
+	{
+    SetFlagOn(ENF_PROPSCHANGED);
+		if (_pNetwork->IsServer()) 
+		{
+      return;
+    }
+    if (m_penSeriousTarget!=NULL && 
+      GetSP()->sp_gdGameDifficulty==CSessionProperties::GD_EXTREME && GetSP()->sp_bSinglePlayer) {
+      m_penTarget = m_penSeriousTarget;
+    }
+		if (!CheckTemplateValid(m_penTarget)) 
+		{
+      return;
+    }
+    CEntity *pen = NULL;
+    CPlacement3D pl(eNetSpawn.vPosition,eNetSpawn.vOrientation);
+		if (eNetSpawn.bCopy) 
+		{
+      // copy template entity
+      pen = GetWorld()->CopyEntityInWorld( *m_penTarget, pl, TRUE, eNetSpawn.ulEntityID,FALSE );
+
+      // change needed properties
+      pen->End();
+      CEnemyBase *peb = ((CEnemyBase*)pen);
+      peb->m_bTemplate = FALSE;
+      if (m_estType==EST_RESPAWNER /*|| m_estType==EST_RESPAWNERBYONE*/
+			 || m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP) 
+			 {
+        peb->m_penSpawnerTarget = this;
       }
-      
+      if (m_penPatrol!=NULL) {
+        peb->m_penMarker = m_penPatrol;
+      }
+      pen->Initialize(EVoid(),FALSE);
+		} 
+		else 
+		{
+      pen = m_penTarget;
+      m_penTarget = NULL;
+    }
+    
+    // spawn teleport effect
+		if (m_bSpawnEffect) 
+		{
+      ESpawnEffect ese;
+      ese.colMuliplier = C_WHITE|CT_OPAQUE;
+      ese.betType = BET_TELEPORT;
+      ese.vNormal = FLOAT3D(0,1,0);
+      FLOATaabbox3D box;
+      pen->GetBoundingBox(box);
+      FLOAT fEntitySize = box.Size().MaxNorm()*2;
+      ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
+      CEntityPointer penEffect = CreateEntity(pl, CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+      penEffect->Initialize(ese,FALSE);
     }
   };
+
 
   // Handle an event, return false if the event is not handled
   BOOL HandleEvent(const CEntityEvent &ee)
@@ -213,9 +447,20 @@ functions:
     if (ee.ee_slEvent==EVENTCODE_ETrigger)
     {
       ETrigger eTrigger = ((ETrigger &) ee);
-      if(IsDerivedFromClass(eTrigger.penCaused, "Enemy Base")
-        && (m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP)) {
+      if( IsDerivedFromClass( eTrigger.penCaused, &CEnemyBase_DLLClass) &&
+        (m_estType==EST_MAINTAINGROUP || m_estType==EST_RESPAWNGROUP || 
+				m_estType==EST_RESPAWNER || m_estType==EST_TRIGGERED)) 
+			{
+				// Respawn By Group인 경우 죽은 에너미의 갯수를 카운트 하는듯...
         m_iEnemiesTriggered++;
+      }
+		} 
+		else if (ee.ee_slEvent==EVENTCODE_ENetSpawnEntity) 
+		{
+			if (!_pNetwork->IsServer()) 
+			{
+        ENetSpawnEntity eNetSpawn = ((ENetSpawnEntity &) ee);
+        SpawnEntity_net(eNetSpawn);
       }
     }
     return CRationalEntity::HandleEvent(ee);
@@ -239,18 +484,20 @@ procedures:
   // spawn one group of entities
   SpawnGroup() 
   {
+    SetFlagOn(ENF_PROPSCHANGED);
     // no enemies in group yet
     m_iInGroup = 0;
     // repeat forever
-    while(TRUE) {
-
+		while(TRUE) 
+		{
       // spawn one enemy
       SpawnEntity(TRUE);
 
       // count total enemies spawned
       m_ctTotal--;
       // if no more left
-      if (m_ctTotal<=0) {
+			if (m_ctTotal<=0) 
+			{
         // finish entire spawner
         return EEnd();
       }
@@ -258,17 +505,23 @@ procedures:
       // count enemies in group
       m_iInGroup++;
       // decrease the needed count
-      if (m_iEnemiesTriggered>0 && m_estType==EST_RESPAWNGROUP) {
-        if (!m_bFirstPass) {
+			if (m_iEnemiesTriggered>0 && m_estType==EST_RESPAWNGROUP) 
+			{
+				if (!m_bFirstPass) 
+				{
           m_iEnemiesTriggered--;
         }
-      } else if (m_iEnemiesTriggered>0) {
+			} 
+			else if (m_iEnemiesTriggered>0) 
+			{
          m_iEnemiesTriggered--;
       }
 
       // if entire group spawned
-      if (m_iInGroup>=m_ctGroupSize) {
-        if (!(m_estType==EST_MAINTAINGROUP && m_iEnemiesTriggered>0)) {
+			if (m_iInGroup>=m_ctGroupSize) 
+			{
+				if (!(m_estType==EST_MAINTAINGROUP && m_iEnemiesTriggered>0)) 
+				{
           // finish
           return EReturn();
         }
@@ -337,11 +590,15 @@ procedures:
   Respawner()
   {
     // repeat
-    while(TRUE) {
+		while(TRUE) 
+		{
       // wait to be triggered
-      wait() {
-        on (EBegin) : { 
-          if (!m_bFirstPass && m_iEnemiesTriggered>0) {
+			wait() 
+			{
+				on (EBegin) : 
+				{				 
+					if (!m_bFirstPass && m_iEnemiesTriggered>0) 
+					{
             stop;
           }
           resume;
@@ -432,6 +689,10 @@ procedures:
     SetModel(MODEL_ENEMYSPAWNER);
     SetModelMainTexture(TEXTURE_ENEMYSPAWNER);
 
+    SetFlagOff(ENF_PROPSCHANGED);
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+
     if (m_tmSingleWait<=0.0f) { m_tmSingleWait=0.05f; }
     if (m_tmGroupWait<=0.0f) { m_tmGroupWait=0.05f; }
     
@@ -446,13 +707,13 @@ procedures:
 
     // check target
     if (m_penTarget!=NULL) {
-      if (!IsDerivedFromClass(m_penTarget, "Enemy Base")) {
+      if( !IsDerivedFromClass( m_penTarget, &CEnemyBase_DLLClass)) {
         WarningMessage("Target '%s' is of wrong class!", m_penTarget->GetName());
         m_penTarget = NULL;
       }
     }
     if (m_penSeriousTarget!=NULL) {
-      if (!IsDerivedFromClass(m_penSeriousTarget, "Enemy Base")) {
+      if( !IsDerivedFromClass(m_penSeriousTarget, &CEnemyBase_DLLClass)) {
         WarningMessage("Target '%s' is of wrong class!", m_penSeriousTarget->GetName());
         m_penSeriousTarget = NULL;
       }
@@ -468,11 +729,13 @@ procedures:
       return;
     }
 
-    if (m_bDoubleInSerious && GetSP()->sp_gdGameDifficulty==CSessionProperties::GD_EXTREME) {
+    if (m_bDoubleInSerious && 
+      GetSP()->sp_gdGameDifficulty==CSessionProperties::GD_EXTREME && GetSP()->sp_bSinglePlayer) {
       m_ctGroupSize*=2;
       m_ctTotal*=2;
     }
-    if (m_penSeriousTarget!=NULL && GetSP()->sp_gdGameDifficulty==CSessionProperties::GD_EXTREME) {
+    if (m_penSeriousTarget!=NULL && 
+      GetSP()->sp_gdGameDifficulty==CSessionProperties::GD_EXTREME && GetSP()->sp_bSinglePlayer) {
       m_penTarget = m_penSeriousTarget;
     }
 
@@ -484,6 +747,7 @@ procedures:
 
     wait() {
       on(EBegin) : {
+        SetFlagOn(ENF_PROPSCHANGED);
         if(m_estType==EST_SIMPLE) {
           call Simple();
         } else if(m_estType==EST_TELEPORTER) {
@@ -500,13 +764,25 @@ procedures:
         }
       }
       on(EDeactivate) : {
-        stop;
+        if (_pNetwork->IsServer()) {
+          stop;
+        } else {
+          resume;
+        }
       }
       on(EStop) : {
-        stop;
+        if (_pNetwork->IsServer()) {
+          stop;
+        } else {
+          resume;
+        }
       }
       on(EEnd) : {
-        stop;
+        if (_pNetwork->IsServer()) {
+          stop;
+        } else {
+          resume;
+        }
       }
     }
 

@@ -6,9 +6,13 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Memory.h>
 #include <Engine/Math/Functions.h>
+#include <ijl.h>
 
 extern void FlipBitmap( UBYTE *pubSrc, UBYTE *pubDst, PIX pixWidth, PIX pixHeight, INDEX iFlipType, BOOL bAlphaChannel);
 
+//강동민 수정 시작 다중 공격 작업	09.06
+#pragma comment(lib, "ijl15L.lib")
+//강동민 수정 끝 다중 공격 작업		09.06
 
 // Order of CroTeam true color pixel components
 #define COMPONENT_1 red
@@ -21,7 +25,6 @@ extern void FlipBitmap( UBYTE *pubSrc, UBYTE *pubDst, PIX pixWidth, PIX pixHeigh
 #define GREEN_COMPONENT 1
 #define BLUE_COMPONENT  2
 #define ALPHA_COMPONENT 3
-
 
 // PCX header structure
 struct PCXHeader
@@ -56,16 +59,16 @@ struct TGAHeader
   UBYTE Descriptor;
 };
 
-
-
 /******************************************************
- * Routines for manipulating CroTeam picture raw format
- */
+* Routines for manipulating CroTeam picture raw format
+*/
 
-CImageInfo::CImageInfo() {
+CImageInfo::CImageInfo() 
+{
   Detach();
 }
-CImageInfo::~CImageInfo() {
+CImageInfo::~CImageInfo() 
+{
   Clear();
 }
 
@@ -166,8 +169,10 @@ void CImageInfo::ExpandEdges( INDEX ctPasses/*=8192*/)
         // average all surrounding pixels that are visible
         ULONG ulRa=0, ulGa=0, ulBa=0;
         INDEX ctVisible=0;
-        for( INDEX j=-1; j<=1; j++) {
-          for( INDEX i=-1; i<=1; i++) {
+				for( INDEX j=-1; j<=1; j++) 
+				{
+					for( INDEX i=-1; i<=1; i++) 
+					{
             const PIX pixSurrOffset = pixOffset + j*ii_Width + i;
             col = ByteSwap(pulSrc[pixSurrOffset]);
             if( ((col&CT_AMASK)>>CT_ASHIFT)<4) continue; // skip non-visible pixels
@@ -177,7 +182,8 @@ void CImageInfo::ExpandEdges( INDEX ctPasses/*=8192*/)
             ctVisible++;
           }
         } // if there were some visible pixels around
-        if( ctVisible>0) {
+				if( ctVisible>0) 
+				{
           // calc average
           ulRa/=ctVisible;  ulGa/=ctVisible;  ulBa/=ctVisible;
           col = RGBAToColor( ulRa,ulGa,ulBa,255);
@@ -194,8 +200,6 @@ void CImageInfo::ExpandEdges( INDEX ctPasses/*=8192*/)
   FreeMemory(pulDst);
 }
 
-
-
 // sets image info structure members with info form file of any supported graphic format
 //  (CT RAW, PCX8, PCX24, TGA32 uncompressed), but does not load picture content nor palette
 INDEX CImageInfo::GetGfxFileInfo_t( const CTFileName &strFileName) // throw char *
@@ -210,7 +214,8 @@ INDEX CImageInfo::GetGfxFileInfo_t( const CTFileName &strFileName) // throw char
   GfxFile.Close();
 
   // check for supported targa format
-  if( (TGAhdr.ImageType==2 || TGAhdr.ImageType==10) && TGAhdr.BitsPerPixel>=24) {
+	if( (TGAhdr.ImageType==2 || TGAhdr.ImageType==10) && TGAhdr.BitsPerPixel>=24) 
+	{
     // targa it is, so clear image info and set new values
     Clear();
     ii_Width  = TGAhdr.Width;
@@ -226,7 +231,8 @@ INDEX CImageInfo::GetGfxFileInfo_t( const CTFileName &strFileName) // throw char
   GfxFile.Close();
 
   // check for supported PCX format
-  if( (PCXhdr.MagicID == 10) && (PCXhdr.PixelBits == 8)) {
+	if( (PCXhdr.MagicID == 10) && (PCXhdr.PixelBits == 8)) 
+	{
     // PCX it is, so clear image info and set new values
     Clear();
     ii_Width = PCXhdr.Xmax - PCXhdr.Xmin + 1;
@@ -243,11 +249,8 @@ INDEX CImageInfo::GetGfxFileInfo_t( const CTFileName &strFileName) // throw char
 
 
 /* TGA *********************************************************************************
- * Routines that load and save true color (24 or 32 bit per pixel) uncompressed targa file
- */
-
-
-
+* Routines that load and save true color (24 or 32 bit per pixel) uncompressed targa file
+*/
 void CImageInfo::LoadTGA_t( const CTFileName &strFileName) // throw char *
 {
   TGAHeader *pTGAHdr;
@@ -289,7 +292,8 @@ void CImageInfo::LoadTGA_t( const CTFileName &strFileName) // throw char *
   UBYTE *pubDst = ii_Picture;
 
   // determine TGA image type
-  if( pTGAHdr->ImageType==10) {
+	if( pTGAHdr->ImageType==10) 
+	{
     // RLE encoded
     UBYTE ubControl;
     INDEX iBlockSize;
@@ -302,7 +306,8 @@ void CImageInfo::LoadTGA_t( const CTFileName &strFileName) // throw char *
       bRepeat    =  ubControl&0x80;
       iBlockSize = (ubControl&0x7F) +1;
       // repeat or copy color values
-      for( INDEX i=0; i<iBlockSize; i++) {
+			for( INDEX i=0; i<iBlockSize; i++) 
+			{
         *pubDst++ = pubSrc[0]; 
         *pubDst++ = pubSrc[1]; 
         *pubDst++ = pubSrc[2]; 
@@ -327,9 +332,9 @@ void CImageInfo::LoadTGA_t( const CTFileName &strFileName) // throw char *
   // determine image flipping
   INDEX iFlipType;
   switch( (pTGAHdr->Descriptor&0x30)>>4) {
-  case 0:  iFlipType = 1;  break; // vertical flipping
+  case 0:  iFlipType = 2;  break; // horizontal flipping
   case 1:  iFlipType = 3;  break; // diagonal flipping
-  case 3:  iFlipType = 2;  break; // horizontal flipping
+  case 3:  iFlipType = 1;  break; // vertical flipping
   default: iFlipType = 0;  break; // no flipping (just copying)
   }
   // do flipping
@@ -346,7 +351,6 @@ void CImageInfo::LoadTGA_t( const CTFileName &strFileName) // throw char *
   // free temorary allocated memory for TGA image format
   FreeMemory( pTGABuffer);
 }
-
 
 // save TGA routine
 void CImageInfo::SaveTGA_t( const CTFileName &strFileName) const // throw char *
@@ -377,7 +381,7 @@ void CImageInfo::SaveTGA_t( const CTFileName &strFileName) const // throw char *
 
   // flip image vertically
   BOOL bAlphaChannel = (slBytesPerPixel==4);
-  FlipBitmap( ii_Picture, pTGAImage, ii_Width, ii_Height, 1, bAlphaChannel);
+  FlipBitmap( ii_Picture, pTGAImage, ii_Width, ii_Height, 2, bAlphaChannel);
 
   // convert CroTeam's pixel format to TGA format
   UBYTE *pubTmp = pTGAImage;  // need 'walking' pointer
@@ -396,12 +400,74 @@ void CImageInfo::SaveTGA_t( const CTFileName &strFileName) const // throw char *
   FreeMemory( pTGABuffer);
 }
 
+//강동민 수정 시작 다중 공격 작업	09.06
+void CImageInfo::SaveJPG_t(const CTFileName &strFileName)	const
+{
+	JPEG_CORE_PROPERTIES jcp;
+	if(ijlInit(&jcp) != IJL_OK)
+	{
+		ijlFree(&jcp);
+		return;
+	}
+
+	jcp.DIBChannels		= 3;
+	jcp.DIBColor		= IJL_BGR;	
+	jcp.DIBHeight		= -ii_Height; // 음수로 하니까 뒤집혔던 그림이 다시 원래대로..
+	jcp.DIBWidth		= ii_Width;
+	long DIBLineSize	= ((ii_Width)*3)/4*4;
+	jcp.DIBPadBytes		= DIBLineSize - ii_Width * 3;	
+	jcp.JPGHeight		= ii_Height;
+	jcp.JPGWidth		= ii_Width;
+	jcp.jquality		= 100;
+	jcp.JPGFile			= strFileName.str_String;	
+	
+	UBYTE *pJPGBuffer	= NULL;
+	SLONG slFileSize;
+	PIX pixBitmapSize	= ii_Width*ii_Height;	
+	
+	// determine and check image info format
+	SLONG slBytesPerPixel = ii_BitsPerPixel/8;
+	ASSERT( slBytesPerPixel==3 || slBytesPerPixel==4);
+	if( slBytesPerPixel!=3 && slBytesPerPixel!=4) 
+		throw( TRANS( "Unsupported BitsPerPixel in ImageInfo header."));
+	
+	// determine TGA file size and allocate memory
+	slFileSize = pixBitmapSize * slBytesPerPixel;
+	pJPGBuffer = (UBYTE*)AllocMemory( slFileSize);	
+	
+	// flip image vertically
+	BOOL bAlphaChannel = (slBytesPerPixel==4);
+	FlipBitmap( ii_Picture, pJPGBuffer, ii_Width, ii_Height, 2, bAlphaChannel);	
+
+	// convert CroTeam's pixel format to TGA format
+	UBYTE *pubTmp = pJPGBuffer;  // need 'walking' pointer
+	for( INDEX iPix=0; iPix<pixBitmapSize; iPix++)
+	{ // flip bytes
+		Swap( pubTmp[0], pubTmp[2]);  // R & B channels
+		pubTmp += slBytesPerPixel; 
+	}
+
+	jcp.DIBBytes = (unsigned char*)pJPGBuffer;
+
+	if(ijlWrite(&jcp, IJL_JFILE_WRITEWHOLEIMAGE) != IJL_OK)
+	{
+		ijlFree(&jcp);
+		FreeMemory( pJPGBuffer);
+		return;
+	}
+	ijlFree(&jcp);
+	
+	// free temorary allocated memory for TGA image format
+	FreeMemory( pJPGBuffer);
+}
+//강동민 수정 끝 다중 공격 작업		09.06
+
 
 /* PCX ***********************************************************************
- * This routine reads file with given file name and if it is valid PCX file it
- * loads it into given ImageInfo structure in CroTeam true-color format.
- * (and, if the one exists, loads the palette)
- */
+* This routine reads file with given file name and if it is valid PCX file it
+* loads it into given ImageInfo structure in CroTeam true-color format.
+* (and, if the one exists, loads the palette)
+*/
 void CImageInfo::LoadPCX_t( const CTFileName &strFileName) // throw char *
 {
   PCXHeader *pPCXHdr;
@@ -446,7 +512,8 @@ void CImageInfo::LoadPCX_t( const CTFileName &strFileName) // throw char *
     // read one byte from PCX image in memory
     data = *pPCXImage++;
     // check byte-run mark
-    if( (data & 0xC0) == 0xC0) {
+		if( (data & 0xC0) == 0xC0) 
+		{
       counter = data & 0x3F;              // determine repeat value
       data = *pPCXImage++;                // read repeated data
       // put several bytes of PCX image to decoded image area in memory
@@ -492,5 +559,8 @@ void CImageInfo::LoadAnyGfxFormat_t( const CTFileName &strFileName) // throw cha
   INDEX iFileFormat = GetGfxFileInfo_t( strFileName);
   if( iFileFormat == PCX_FILE) LoadPCX_t( strFileName);
   if( iFileFormat == TGA_FILE) LoadTGA_t( strFileName);
+
+	// FIXME : 시간나면 한번 구현해 보자...
+	//if( iFileFormat == JPG_FILE)
   if( iFileFormat == UNSUPPORTED_FILE) throw( "Gfx format not supported.");
 }

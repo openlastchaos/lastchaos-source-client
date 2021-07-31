@@ -5,6 +5,10 @@
 
 uses "EntitiesMP/BasicEffects";
 
+event ECopierTrigger {
+  ULONG ulEntityID,
+};
+
 class CCopier : CRationalEntity {
 name      "Copier";
 thumbnail "Thumbnails\\Copier.tbn";
@@ -21,8 +25,8 @@ properties:
 
 components:
 
-  1 model   MODEL_TELEPORT     "Models\\Editor\\Copier.mdl",
-  2 texture TEXTURE_TELEPORT   "Models\\Editor\\Copier.tex",
+  1 editor model   MODEL_TELEPORT     "Data\\Models\\Editor\\Copier.mdl",
+  2 editor texture TEXTURE_TELEPORT   "Data\\Models\\Editor\\Copier.tex",
   3 class   CLASS_BASIC_EFFECT  "Classes\\BasicEffect.ecl",
 
 
@@ -46,7 +50,7 @@ functions:
     }
 
     CEntity *pen = GetWorld()->CopyEntityInWorld( *m_penTarget,
-      CPlacement3D(FLOAT3D(-32000.0f+FRnd()*200.0f, -32000.0f+FRnd()*200.0f, 0), ANGLE3D(0, 0, 0)) );
+      CPlacement3D(FLOAT3D(-32000.0f+FRnd()*200.0f, -32000.0f+FRnd()*200.0f, 0), ANGLE3D(0, 0, 0)),TRUE,WLD_AUTO_ENTITY_ID,FALSE );
 
     // teleport back
     CPlacement3D pl = GetPlacement();
@@ -63,8 +67,44 @@ functions:
       pen->GetBoundingBox(box);
       FLOAT fEntitySize = box.Size().MaxNorm()*2;
       ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
-      CEntityPointer penEffect = CreateEntity(GetPlacement(), CLASS_BASIC_EFFECT);
-      penEffect->Initialize(ese);
+      CEntityPointer penEffect = CreateEntity(GetPlacement(), CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+      penEffect->Initialize(ese,FALSE);
+    }
+
+    ECopierTrigger ect;
+    ect.ulEntityID = pen->en_ulID;
+    SendEvent(ect,TRUE);
+  }
+
+  
+  void TeleportEntity_net(ECopierTrigger ect)
+  {
+    // if the target doesn't exist, or is destroyed
+    if (m_penTarget==NULL || (m_penTarget->GetFlags()&ENF_DELETED)) {
+      // do nothing
+      return;
+    }
+
+    CEntity *pen = GetWorld()->CopyEntityInWorld( *m_penTarget,
+      CPlacement3D(FLOAT3D(-32000.0f+FRnd()*200.0f, -32000.0f+FRnd()*200.0f, 0), ANGLE3D(0, 0, 0)),TRUE,ect.ulEntityID,FALSE );
+
+    // teleport back
+    CPlacement3D pl = GetPlacement();
+    pl.pl_PositionVector += GetRotationMatrix().GetColumn(2)*0.05f;
+    pen->Teleport(pl, m_bTelefrag);
+
+    // spawn teleport effect
+    if (m_bSpawnEffect) {
+      ESpawnEffect ese;
+      ese.colMuliplier = C_WHITE|CT_OPAQUE;
+      ese.betType = BET_TELEPORT;
+      ese.vNormal = FLOAT3D(0,1,0);
+      FLOATaabbox3D box;
+      pen->GetBoundingBox(box);
+      FLOAT fEntitySize = box.Size().MaxNorm()*2;
+      ese.vStretch = FLOAT3D(fEntitySize, fEntitySize, fEntitySize);
+      CEntityPointer penEffect = CreateEntity(GetPlacement(), CLASS_BASIC_EFFECT,WLD_AUTO_ENTITY_ID,FALSE);
+      penEffect->Initialize(ese,FALSE);
     }
   }
 
@@ -91,6 +131,11 @@ procedures:
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_TOUCHMODEL);
 
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOff(ENF_PROPSCHANGED);
+    SetFlagOn(ENF_CLIENTHANDLING);
+
     // set appearance
     SetModel(MODEL_TELEPORT);
     SetModelMainTexture(TEXTURE_TELEPORT);
@@ -99,10 +144,24 @@ procedures:
       // wait to someone enter and teleport it
       wait() {
         on (ETrigger eTrigger) : {
-          if (m_penTarget!=NULL) {
-            TeleportEntity();
-          }
-          stop;
+          if (_pNetwork->IsServer()) {
+            if (m_penTarget!=NULL) {
+              TeleportEntity();
+            }
+            stop;
+          }  
+          // if client
+          resume;
+        }
+        on (ECopierTrigger ect) : {
+          if (!_pNetwork->IsServer()) {
+            if (m_penTarget!=NULL) {
+              TeleportEntity_net(ect);
+            }
+            stop;
+          }  
+          // if client
+          resume;
         }
         otherwise() : {
           resume;

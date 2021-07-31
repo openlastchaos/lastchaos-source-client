@@ -233,7 +233,7 @@ void CDlgPgInfoAttachingPlacement::DoDataExchange(CDataExchange* pDX)
 	  plCurrent.pl_PositionVector(2) = m_fYOffset;
 	  plCurrent.pl_PositionVector(3) = m_fZOffset;
     pMD->md_aampAttachedPosition[ m_iActivePlacement].amp_plRelativePlacement = plCurrent;
-    pDoc->m_emEditModel.edm_aamAttachedModels[ m_iActivePlacement].am_strName = CStringA(m_strName);
+    pDoc->m_emEditModel.edm_aamAttachedModels[ m_iActivePlacement].am_strName = m_strName;
     pDoc->m_emEditModel.edm_aamAttachedModels[ m_iActivePlacement].am_bVisible = m_bIsVisible;
     pDoc->m_emEditModel.edm_aamAttachedModels.Unlock();
     pMD->md_aampAttachedPosition.Unlock();
@@ -472,7 +472,7 @@ void CDlgPgInfoAttachingPlacement::FillAttachmentModelAnimationCombo()
   {
     CAnimInfo aiInfo;
     pMD->GetAnimInfo( iAnim, aiInfo);
-    m_comboAttachmentModelAnimation.AddString( CString(aiInfo.ai_AnimName));
+    m_comboAttachmentModelAnimation.AddString( aiInfo.ai_AnimName);
   }
   m_comboAttachmentModelAnimation.SetCurSel(pamAttachedModel->am_iAnimation);
 }

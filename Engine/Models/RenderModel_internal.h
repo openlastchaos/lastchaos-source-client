@@ -4,7 +4,6 @@
   #pragma once
 #endif
 
-extern CDrawPort *_pdp;
 extern CAnyProjection3D _aprProjection;
 extern UBYTE *_pubMask;
 extern SLONG _slMaskWidth;

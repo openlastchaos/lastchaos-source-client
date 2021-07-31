@@ -90,11 +90,6 @@ CBrushMip *CBrush3D::NewBrushMipBefore(CBrushMip *pbmOld, BOOL bCopy)
   return pbmNew;
 }
 
-// make 'for' construct for walking a list reversely
-#define FOREACHINLIST_R(baseclass, member, head, iter) \
-  for ( LISTITER(baseclass, member) iter(head.IterationTail()); \
-   !iter->member.IsHeadMarker(); iter.MoveToPrev() )
-
 /*
  * Get a brush mip for given mip-factor.
  */

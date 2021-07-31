@@ -1,5 +1,6 @@
 
-/*  A Bison parser, made from engine/base/parser.y with Bison version GNU Bison version 1.24
+/*  A Bison parser, made from .\base/parser.y
+ by  GNU Bison version 1.25
   */
 
 #define YYBISON 1  /* Identify Bison output.  */
@@ -36,7 +37,7 @@
 #define	TYPECAST	287
 #define	SIGN	288
 
-#line 1 "engine/base/parser.y"
+#line 1 ".\base/parser.y"
 
 #include "StdH.h"
 
@@ -47,14 +48,14 @@
 #include <Engine/Templates/DynamicStackArray.cpp>
 #include <Engine/Templates/AllocationArray.cpp>
 
-#line 13 "engine/base/parser.y"
+#line 13 ".\base/parser.y"
 
 #define YYERROR_VERBOSE 1
 // if error occurs in parsing
 void yyerror(char *str)
 {
-  // just report the string
-  _pShell->ErrorF("%s", str);
+	// just report the string
+	_pShell->ErrorF("%s", str);
 };
 
 static BOOL _bExecNextElse = FALSE;
@@ -65,193 +66,176 @@ static UBYTE _ubStack[1024];
 
 INDEX PushExpression(value &v)
 {
-  if (v.sttType==STT_FLOAT) {
-    FLOAT f = v.fFloat;
-    memcpy(_ubStack+_iStack, &f, sizeof(f));
-    _iStack+=sizeof(f);
-    return sizeof(f);
-  } else if (v.sttType==STT_INDEX) {
-    INDEX i = v.iIndex;
-    memcpy(_ubStack+_iStack, &i, sizeof(i));
-    _iStack+=sizeof(i);
-    return sizeof(i);
-  } else if (v.sttType==STT_STRING) {
-    CTString &str = _shell_astrTempStrings.Push();
-    str = v.strString;
-    CTString *pstr = &str;
-    memcpy(_ubStack+_iStack, &pstr, sizeof(pstr));
-    _iStack+=sizeof(pstr);
-    return sizeof(pstr);
-  } else {
-    return 0;
-  }
+	if (v.sttType==STT_FLOAT) {
+		FLOAT f = v.fFloat;
+		memcpy(_ubStack+_iStack, &f, sizeof(f));
+		_iStack+=sizeof(f);
+		return sizeof(f);
+	} else if (v.sttType==STT_INDEX) {
+		INDEX i = v.iIndex;
+		memcpy(_ubStack+_iStack, &i, sizeof(i));
+		_iStack+=sizeof(i);
+		return sizeof(i);
+	} else if (v.sttType==STT_STRING) {
+		CTString &str = _shell_astrTempStrings.Push();
+		str = v.strString;
+		CTString *pstr = &str;
+		memcpy(_ubStack+_iStack, &pstr, sizeof(pstr));
+		_iStack+=sizeof(pstr);
+		return sizeof(pstr);
+	} else {
+		return 0;
+	}
 }
 
 BOOL MatchTypes(value &v1, value &v2)
 {
-  if (v1.sttType==STT_FLOAT && v2.sttType==STT_FLOAT) {
-    return TRUE;
-  } else if (v1.sttType==STT_STRING && v2.sttType==STT_STRING) {
-    return TRUE;
-  } else if (v1.sttType==STT_INDEX && v2.sttType==STT_INDEX) {
-    return TRUE;
-  } else {
-    v1.sttType = STT_ILLEGAL;
-    v2.sttType = STT_ILLEGAL;
-    _pShell->ErrorF("Type mismatch");
-    return FALSE;
-  }
+	if (v1.sttType==STT_FLOAT && v2.sttType==STT_FLOAT) {
+		return TRUE;
+	} else if (v1.sttType==STT_STRING && v2.sttType==STT_STRING) {
+		return TRUE;
+	} else if (v1.sttType==STT_INDEX && v2.sttType==STT_INDEX) {
+		return TRUE;
+	} else {
+		v1.sttType = STT_ILLEGAL;
+		v2.sttType = STT_ILLEGAL;
+		_pShell->ErrorF("Type mismatch");
+		return FALSE;
+	}
 }
 
 void Declaration(
-  ULONG ulQualifiers, INDEX istType, CShellSymbol &ssNew,
-  INDEX (*pPreFunc)(INDEX), void (*pPostFunc)(INDEX))
+	ULONG ulQualifiers, INDEX istType, CShellSymbol &ssNew,
+	INDEX (*pPreFunc)(INDEX), void (*pPostFunc)(INDEX))
 {
-  // if external
-  if (ulQualifiers&SSF_EXTERNAL) {
-    // get it a new value
-    if (_shell_ast[istType].st_sttType==STT_INDEX
-      ||_shell_ast[istType].st_sttType==STT_FLOAT) {
-      _pvNextToDeclare = &_shell_afExtFloats.Push();
-    } else if (_shell_ast[istType].st_sttType==STT_STRING) {
-      _pvNextToDeclare = &_shell_astrExtStrings.Push();
-    } else {
-      NOTHING;
-    }
-  }
+	// if external
+	if (ulQualifiers&SSF_EXTERNAL) {
+		// get it a new value
+		if (_shell_ast[istType].st_sttType==STT_INDEX
+			||_shell_ast[istType].st_sttType==STT_FLOAT) {
+			_pvNextToDeclare = &_shell_afExtFloats.Push();
+		} else if (_shell_ast[istType].st_sttType==STT_STRING) {
+			_pvNextToDeclare = &_shell_astrExtStrings.Push();
+		} else {
+			NOTHING;
+		}
+	}
 
-  // if not parsing an external declaration
-  if (_pvNextToDeclare==NULL) {
-    // error
-    _pShell->ErrorF("Only external declarations are supported");
-    return;
-  }
+	// if not parsing an external declaration
+	if (_pvNextToDeclare==NULL) {
+		// error
+		_pShell->ErrorF("Only external declarations are supported");
+		return;
+	}
 
-  // if the symbol is declared already
-  if (ssNew.IsDeclared()) {
-    // if the declaration is not identical
-    if (!ShellTypeIsSame(ssNew.ss_istType, istType) || 
-      ((ssNew.ss_ulFlags&SSF_CONSTANT)!=(ulQualifiers&SSF_CONSTANT))) {
-      // error
-      _pShell->ErrorF("Symbol '%s' is already declared diferrently", ssNew.ss_strName);
-      return;
-    }
+	// if the symbol is declared already
+	if (ssNew.IsDeclared()) {
+		// if the declaration is not identical
+		if (!ShellTypeIsSame(ssNew.ss_istType, istType) || 
+			((ssNew.ss_ulFlags&SSF_CONSTANT)!=(ulQualifiers&SSF_CONSTANT))) {
+			// error
+			_pShell->ErrorF("Symbol '%s' is already declared diferrently", ssNew.ss_strName);
+			return;
+		}
 
-    // copy its value
-    if (_shell_ast[ssNew.ss_istType].st_sttType==STT_INDEX) {
-      *(INDEX*)_pvNextToDeclare = *(INDEX*)ssNew.ss_pvValue;
-    } else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_FLOAT) {
-      *(FLOAT*)_pvNextToDeclare = *(FLOAT*)ssNew.ss_pvValue;
-    } else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_STRING) {
-      *(CTString*)_pvNextToDeclare = *(CTString*)ssNew.ss_pvValue;
-    } else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_ARRAY) {
-      NOTHING;  // array values are not retained
-    } else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_FUNCTION) {
-      NOTHING;  // function values are not retained
-    } else {
-      // error
-      _pShell->ErrorF("'%s': old value couldn't be retained", ssNew.ss_strName);
-      return;
-    }
-  }
+		// copy its value
+		if (_shell_ast[ssNew.ss_istType].st_sttType==STT_INDEX) {
+			*(INDEX*)_pvNextToDeclare = *(INDEX*)ssNew.ss_pvValue;
+		} else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_FLOAT) {
+			*(FLOAT*)_pvNextToDeclare = *(FLOAT*)ssNew.ss_pvValue;
+		} else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_STRING) {
+			*(CTString*)_pvNextToDeclare = *(CTString*)ssNew.ss_pvValue;
+		} else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_ARRAY) {
+			NOTHING;  // array values are not retained
+		} else if (_shell_ast[ssNew.ss_istType].st_sttType==STT_FUNCTION) {
+			NOTHING;  // function values are not retained
+		} else {
+			// error
+			_pShell->ErrorF("'%s': old value couldn't be retained", ssNew.ss_strName);
+			return;
+		}
+	}
 
-  // set the type to given type
-  if (!ssNew.IsDeclared()) {
-    ssNew.ss_istType = ShellTypeMakeDuplicate(istType);
-  }
-  // set the value for the external symbol if not already set
-  if (ssNew.ss_pvValue==NULL || !(ulQualifiers&SSF_EXTERNAL)) {
-    ssNew.ss_pvValue = _pvNextToDeclare;
-  }
-  // remember qualifiers (if already predeclared - keep old flags)
-  ssNew.ss_ulFlags |= ulQualifiers;
-  // remember pre and post functions
-  if (ssNew.ss_pPreFunc==NULL) {
-    ssNew.ss_pPreFunc = (BOOL (*)(void *))pPreFunc;
-  }
-  if (ssNew.ss_pPostFunc==NULL) {
-    ssNew.ss_pPostFunc = (void (*)(void *))pPostFunc;
-  }
+	// set the type to given type
+	if (!ssNew.IsDeclared()) {
+		ssNew.ss_istType = ShellTypeMakeDuplicate(istType);
+	}
+	// set the value for the external symbol if not already set
+	if (ssNew.ss_pvValue==NULL || !(ulQualifiers&SSF_EXTERNAL)) {
+		ssNew.ss_pvValue = _pvNextToDeclare;
+	}
+	// remember qualifiers (if already predeclared - keep old flags)
+	ssNew.ss_ulFlags |= ulQualifiers;
+	// remember pre and post functions
+	if (ssNew.ss_pPreFunc==NULL) {
+		ssNew.ss_pPreFunc = (BOOL (*)(void *))pPreFunc;
+	}
+	if (ssNew.ss_pPostFunc==NULL) {
+		ssNew.ss_pPostFunc = (void (*)(void *))pPostFunc;
+	}
 }
 
 void DoComparison(value &vRes, value &v0, value &v1, int token)
 {
-  MatchTypes(v0, v1);
+	MatchTypes(v0, v1);
 
-  vRes.sttType = STT_INDEX;
-  if (v0.sttType == STT_FLOAT) {
-    switch (token) {
-    case '<': vRes.iIndex = v0.fFloat <v1.fFloat; break;
-    case '>': vRes.iIndex = v0.fFloat >v1.fFloat; break;
-    case '=': vRes.iIndex = v0.fFloat==v1.fFloat; break;
-    case '!': vRes.iIndex = v0.fFloat!=v1.fFloat; break;
-    case '}': vRes.iIndex = v0.fFloat>=v1.fFloat; break;
-    case '{': vRes.iIndex = v0.fFloat<=v1.fFloat; break;
-    default: ASSERT(FALSE);
-      vRes.sttType = STT_INDEX;
-      vRes.iIndex = 0;
-    }
-  } else if (v0.sttType == STT_INDEX) {
-    switch (token) {
-    case '<': vRes.iIndex = v0.iIndex <v1.iIndex; break;
-    case '>': vRes.iIndex = v0.iIndex >v1.iIndex; break;
-    case '=': vRes.iIndex = v0.iIndex==v1.iIndex; break;
-    case '!': vRes.iIndex = v0.iIndex!=v1.iIndex; break;
-    case '}': vRes.iIndex = v0.iIndex>=v1.iIndex; break;
-    case '{': vRes.iIndex = v0.iIndex<=v1.iIndex; break;
-    default: ASSERT(FALSE);
-      vRes.sttType = STT_INDEX;
-      vRes.iIndex = 0;
-    }
-  } else if (v0.sttType == STT_STRING) {
-    switch (token) {
-    case '<': vRes.iIndex = stricmp(v0.strString, v1.strString)  < 0; break;
-    case '>': vRes.iIndex = stricmp(v0.strString, v1.strString)  > 0; break;
-    case '=': vRes.iIndex = stricmp(v0.strString, v1.strString) == 0; break;
-    case '!': vRes.iIndex = stricmp(v0.strString, v1.strString) != 0; break;
-    case '}': vRes.iIndex = stricmp(v0.strString, v1.strString) >= 0; break;
-    case '{': vRes.iIndex = stricmp(v0.strString, v1.strString) <= 0; break;
-    default: ASSERT(FALSE);
-      vRes.sttType = STT_INDEX;
-      vRes.iIndex = 0;
-    }
-  } else {
-    vRes.sttType = STT_INDEX;
-    vRes.iIndex = 0;
-  }
+	vRes.sttType = STT_INDEX;
+	if (v0.sttType == STT_FLOAT) {
+		switch (token) {
+		case '<': vRes.iIndex = v0.fFloat <v1.fFloat; break;
+		case '>': vRes.iIndex = v0.fFloat >v1.fFloat; break;
+		case '=': vRes.iIndex = v0.fFloat==v1.fFloat; break;
+		case '!': vRes.iIndex = v0.fFloat!=v1.fFloat; break;
+		case '}': vRes.iIndex = v0.fFloat>=v1.fFloat; break;
+		case '{': vRes.iIndex = v0.fFloat<=v1.fFloat; break;
+		default: ASSERT(FALSE);
+			vRes.sttType = STT_INDEX;
+			vRes.iIndex = 0;
+		}
+	} else if (v0.sttType == STT_INDEX) {
+		switch (token) {
+		case '<': vRes.iIndex = v0.iIndex <v1.iIndex; break;
+		case '>': vRes.iIndex = v0.iIndex >v1.iIndex; break;
+		case '=': vRes.iIndex = v0.iIndex==v1.iIndex; break;
+		case '!': vRes.iIndex = v0.iIndex!=v1.iIndex; break;
+		case '}': vRes.iIndex = v0.iIndex>=v1.iIndex; break;
+		case '{': vRes.iIndex = v0.iIndex<=v1.iIndex; break;
+		default: ASSERT(FALSE);
+			vRes.sttType = STT_INDEX;
+			vRes.iIndex = 0;
+		}
+	} else if (v0.sttType == STT_STRING) {
+		switch (token) {
+		case '<': vRes.iIndex = stricmp(v0.strString, v1.strString)  < 0; break;
+		case '>': vRes.iIndex = stricmp(v0.strString, v1.strString)  > 0; break;
+		case '=': vRes.iIndex = stricmp(v0.strString, v1.strString) == 0; break;
+		case '!': vRes.iIndex = stricmp(v0.strString, v1.strString) != 0; break;
+		case '}': vRes.iIndex = stricmp(v0.strString, v1.strString) >= 0; break;
+		case '{': vRes.iIndex = stricmp(v0.strString, v1.strString) <= 0; break;
+		default: ASSERT(FALSE);
+			vRes.sttType = STT_INDEX;
+			vRes.iIndex = 0;
+		}
+	} else {
+		vRes.sttType = STT_INDEX;
+		vRes.iIndex = 0;
+	}
 }
 
-#line 192 "engine/base/parser.y"
+#line 192 ".\base/parser.y"
 typedef union {
-  value val;                  // for constants and expressions
-  arguments arg;               // for function input arguments
-  ULONG ulFlags;              // for declaration qualifiers
-  INDEX istType;              // for types
-  CShellSymbol *pssSymbol;    // for symbols
-  struct LValue lvLValue;
-  INDEX (*pPreFunc)(INDEX);  // pre-set function for a variable
-  void (*pPostFunc)(INDEX); // post-set function for a variable
+	value val;                  // for constants and expressions
+	arguments arg;               // for function input arguments
+	ULONG ulFlags;              // for declaration qualifiers
+	INDEX istType;              // for types
+	CShellSymbol *pssSymbol;    // for symbols
+	struct LValue lvLValue;
+	INDEX (*pPreFunc)(INDEX);  // pre-set function for a variable
+	void (*pPostFunc)(INDEX); // post-set function for a variable
 } YYSTYPE;
-#line 203 "engine/base/parser.y"
+#line 203 ".\base/parser.y"
 
-  extern int yylex(YYSTYPE *lvalp);
-
-#ifndef YYLTYPE
-typedef
-  struct yyltype
-    {
-      int timestamp;
-      int first_line;
-      int first_column;
-      int last_line;
-      int last_column;
-      char *text;
-   }
-  yyltype;
-
-#define YYLTYPE yyltype
-#endif
-
+	extern int yylex(YYSTYPE *lvalp);
 #include <stdio.h>
 
 #ifndef __cplusplus
@@ -358,6 +342,10 @@ static const short yyrline[] = { 0,
    878,   881,   884,   890,   904,   916,   929,   943,   957,   974,
   1046
 };
+#endif
+
+
+#if YYDEBUG != 0 || defined (YYERROR_VERBOSE)
 
 static const char * const yytname[] = {   "$","error","$undefined.","c_float",
 "c_int","c_string","c_char","identifier","k_INDEX","k_FLOAT","k_CTString","k_void",
@@ -368,7 +356,7 @@ static const char * const yytname[] = {   "$","error","$undefined.","c_float",
 "block","statements","declaration_qualifiers","opt_string","type_specifier",
 "pre_func_opt","post_func_opt","parameter_list_opt","parameter_list","declaration",
 "statement","@1","@2","opt_else","@3","@4","@5","lvalue","argument_expression_list_opt",
-"argument_expression_list","expression",""
+"argument_expression_list","expression", NULL
 };
 #endif
 
@@ -574,7 +562,6 @@ static const short yycheck[] = {     8,
    This special exception was added by the Free Software Foundation
    in version 1.24 of Bison.  */
 
-#undef YYERROR_VERBOSE
 #ifndef alloca
 #ifdef __GNUC__
 #define alloca __builtin_alloca
@@ -613,19 +600,19 @@ void *alloca ();
    It is replaced by the list of actions, each action
    as one case of the switch.  */
 
-#define yyerrok		(yyerrstatus = 0)
+#define yyerrok 	(yyerrstatus = 0)
 #define yyclearin	(yychar = YYEMPTY)
-#define YYEMPTY		-2
+#define YYEMPTY 	-2
 #define YYEOF		0
 #define YYACCEPT	return(0)
 #define YYABORT 	return(1)
-#define YYERROR		goto yyerrlab1
+#define YYERROR 	goto yyerrlab1
 /* Like YYERROR except do call yyerror.
    This remains here temporarily to ease the
    transition to the new meaning of YYERROR, for GCC.
    Once GCC version 2 has supplanted version 1, this can go.  */
 #define YYFAIL		goto yyerrlab
-#define YYRECOVERING()  (!!yyerrstatus)
+#define YYRECOVERING()	(!!yyerrstatus)
 #define YYBACKUP(token, value) \
 do								\
   if (yychar == YYEMPTY && yylen == 1)				\
@@ -635,7 +622,7 @@ do								\
       goto yybackup;						\
     }								\
   else								\
-    { yyerror ("syntax error: cannot back up"); YYERROR; }	\
+    { yyerror ("syntax error: cannot back up"); YYERROR; }      \
 while (0)
 
 #define YYTERROR	1
@@ -665,17 +652,17 @@ while (0)
 
 #ifndef YYPURE
 
-int	yychar;			/*  the lookahead symbol		*/
-YYSTYPE	yylval;			/*  the semantic value of the		*/
+int	yychar; 		/*  the lookahead symbol		*/
+YYSTYPE yylval; 		/*  the semantic value of the		*/
 				/*  lookahead symbol			*/
 
 #ifdef YYLSP_NEEDED
-YYLTYPE yylloc;			/*  location data for the lookahead	*/
+YYLTYPE yylloc; 		/*  location data for the lookahead	*/
 				/*  symbol				*/
 #endif
 
-int yynerrs;			/*  number of parse errors so far       */
-#endif  /* not YYPURE */
+int yynerrs;			/*  number of parse errors so far	*/
+#endif	/* not YYPURE */
 
 #if YYDEBUG != 0
 int yydebug;			/*  nonzero means print parse trace	*/
@@ -683,21 +670,21 @@ int yydebug;			/*  nonzero means print parse trace	*/
    from coexisting.  */
 #endif
 
-/*  YYINITDEPTH indicates the initial size of the parser's stacks	*/
+/*  YYINITDEPTH indicates the initial size of the parser's stacks       */
 
-#ifndef	YYINITDEPTH
+#ifndef YYINITDEPTH
 #define YYINITDEPTH 200
 #endif
 
 /*  YYMAXDEPTH is the maximum size the stacks can grow to
     (effective only if the built-in stack extension method is used).  */
 
-#if YYMAXDEPTH == 0
-#undef YYMAXDEPTH
-#endif
-
 #ifndef YYMAXDEPTH
 #define YYMAXDEPTH 10000
+#endif
+
+#if YYMAXDEPTH == 0
+#undef YYMAXDEPTH
 #endif
 
 /* Prevent warning if -Wstrict-prototypes.  */
@@ -706,16 +693,16 @@ int yyparse (void);
 #endif
 
 #if __GNUC__ > 1		/* GNU C and GNU C++ define this.  */
-#define __yy_memcpy(FROM,TO,COUNT)	__builtin_memcpy(TO,FROM,COUNT)
+#define __yy_memcpy(TO,FROM,COUNT)	__builtin_memcpy(TO,FROM,COUNT)
 #else				/* not GNU C or C++ */
 #ifndef __cplusplus
 
 /* This is the most reliable way to avoid incompatibilities
-   in available built-in functions on various systems.  */
+   in available built-in functions on various systems.	*/
 static void
-__yy_memcpy (from, to, count)
-     char *from;
+__yy_memcpy (to, from, count)
      char *to;
+     char *from;
      int count;
 {
   register char *f = from;
@@ -729,9 +716,9 @@ __yy_memcpy (from, to, count)
 #else /* __cplusplus */
 
 /* This is the most reliable way to avoid incompatibilities
-   in available built-in functions on various systems.  */
+   in available built-in functions on various systems.	*/
 static void
-__yy_memcpy (char *from, char *to, int count)
+__yy_memcpy (char *to, char *from, int count)
 {
   register char *f = from;
   register char *t = to;
@@ -744,23 +731,29 @@ __yy_memcpy (char *from, char *to, int count)
 #endif
 #endif
 
-#line 192 "bison.simple"
+#line 196 "bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
    It should actually point to an object.
    Grammar actions can access the variable by casting it
-   to the proper pointer type.  */
+   to the proper pointer type.	*/
 
 #ifdef YYPARSE_PARAM
-#define YYPARSE_PARAM_DECL void *YYPARSE_PARAM;
-#else
-#define YYPARSE_PARAM
+#ifdef __cplusplus
+#define YYPARSE_PARAM_ARG void *YYPARSE_PARAM
 #define YYPARSE_PARAM_DECL
-#endif
+#else /* not __cplusplus */
+#define YYPARSE_PARAM_ARG YYPARSE_PARAM
+#define YYPARSE_PARAM_DECL void *YYPARSE_PARAM;
+#endif /* not __cplusplus */
+#else /* not YYPARSE_PARAM */
+#define YYPARSE_PARAM_ARG
+#define YYPARSE_PARAM_DECL
+#endif /* not YYPARSE_PARAM */
 
 int
-yyparse(YYPARSE_PARAM)
+yyparse(YYPARSE_PARAM_ARG)
      YYPARSE_PARAM_DECL
 {
   register int yystate;
@@ -770,7 +763,7 @@ yyparse(YYPARSE_PARAM)
   int yyerrstatus;	/*  number of tokens to shift before error messages enabled */
   int yychar1 = 0;		/*  lookahead token as an internal (translated) token number */
 
-  short	yyssa[YYINITDEPTH];	/*  the state stack			*/
+  short yyssa[YYINITDEPTH];	/*  the state stack			*/
   YYSTYPE yyvsa[YYINITDEPTH];	/*  the semantic value stack		*/
 
   short *yyss = yyssa;		/*  refer to the stacks thru separate pointers */
@@ -797,7 +790,7 @@ yyparse(YYPARSE_PARAM)
 #endif
 #endif
 
-  YYSTYPE yyval;		/*  the variable used to return		*/
+  YYSTYPE yyval;		/*  the variable used to return 	*/
 				/*  semantic values from the action	*/
 				/*  routines				*/
 
@@ -824,7 +817,7 @@ yyparse(YYPARSE_PARAM)
   yylsp = yyls;
 #endif
 
-/* Push a new state, which is found in  yystate  .  */
+/* Push a new state, which is found in	yystate  .  */
 /* In all cases, when you get here, the value and location stacks
    have just been pushed. so pushing a state here evens the stacks.  */
 yynewstate:
@@ -849,7 +842,7 @@ yynewstate:
 	 the data in use in that stack, in bytes.  */
 #ifdef YYLSP_NEEDED
       /* This used to be a conditional around just the two extra args,
-	 but that might be undefined if yyoverflow is a macro.  */
+	 but that might be undefined if yyoverflow is a macro.	*/
       yyoverflow("parser stack overflow",
 		 &yyss1, size * sizeof (*yyssp),
 		 &yyvs1, size * sizeof (*yyvsp),
@@ -867,7 +860,7 @@ yynewstate:
       yyls = yyls1;
 #endif
 #else /* no yyoverflow */
-      /* Extend the stack our own way.  */
+      /* Extend the stack our own way.	*/
       if (yystacksize >= YYMAXDEPTH)
 	{
 	  yyerror("parser stack overflow");
@@ -877,12 +870,12 @@ yynewstate:
       if (yystacksize > YYMAXDEPTH)
 	yystacksize = YYMAXDEPTH;
       yyss = (short *) alloca (yystacksize * sizeof (*yyssp));
-      __yy_memcpy ((char *)yyss1, (char *)yyss, size * sizeof (*yyssp));
+      __yy_memcpy ((char *)yyss, (char *)yyss1, size * sizeof (*yyssp));
       yyvs = (YYSTYPE *) alloca (yystacksize * sizeof (*yyvsp));
-      __yy_memcpy ((char *)yyvs1, (char *)yyvs, size * sizeof (*yyvsp));
+      __yy_memcpy ((char *)yyvs, (char *)yyvs1, size * sizeof (*yyvsp));
 #ifdef YYLSP_NEEDED
       yyls = (YYLTYPE *) alloca (yystacksize * sizeof (*yylsp));
-      __yy_memcpy ((char *)yyls1, (char *)yyls, size * sizeof (*yylsp));
+      __yy_memcpy ((char *)yyls, (char *)yyls1, size * sizeof (*yylsp));
 #endif
 #endif /* no yyoverflow */
 
@@ -996,7 +989,7 @@ yynewstate:
     fprintf(stderr, "Shifting token %d (%s), ", yychar, yytname[yychar1]);
 #endif
 
-  /* Discard the token being shifted unless it is eof.  */
+  /* Discard the token being shifted unless it is eof.	*/
   if (yychar != YYEOF)
     yychar = YYEMPTY;
 
@@ -1043,921 +1036,921 @@ yyreduce:
   switch (yyn) {
 
 case 7:
-#line 285 "engine/base/parser.y"
+#line 285 ".\base/parser.y"
 {
-  yyval.ulFlags = 0;
+	yyval.ulFlags = 0;
 ;
     break;}
 case 8:
-#line 288 "engine/base/parser.y"
+#line 288 ".\base/parser.y"
 {
-  yyval.ulFlags = yyvsp[-1].ulFlags | SSF_CONSTANT;
+	yyval.ulFlags = yyvsp[-1].ulFlags | SSF_CONSTANT;
 ;
     break;}
 case 9:
-#line 291 "engine/base/parser.y"
+#line 291 ".\base/parser.y"
 {
-  yyval.ulFlags = yyvsp[-1].ulFlags | SSF_USER;
+	yyval.ulFlags = yyvsp[-1].ulFlags | SSF_USER;
 ;
     break;}
 case 10:
-#line 294 "engine/base/parser.y"
+#line 294 ".\base/parser.y"
 {
-  yyval.ulFlags = yyvsp[-1].ulFlags | SSF_PERSISTENT;
+	yyval.ulFlags = yyvsp[-1].ulFlags | SSF_PERSISTENT;
 ;
     break;}
 case 11:
-#line 297 "engine/base/parser.y"
+#line 297 ".\base/parser.y"
 {
-  yyval.ulFlags = yyvsp[-1].ulFlags | SSF_EXTERNAL;
+	yyval.ulFlags = yyvsp[-1].ulFlags | SSF_EXTERNAL;
 ;
     break;}
 case 12:
-#line 302 "engine/base/parser.y"
+#line 302 ".\base/parser.y"
 {
-  yyval.val.strString = "";
+	yyval.val.strString = "";
 ;
     break;}
 case 13:
-#line 305 "engine/base/parser.y"
+#line 305 ".\base/parser.y"
 {
-  // !!!! remove this option
-  //_pShell->ErrorF("Warning: symbol comments are not supported");
-  yyval.val.strString = yyvsp[0].val.strString;
+	// !!!! remove this option
+	//_pShell->ErrorF("Warning: symbol comments are not supported");
+	yyval.val.strString = yyvsp[0].val.strString;
 ;
     break;}
 case 14:
-#line 312 "engine/base/parser.y"
+#line 312 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewFloat();
+	yyval.istType = ShellTypeNewFloat();
 ;
     break;}
 case 15:
-#line 315 "engine/base/parser.y"
+#line 315 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewIndex();
+	yyval.istType = ShellTypeNewIndex();
 ;
     break;}
 case 16:
-#line 318 "engine/base/parser.y"
+#line 318 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewString();
+	yyval.istType = ShellTypeNewString();
 ;
     break;}
 case 17:
-#line 321 "engine/base/parser.y"
+#line 321 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewVoid();
+	yyval.istType = ShellTypeNewVoid();
 ;
     break;}
 case 18:
-#line 326 "engine/base/parser.y"
+#line 326 ".\base/parser.y"
 {
-  yyval.pPreFunc = NULL;
+	yyval.pPreFunc = NULL;
 ;
     break;}
 case 19:
-#line 329 "engine/base/parser.y"
+#line 329 ".\base/parser.y"
 {
-  if (_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_sttType!=STT_FUNCTION
-    ||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istBaseType].st_sttType!=STT_INDEX
-    ||_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument!=_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istLastArgument
-    ||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument].st_sttType!=STT_INDEX) {
-    _pShell->ErrorF("'%s' must return 'INDEX' and take 'INDEX' as input", yyvsp[0].pssSymbol->ss_strName);
-  } else {
-    void *pv = yyvsp[0].pssSymbol->ss_pvValue;
-    yyval.pPreFunc = (INDEX(*)(INDEX))yyvsp[0].pssSymbol->ss_pvValue;
-  }
+	if (_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_sttType!=STT_FUNCTION
+		||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istBaseType].st_sttType!=STT_INDEX
+		||_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument!=_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istLastArgument
+		||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument].st_sttType!=STT_INDEX) {
+		_pShell->ErrorF("'%s' must return 'INDEX' and take 'INDEX' as input", yyvsp[0].pssSymbol->ss_strName);
+	} else {
+		void *pv = yyvsp[0].pssSymbol->ss_pvValue;
+		yyval.pPreFunc = (INDEX(*)(INDEX))yyvsp[0].pssSymbol->ss_pvValue;
+	}
 ;
     break;}
 case 20:
-#line 342 "engine/base/parser.y"
+#line 342 ".\base/parser.y"
 {
-  yyval.pPostFunc = NULL;
+	yyval.pPostFunc = NULL;
 ;
     break;}
 case 21:
-#line 345 "engine/base/parser.y"
+#line 345 ".\base/parser.y"
 {
-  if (_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_sttType!=STT_FUNCTION
-    ||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istBaseType].st_sttType!=STT_VOID
-    ||_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument!=_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istLastArgument
-    ||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument].st_sttType!=STT_INDEX) {
-    _pShell->ErrorF("'%s' must return 'void' and take 'INDEX' as input", yyvsp[0].pssSymbol->ss_strName);
-  } else {
-    yyval.pPostFunc = (void(*)(INDEX))yyvsp[0].pssSymbol->ss_pvValue;
-  }
+	if (_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_sttType!=STT_FUNCTION
+		||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istBaseType].st_sttType!=STT_VOID
+		||_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument!=_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istLastArgument
+		||_shell_ast[_shell_ast[yyvsp[0].pssSymbol->ss_istType].st_istFirstArgument].st_sttType!=STT_INDEX) {
+		_pShell->ErrorF("'%s' must return 'void' and take 'INDEX' as input", yyvsp[0].pssSymbol->ss_strName);
+	} else {
+		yyval.pPostFunc = (void(*)(INDEX))yyvsp[0].pssSymbol->ss_pvValue;
+	}
 ;
     break;}
 case 22:
-#line 358 "engine/base/parser.y"
+#line 358 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewFunction(0);
-  ShellTypeAddFunctionArgument(yyval.istType, ShellTypeNewVoid());
+	yyval.istType = ShellTypeNewFunction(0);
+	ShellTypeAddFunctionArgument(yyval.istType, ShellTypeNewVoid());
 ;
     break;}
 case 23:
-#line 362 "engine/base/parser.y"
+#line 362 ".\base/parser.y"
 {
-  yyval.istType = yyvsp[0].istType;
+	yyval.istType = yyvsp[0].istType;
 ;
     break;}
 case 24:
-#line 368 "engine/base/parser.y"
+#line 368 ".\base/parser.y"
 {
-  yyval.istType = ShellTypeNewFunction(0);
-  ShellTypeAddFunctionArgument(yyval.istType, yyvsp[0].istType);
+	yyval.istType = ShellTypeNewFunction(0);
+	ShellTypeAddFunctionArgument(yyval.istType, yyvsp[0].istType);
 ;
     break;}
 case 25:
-#line 376 "engine/base/parser.y"
+#line 376 ".\base/parser.y"
 {
-  yyval.istType = yyvsp[-2].istType;
-  ShellTypeAddFunctionArgument(yyval.istType, yyvsp[0].istType);
+	yyval.istType = yyvsp[-2].istType;
+	ShellTypeAddFunctionArgument(yyval.istType, yyvsp[0].istType);
 ;
     break;}
 case 26:
-#line 387 "engine/base/parser.y"
+#line 387 ".\base/parser.y"
 {
-  Declaration(yyvsp[-6].ulFlags, yyvsp[-5].istType, *yyvsp[-4].pssSymbol, yyvsp[-3].pPreFunc, yyvsp[-2].pPostFunc);
-  ShellTypeDelete(yyvsp[-5].istType);
+	Declaration(yyvsp[-6].ulFlags, yyvsp[-5].istType, *yyvsp[-4].pssSymbol, yyvsp[-3].pPreFunc, yyvsp[-2].pPostFunc);
+	ShellTypeDelete(yyvsp[-5].istType);
 ;
     break;}
 case 27:
-#line 391 "engine/base/parser.y"
+#line 391 ".\base/parser.y"
 {
-  // take function from the parameter list and set its return type
-  _shell_ast[yyvsp[-3].istType].st_istBaseType = yyvsp[-6].istType;
-  yyvsp[-6].istType = yyvsp[-3].istType;
-  // declare it
-  Declaration(yyvsp[-7].ulFlags, yyvsp[-6].istType, *yyvsp[-5].pssSymbol, NULL, NULL);
-  // free the type (declaration will make a copy)
-  ShellTypeDelete(yyvsp[-6].istType);
+	// take function from the parameter list and set its return type
+	_shell_ast[yyvsp[-3].istType].st_istBaseType = yyvsp[-6].istType;
+	yyvsp[-6].istType = yyvsp[-3].istType;
+	// declare it
+	Declaration(yyvsp[-7].ulFlags, yyvsp[-6].istType, *yyvsp[-5].pssSymbol, NULL, NULL);
+	// free the type (declaration will make a copy)
+	ShellTypeDelete(yyvsp[-6].istType);
 ;
     break;}
 case 28:
-#line 400 "engine/base/parser.y"
+#line 400 ".\base/parser.y"
 {
-  if (yyvsp[-5].val.sttType!=STT_INDEX) {
-    _pShell->ErrorF("Array size is not integral");
-  }
-  yyvsp[-8].istType = ShellTypeNewArray(yyvsp[-8].istType, yyvsp[-5].val.iIndex);
-  Declaration(yyvsp[-9].ulFlags, yyvsp[-8].istType, *yyvsp[-7].pssSymbol, NULL, NULL);
-  ShellTypeDelete(yyvsp[-8].istType);
+	if (yyvsp[-5].val.sttType!=STT_INDEX) {
+		_pShell->ErrorF("Array size is not integral");
+	}
+	yyvsp[-8].istType = ShellTypeNewArray(yyvsp[-8].istType, yyvsp[-5].val.iIndex);
+	Declaration(yyvsp[-9].ulFlags, yyvsp[-8].istType, *yyvsp[-7].pssSymbol, NULL, NULL);
+	ShellTypeDelete(yyvsp[-8].istType);
 ;
     break;}
 case 29:
-#line 410 "engine/base/parser.y"
+#line 410 ".\base/parser.y"
 {
-  // dummy
+	// dummy
 ;
     break;}
 case 30:
-#line 413 "engine/base/parser.y"
+#line 413 ".\base/parser.y"
 {
-  // dummy
+	// dummy
 ;
     break;}
 case 31:
-#line 416 "engine/base/parser.y"
+#line 416 ".\base/parser.y"
 {
-  // print its value
-  if (yyvsp[-1].val.sttType == STT_VOID) {
-    NOTHING;
-  } else if (yyvsp[-1].val.sttType == STT_FLOAT) {
-    CPrintF("%g\n", yyvsp[-1].val.fFloat);
-  } else if (yyvsp[-1].val.sttType == STT_STRING) {
-    CPrintF("\"%s\"\n", yyvsp[-1].val.strString);
-  } else if (yyvsp[-1].val.sttType == STT_INDEX) {
-    CPrintF("%d(0x%08X)\n", yyvsp[-1].val.iIndex, yyvsp[-1].val.iIndex);
-  } else {
-    _pShell->ErrorF("Expression cannot be printed");
-  }
+	// print its value
+	if (yyvsp[-1].val.sttType == STT_VOID) {
+		NOTHING;
+	} else if (yyvsp[-1].val.sttType == STT_FLOAT) {
+		CPrintF("%g\n", yyvsp[-1].val.fFloat);
+	} else if (yyvsp[-1].val.sttType == STT_STRING) {
+		CPrintF("\"%s\"\n", yyvsp[-1].val.strString);
+	} else if (yyvsp[-1].val.sttType == STT_INDEX) {
+		CPrintF("%d(0x%08X)\n", yyvsp[-1].val.iIndex, yyvsp[-1].val.iIndex);
+	} else {
+		_pShell->ErrorF("Expression cannot be printed");
+	}
 ;
     break;}
 case 32:
-#line 430 "engine/base/parser.y"
+#line 430 ".\base/parser.y"
 {
-  // if it is constant
-  if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_ulFlags&SSF_CONSTANT) {
-    _pShell->ErrorF("Symbol '%s' is a constant", yyvsp[-3].lvLValue.lv_pssSymbol->ss_strName);
-  // if it is not constant
-  } else {
-    // if it can be changed
-    if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPreFunc==NULL || yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPreFunc(yyvsp[-3].lvLValue.lv_pvAddress)) {
-      // if floats
-      if (yyvsp[-3].lvLValue.lv_sttType == STT_FLOAT && yyvsp[-1].val.sttType==STT_FLOAT) {
-        // assign value
-        *(FLOAT*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.fFloat;
-      // if indices
-      } else if (yyvsp[-3].lvLValue.lv_sttType == STT_INDEX && yyvsp[-1].val.sttType==STT_INDEX) {
-        // assign value
-        *(INDEX*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.iIndex;
+	// if it is constant
+	if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_ulFlags&SSF_CONSTANT) {
+		_pShell->ErrorF("Symbol '%s' is a constant", yyvsp[-3].lvLValue.lv_pssSymbol->ss_strName);
+	// if it is not constant
+	} else {
+		// if it can be changed
+		if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPreFunc==NULL || yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPreFunc(yyvsp[-3].lvLValue.lv_pvAddress)) {
+			// if floats
+			if (yyvsp[-3].lvLValue.lv_sttType == STT_FLOAT && yyvsp[-1].val.sttType==STT_FLOAT) {
+				// assign value
+				*(FLOAT*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.fFloat;
+			// if indices
+			} else if (yyvsp[-3].lvLValue.lv_sttType == STT_INDEX && yyvsp[-1].val.sttType==STT_INDEX) {
+				// assign value
+				*(INDEX*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.iIndex;
 
-      // if strings
-      } else if (yyvsp[-3].lvLValue.lv_sttType == STT_STRING && yyvsp[-1].val.sttType==STT_STRING) {
-        // assign value
-        *(CTString*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.strString;
+			// if strings
+			} else if (yyvsp[-3].lvLValue.lv_sttType == STT_STRING && yyvsp[-1].val.sttType==STT_STRING) {
+				// assign value
+				*(CTString*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.strString;
 
-      // if assigning index to float
-      } else if (yyvsp[-3].lvLValue.lv_sttType == STT_FLOAT && yyvsp[-1].val.sttType==STT_INDEX) {
-        *(FLOAT*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.iIndex;
-      // otherwise
-      } else {
-        // error
-        _pShell->ErrorF("Cannot assign: different types");
-      }
+			// if assigning index to float
+			} else if (yyvsp[-3].lvLValue.lv_sttType == STT_FLOAT && yyvsp[-1].val.sttType==STT_INDEX) {
+				*(FLOAT*)yyvsp[-3].lvLValue.lv_pvAddress = yyvsp[-1].val.iIndex;
+			// otherwise
+			} else {
+				// error
+				_pShell->ErrorF("Cannot assign: different types");
+			}
 
-      // call post-change function
-      if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPostFunc!=NULL) {
-        yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPostFunc(yyvsp[-3].lvLValue.lv_pvAddress);
-      }
-    }
-  }
+			// call post-change function
+			if (yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPostFunc!=NULL) {
+				yyvsp[-3].lvLValue.lv_pssSymbol->ss_pPostFunc(yyvsp[-3].lvLValue.lv_pvAddress);
+			}
+		}
+	}
 ;
     break;}
 case 33:
-#line 468 "engine/base/parser.y"
+#line 468 ".\base/parser.y"
 {
-  Declaration(yyvsp[-5].ulFlags, yyvsp[-4].istType, *yyvsp[-3].pssSymbol, NULL, NULL);
-  ShellTypeDelete(yyvsp[-4].istType);
+	Declaration(yyvsp[-5].ulFlags, yyvsp[-4].istType, *yyvsp[-3].pssSymbol, NULL, NULL);
+	ShellTypeDelete(yyvsp[-4].istType);
 
-  CShellSymbol &ssSymbol = *yyvsp[-3].pssSymbol;
-  // if it is constant
-  if (ssSymbol.ss_ulFlags&SSF_CONSTANT) {
-    // error
-    _pShell->ErrorF("Symbol '%s' is a constant", ssSymbol.ss_strName);
-  }
+	CShellSymbol &ssSymbol = *yyvsp[-3].pssSymbol;
+	// if it is constant
+	if (ssSymbol.ss_ulFlags&SSF_CONSTANT) {
+		// error
+		_pShell->ErrorF("Symbol '%s' is a constant", ssSymbol.ss_strName);
+	}
 
-  // get symbol type
-  ShellTypeType stt = _shell_ast[yyvsp[-4].istType].st_sttType;
+	// get symbol type
+	ShellTypeType stt = _shell_ast[yyvsp[-4].istType].st_sttType;
 
-  // if floats
-  if (stt == STT_FLOAT && yyvsp[-1].val.sttType==STT_FLOAT) {
-    // assign value
-    *(FLOAT*)ssSymbol.ss_pvValue = yyvsp[-1].val.fFloat;
-  // if indices
-  } else if (stt == STT_INDEX && yyvsp[-1].val.sttType==STT_INDEX) {
-    // assign value
-    *(INDEX*)ssSymbol.ss_pvValue = yyvsp[-1].val.iIndex;
-  // if strings
-  } else if (stt == STT_STRING && yyvsp[-1].val.sttType==STT_STRING) {
-    // assign value
-    *(CTString*)ssSymbol.ss_pvValue = yyvsp[-1].val.strString;
-  // !!!! remove this conversion
-  } else if (stt == STT_FLOAT && yyvsp[-1].val.sttType==STT_INDEX) {
-    _pShell->ErrorF("Warning: assigning INDEX to FLOAT!");  
-    *(FLOAT*)ssSymbol.ss_pvValue = yyvsp[-1].val.iIndex;
-  } else {
-    _pShell->ErrorF("Symbol '%s' and its initializer have different types", ssSymbol.ss_strName);
-  }
+	// if floats
+	if (stt == STT_FLOAT && yyvsp[-1].val.sttType==STT_FLOAT) {
+		// assign value
+		*(FLOAT*)ssSymbol.ss_pvValue = yyvsp[-1].val.fFloat;
+	// if indices
+	} else if (stt == STT_INDEX && yyvsp[-1].val.sttType==STT_INDEX) {
+		// assign value
+		*(INDEX*)ssSymbol.ss_pvValue = yyvsp[-1].val.iIndex;
+	// if strings
+	} else if (stt == STT_STRING && yyvsp[-1].val.sttType==STT_STRING) {
+		// assign value
+		*(CTString*)ssSymbol.ss_pvValue = yyvsp[-1].val.strString;
+	// !!!! remove this conversion
+	} else if (stt == STT_FLOAT && yyvsp[-1].val.sttType==STT_INDEX) {
+		_pShell->ErrorF("Warning: assigning INDEX to FLOAT!");  
+		*(FLOAT*)ssSymbol.ss_pvValue = yyvsp[-1].val.iIndex;
+	} else {
+		_pShell->ErrorF("Symbol '%s' and its initializer have different types", ssSymbol.ss_strName);
+	}
 ;
     break;}
 case 34:
-#line 502 "engine/base/parser.y"
+#line 502 ".\base/parser.y"
 { 
 extern void PrintShellSymbolHelp(const CTString &strSymbol);
-  PrintShellSymbolHelp(yyvsp[0].pssSymbol->ss_strName);
+	PrintShellSymbolHelp(yyvsp[0].pssSymbol->ss_strName);
 ;
     break;}
 case 35:
-#line 506 "engine/base/parser.y"
+#line 506 ".\base/parser.y"
 { 
 extern void PrintShellSymbolHelp(const CTString &strSymbol);
-  PrintShellSymbolHelp(yyvsp[-2].pssSymbol->ss_strName);
+	PrintShellSymbolHelp(yyvsp[-2].pssSymbol->ss_strName);
 ;
     break;}
 case 36:
-#line 510 "engine/base/parser.y"
+#line 510 ".\base/parser.y"
 { 
 extern void PrintShellSymbolHelp(const CTString &strSymbol);
-  PrintShellSymbolHelp(yyvsp[-2].pssSymbol->ss_strName);
+	PrintShellSymbolHelp(yyvsp[-2].pssSymbol->ss_strName);
 ;
     break;}
 case 37:
-#line 514 "engine/base/parser.y"
+#line 514 ".\base/parser.y"
 { 
-  _bExecNextBlock = FALSE;
-  if (yyvsp[-1].val.sttType == STT_INDEX) {
-    _bExecNextBlock = yyvsp[-1].val.iIndex!=0;
-  } else if (yyvsp[-1].val.sttType == STT_FLOAT) {
-    _bExecNextBlock = yyvsp[-1].val.fFloat!=0;
-  } else {
-    _pShell->ErrorF("If expression is not integral");
-  }
-  yyvsp[-3].ulFlags = _bExecNextBlock;
+	_bExecNextBlock = FALSE;
+	if (yyvsp[-1].val.sttType == STT_INDEX) {
+		_bExecNextBlock = yyvsp[-1].val.iIndex!=0;
+	} else if (yyvsp[-1].val.sttType == STT_FLOAT) {
+		_bExecNextBlock = yyvsp[-1].val.fFloat!=0;
+	} else {
+		_pShell->ErrorF("If expression is not integral");
+	}
+	yyvsp[-3].ulFlags = _bExecNextBlock;
 ;
     break;}
 case 38:
-#line 524 "engine/base/parser.y"
+#line 524 ".\base/parser.y"
 {
-  _bExecNextElse = !yyvsp[-5].ulFlags;
-  _bExecNextBlock = TRUE;
+	_bExecNextElse = !yyvsp[-5].ulFlags;
+	_bExecNextBlock = TRUE;
 ;
     break;}
 case 41:
-#line 533 "engine/base/parser.y"
+#line 533 ".\base/parser.y"
 {
-  if (_bExecNextElse) {  
-    _bExecNextBlock = FALSE;
-    if (yyvsp[-1].val.sttType == STT_INDEX) {
-      _bExecNextBlock = yyvsp[-1].val.iIndex!=0;
-    } else if (yyvsp[-1].val.sttType == STT_FLOAT) {
-      _bExecNextBlock = yyvsp[-1].val.fFloat!=0;
-    } else {
-      _pShell->ErrorF("If expression is not integral");
-    }
-    yyvsp[-3].ulFlags = _bExecNextBlock;
-  } else {
-    _bExecNextBlock = FALSE;
-    _bExecNextElse = FALSE;
-    yyvsp[-3].ulFlags = TRUE;
-  }
+	if (_bExecNextElse) {  
+		_bExecNextBlock = FALSE;
+		if (yyvsp[-1].val.sttType == STT_INDEX) {
+			_bExecNextBlock = yyvsp[-1].val.iIndex!=0;
+		} else if (yyvsp[-1].val.sttType == STT_FLOAT) {
+			_bExecNextBlock = yyvsp[-1].val.fFloat!=0;
+		} else {
+			_pShell->ErrorF("If expression is not integral");
+		}
+		yyvsp[-3].ulFlags = _bExecNextBlock;
+	} else {
+		_bExecNextBlock = FALSE;
+		_bExecNextElse = FALSE;
+		yyvsp[-3].ulFlags = TRUE;
+	}
 ;
     break;}
 case 42:
-#line 549 "engine/base/parser.y"
+#line 549 ".\base/parser.y"
 {
-  _bExecNextElse = !yyvsp[-5].ulFlags;
-  _bExecNextBlock = TRUE;
+	_bExecNextElse = !yyvsp[-5].ulFlags;
+	_bExecNextBlock = TRUE;
 ;
     break;}
 case 44:
-#line 554 "engine/base/parser.y"
+#line 554 ".\base/parser.y"
 {
-  _bExecNextBlock = _bExecNextElse;  
+	_bExecNextBlock = _bExecNextElse;  
 ;
     break;}
 case 45:
-#line 556 "engine/base/parser.y"
+#line 556 ".\base/parser.y"
 {
-  _bExecNextBlock = TRUE;
+	_bExecNextBlock = TRUE;
 ;
     break;}
 case 46:
-#line 562 "engine/base/parser.y"
+#line 562 ".\base/parser.y"
 {
-  CShellSymbol &ssSymbol = *yyvsp[0].pssSymbol;
-  const ShellType &stType = _shell_ast[ssSymbol.ss_istType];
+	CShellSymbol &ssSymbol = *yyvsp[0].pssSymbol;
+	const ShellType &stType = _shell_ast[ssSymbol.ss_istType];
 
-  yyval.lvLValue.lv_pssSymbol = &ssSymbol;
-  if (!ssSymbol.IsDeclared()) {
-    // error
-    _pShell->ErrorF("Identifier '%s' is not declared", yyvsp[0].pssSymbol->ss_strName);
-    fDummy = -666;
-    yyval.lvLValue.lv_sttType = STT_VOID;
-    yyval.lvLValue.lv_pvAddress = &fDummy;
-  // if the identifier is a float, int or string
-  } else if (stType.st_sttType==STT_FLOAT || stType.st_sttType==STT_INDEX || stType.st_sttType==STT_STRING) {
-    // get its value and type
-    yyval.lvLValue.lv_sttType = stType.st_sttType;
-    yyval.lvLValue.lv_pvAddress = ssSymbol.ss_pvValue;
-  // if the identifier is something else
-  } else {
-    // error
-    _pShell->ErrorF("'%s' doesn't have a value", yyvsp[0].pssSymbol->ss_strName);
-    fDummy = -666.0f;
-    yyval.lvLValue.lv_sttType = STT_VOID;
-    yyval.lvLValue.lv_pvAddress = &fDummy;
-  }
+	yyval.lvLValue.lv_pssSymbol = &ssSymbol;
+	if (!ssSymbol.IsDeclared()) {
+		// error
+		_pShell->ErrorF("Identifier '%s' is not declared", yyvsp[0].pssSymbol->ss_strName);
+		fDummy = -666;
+		yyval.lvLValue.lv_sttType = STT_VOID;
+		yyval.lvLValue.lv_pvAddress = &fDummy;
+	// if the identifier is a float, int or string
+	} else if (stType.st_sttType==STT_FLOAT || stType.st_sttType==STT_INDEX || stType.st_sttType==STT_STRING) {
+		// get its value and type
+		yyval.lvLValue.lv_sttType = stType.st_sttType;
+		yyval.lvLValue.lv_pvAddress = ssSymbol.ss_pvValue;
+	// if the identifier is something else
+	} else {
+		// error
+		_pShell->ErrorF("'%s' doesn't have a value", yyvsp[0].pssSymbol->ss_strName);
+		fDummy = -666.0f;
+		yyval.lvLValue.lv_sttType = STT_VOID;
+		yyval.lvLValue.lv_pvAddress = &fDummy;
+	}
 ;
     break;}
 case 47:
-#line 587 "engine/base/parser.y"
+#line 587 ".\base/parser.y"
 {
-  CShellSymbol &ssSymbol = *yyvsp[-3].pssSymbol;
-  const ShellType &stType = _shell_ast[ssSymbol.ss_istType];
-  yyval.lvLValue.lv_pssSymbol = &ssSymbol;
+	CShellSymbol &ssSymbol = *yyvsp[-3].pssSymbol;
+	const ShellType &stType = _shell_ast[ssSymbol.ss_istType];
+	yyval.lvLValue.lv_pssSymbol = &ssSymbol;
 
-  int iIndex = 0;
-  // if subscript is index
-  if (yyvsp[-1].val.sttType==STT_INDEX) {
-    // get the index
-    iIndex = yyvsp[-1].val.iIndex;
-  // if subscript is not index
-  } else {
-    // error
-    _pShell->ErrorF("Array subscript is not integral");
-  }
-  // if the symbol is array 
-  if (stType.st_sttType==STT_ARRAY) {
-    const ShellType &stBase = _shell_ast[stType.st_istBaseType];
-    // if it is float or int array
-    if (stBase.st_sttType==STT_FLOAT || stBase.st_sttType==STT_INDEX) {
-      // if the index is out of range
-      if (iIndex<0 || iIndex>=stType.st_ctArraySize) {
-        _pShell->ErrorF("Array member out of range");
-        fDummy = -666.0f;
-        yyval.lvLValue.lv_pvAddress = &fDummy;
-      } else {
-        // get its value and type
-        yyval.lvLValue.lv_sttType = stBase.st_sttType;
-        yyval.lvLValue.lv_pvAddress = (FLOAT*)ssSymbol.ss_pvValue+iIndex;
-      }
-    }
-  } else {
-    _pShell->ErrorF("'%s[]' doesn't have a value", yyvsp[-3].pssSymbol->ss_strName);
-    fDummy = -666.0f;
-    yyval.lvLValue.lv_pvAddress = &fDummy;
-  }
+	int iIndex = 0;
+	// if subscript is index
+	if (yyvsp[-1].val.sttType==STT_INDEX) {
+		// get the index
+		iIndex = yyvsp[-1].val.iIndex;
+	// if subscript is not index
+	} else {
+		// error
+		_pShell->ErrorF("Array subscript is not integral");
+	}
+	// if the symbol is array 
+	if (stType.st_sttType==STT_ARRAY) {
+		const ShellType &stBase = _shell_ast[stType.st_istBaseType];
+		// if it is float or int array
+		if (stBase.st_sttType==STT_FLOAT || stBase.st_sttType==STT_INDEX) {
+			// if the index is out of range
+			if (iIndex<0 || iIndex>=stType.st_ctArraySize) {
+				_pShell->ErrorF("Array member out of range");
+				fDummy = -666.0f;
+				yyval.lvLValue.lv_pvAddress = &fDummy;
+			} else {
+				// get its value and type
+				yyval.lvLValue.lv_sttType = stBase.st_sttType;
+				yyval.lvLValue.lv_pvAddress = (FLOAT*)ssSymbol.ss_pvValue+iIndex;
+			}
+		}
+	} else {
+		_pShell->ErrorF("'%s[]' doesn't have a value", yyvsp[-3].pssSymbol->ss_strName);
+		fDummy = -666.0f;
+		yyval.lvLValue.lv_pvAddress = &fDummy;
+	}
 ;
     break;}
 case 48:
-#line 627 "engine/base/parser.y"
+#line 627 ".\base/parser.y"
 {
-  yyval.arg.istType = ShellTypeNewFunction(ShellTypeNewVoid());
-  ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewVoid());
-  yyval.arg.ctBytes = 0;
+	yyval.arg.istType = ShellTypeNewFunction(ShellTypeNewVoid());
+	ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewVoid());
+	yyval.arg.ctBytes = 0;
 ;
     break;}
 case 49:
-#line 632 "engine/base/parser.y"
+#line 632 ".\base/parser.y"
 {
-  yyval.arg = yyvsp[0].arg;
+	yyval.arg = yyvsp[0].arg;
 ;
     break;}
 case 50:
-#line 638 "engine/base/parser.y"
+#line 638 ".\base/parser.y"
 {
-  yyval.arg.istType = ShellTypeNewFunction(ShellTypeNewVoid());
-  ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewByType(yyvsp[0].val.sttType));
-  yyval.arg.ctBytes = PushExpression(yyvsp[0].val);
+	yyval.arg.istType = ShellTypeNewFunction(ShellTypeNewVoid());
+	ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewByType(yyvsp[0].val.sttType));
+	yyval.arg.ctBytes = PushExpression(yyvsp[0].val);
 ;
     break;}
 case 51:
-#line 643 "engine/base/parser.y"
+#line 643 ".\base/parser.y"
 {
-  yyval.arg = yyvsp[-2].arg;
-  ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewByType(yyvsp[0].val.sttType));
-  yyval.arg.ctBytes += PushExpression(yyvsp[0].val);
+	yyval.arg = yyvsp[-2].arg;
+	ShellTypeAddFunctionArgument(yyval.arg.istType, ShellTypeNewByType(yyvsp[0].val.sttType));
+	yyval.arg.ctBytes += PushExpression(yyvsp[0].val);
 ;
     break;}
 case 52:
-#line 650 "engine/base/parser.y"
+#line 650 ".\base/parser.y"
 {
-  yyval.val.sttType = STT_FLOAT;  
-  yyval.val.fFloat = yyvsp[0].val.fFloat;
+	yyval.val.sttType = STT_FLOAT;  
+	yyval.val.fFloat = yyvsp[0].val.fFloat;
 ;
     break;}
 case 53:
-#line 654 "engine/base/parser.y"
+#line 654 ".\base/parser.y"
 {
-  yyval.val.sttType = STT_INDEX;  
-  yyval.val.iIndex = yyvsp[0].val.iIndex;
+	yyval.val.sttType = STT_INDEX;  
+	yyval.val.iIndex = yyvsp[0].val.iIndex;
 ;
     break;}
 case 54:
-#line 658 "engine/base/parser.y"
+#line 658 ".\base/parser.y"
 {
-  yyval.val.sttType = STT_STRING;  
-  yyval.val.strString = yyvsp[0].val.strString;
+	yyval.val.sttType = STT_STRING;  
+	yyval.val.strString = yyvsp[0].val.strString;
 ;
     break;}
 case 55:
-#line 662 "engine/base/parser.y"
+#line 662 ".\base/parser.y"
 {
-  // get its value
-  yyval.val.sttType = yyvsp[0].lvLValue.lv_sttType;
-  if (yyvsp[0].lvLValue.lv_sttType==STT_VOID) {
-    NOTHING;
-  } else if (yyvsp[0].lvLValue.lv_sttType==STT_FLOAT) {
-    yyval.val.fFloat = *(FLOAT*)yyvsp[0].lvLValue.lv_pvAddress;
-  } else if (yyvsp[0].lvLValue.lv_sttType==STT_INDEX) {
-    yyval.val.iIndex = *(INDEX*)yyvsp[0].lvLValue.lv_pvAddress;
-  } else if (yyvsp[0].lvLValue.lv_sttType==STT_STRING) {
-    yyval.val.strString = (const char*)*(CTString*)yyvsp[0].lvLValue.lv_pvAddress;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-    _pShell->ErrorF("'%s' is of wrong type", yyvsp[0].lvLValue.lv_pssSymbol->ss_strName);
-  }
+	// get its value
+	yyval.val.sttType = yyvsp[0].lvLValue.lv_sttType;
+	if (yyvsp[0].lvLValue.lv_sttType==STT_VOID) {
+		NOTHING;
+	} else if (yyvsp[0].lvLValue.lv_sttType==STT_FLOAT) {
+		yyval.val.fFloat = *(FLOAT*)yyvsp[0].lvLValue.lv_pvAddress;
+	} else if (yyvsp[0].lvLValue.lv_sttType==STT_INDEX) {
+		yyval.val.iIndex = *(INDEX*)yyvsp[0].lvLValue.lv_pvAddress;
+	} else if (yyvsp[0].lvLValue.lv_sttType==STT_STRING) {
+		yyval.val.strString = (const char*)*(CTString*)yyvsp[0].lvLValue.lv_pvAddress;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+		_pShell->ErrorF("'%s' is of wrong type", yyvsp[0].lvLValue.lv_pssSymbol->ss_strName);
+	}
 ;
     break;}
 case 56:
-#line 680 "engine/base/parser.y"
+#line 680 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex<<yyvsp[0].val.iIndex;
-  } else {
-    _pShell->ErrorF("Wrong arguments for '<<'");
-    yyval.val.sttType = STT_INDEX;
-    yyval.val.iIndex = -666;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex<<yyvsp[0].val.iIndex;
+	} else {
+		_pShell->ErrorF("Wrong arguments for '<<'");
+		yyval.val.sttType = STT_INDEX;
+		yyval.val.iIndex = -666;
+	}
 ;
     break;}
 case 57:
-#line 693 "engine/base/parser.y"
+#line 693 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex>>yyvsp[0].val.iIndex;
-  } else {
-    _pShell->ErrorF("Wrong arguments for '>>'");
-    yyval.val.sttType = STT_INDEX;
-    yyval.val.iIndex = -666;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex>>yyvsp[0].val.iIndex;
+	} else {
+		_pShell->ErrorF("Wrong arguments for '>>'");
+		yyval.val.sttType = STT_INDEX;
+		yyval.val.iIndex = -666;
+	}
 ;
     break;}
 case 58:
-#line 707 "engine/base/parser.y"
+#line 707 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'&' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex&yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'&' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex&yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 59:
-#line 721 "engine/base/parser.y"
+#line 721 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'|' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex|yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'|' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex|yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 60:
-#line 735 "engine/base/parser.y"
+#line 735 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'^' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex^yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'^' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex^yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 61:
-#line 751 "engine/base/parser.y"
+#line 751 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'&&' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex&&yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'&&' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex&&yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 62:
-#line 765 "engine/base/parser.y"
+#line 765 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'||' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex||yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'||' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex||yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 63:
-#line 780 "engine/base/parser.y"
+#line 780 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[-2].val.fFloat+yyvsp[0].val.fFloat;
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex+yyvsp[0].val.iIndex;
-  } else if (yyvsp[-2].val.sttType == STT_STRING) {
-    CTString &strNew = _shell_astrTempStrings.Push();
-    strNew = CTString(yyvsp[-2].val.strString)+yyvsp[0].val.strString;
-    yyval.val.strString = (const char*)strNew;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[-2].val.fFloat+yyvsp[0].val.fFloat;
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex+yyvsp[0].val.iIndex;
+	} else if (yyvsp[-2].val.sttType == STT_STRING) {
+		CTString &strNew = _shell_astrTempStrings.Push();
+		strNew = CTString(yyvsp[-2].val.strString)+yyvsp[0].val.strString;
+		yyval.val.strString = (const char*)strNew;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 64:
-#line 799 "engine/base/parser.y"
+#line 799 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[-2].val.fFloat-yyvsp[0].val.fFloat;
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex-yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[-2].val.fFloat-yyvsp[0].val.fFloat;
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex-yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 65:
-#line 815 "engine/base/parser.y"
+#line 815 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[-2].val.fFloat*yyvsp[0].val.fFloat;
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex*yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[-2].val.fFloat*yyvsp[0].val.fFloat;
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex*yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 
 ;
     break;}
 case 66:
-#line 831 "engine/base/parser.y"
+#line 831 ".\base/parser.y"
 {
 
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[-2].val.fFloat/yyvsp[0].val.fFloat;
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    if (yyvsp[0].val.iIndex==0) {
-      _pShell->ErrorF("Division by zero!\n");
-      yyval.val.iIndex = 0;
-    } else {
-      yyval.val.iIndex = yyvsp[-2].val.iIndex/yyvsp[0].val.iIndex;
-    }
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[-2].val.fFloat/yyvsp[0].val.fFloat;
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		if (yyvsp[0].val.iIndex==0) {
+			_pShell->ErrorF("Division by zero!\n");
+			yyval.val.iIndex = 0;
+		} else {
+			yyval.val.iIndex = yyvsp[-2].val.iIndex/yyvsp[0].val.iIndex;
+		}
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 
 ;
     break;}
 case 67:
-#line 853 "engine/base/parser.y"
+#line 853 ".\base/parser.y"
 {
-  MatchTypes(yyvsp[-2].val, yyvsp[0].val);
+	MatchTypes(yyvsp[-2].val, yyvsp[0].val);
 
-  yyval.val.sttType = yyvsp[-2].val.sttType;
-  if (yyvsp[-2].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'%' is illegal for FLOAT values");
-  } else if (yyvsp[-2].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[-2].val.iIndex%yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[-2].val.sttType;
+	if (yyvsp[-2].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'%' is illegal for FLOAT values");
+	} else if (yyvsp[-2].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[-2].val.iIndex%yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 
 ;
     break;}
 case 68:
-#line 869 "engine/base/parser.y"
+#line 869 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '<');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '<');
 ;
     break;}
 case 69:
-#line 872 "engine/base/parser.y"
+#line 872 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '>');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '>');
 ;
     break;}
 case 70:
-#line 875 "engine/base/parser.y"
+#line 875 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '=');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '=');
 ;
     break;}
 case 71:
-#line 878 "engine/base/parser.y"
+#line 878 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '!');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '!');
 ;
     break;}
 case 72:
-#line 881 "engine/base/parser.y"
+#line 881 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '}');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '}');
 ;
     break;}
 case 73:
-#line 884 "engine/base/parser.y"
+#line 884 ".\base/parser.y"
 {
-  DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '{');
+	DoComparison(yyval.val, yyvsp[-2].val, yyvsp[0].val, '{');
 ;
     break;}
 case 74:
-#line 890 "engine/base/parser.y"
+#line 890 ".\base/parser.y"
 {
-  yyval.val.sttType = yyvsp[0].val.sttType;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = -yyvsp[0].val.fFloat;
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = -yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[0].val.sttType;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = -yyvsp[0].val.fFloat;
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = -yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 75:
-#line 904 "engine/base/parser.y"
+#line 904 ".\base/parser.y"
 {
-  yyval.val.sttType = yyvsp[0].val.sttType;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[0].val.fFloat;
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[0].val.sttType;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[0].val.fFloat;
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 76:
-#line 916 "engine/base/parser.y"
+#line 916 ".\base/parser.y"
 {
-  yyval.val.sttType = yyvsp[0].val.sttType;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    _pShell->ErrorF("'!' is illegal for FLOAT values");
-    yyval.val.fFloat = yyvsp[0].val.fFloat;
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = !yyvsp[0].val.iIndex;
-  } else {
-    yyval.val.sttType = STT_FLOAT;
-    yyval.val.fFloat = -666.0f;
-  }
+	yyval.val.sttType = yyvsp[0].val.sttType;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		_pShell->ErrorF("'!' is illegal for FLOAT values");
+		yyval.val.fFloat = yyvsp[0].val.fFloat;
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = !yyvsp[0].val.iIndex;
+	} else {
+		yyval.val.sttType = STT_FLOAT;
+		yyval.val.fFloat = -666.0f;
+	}
 ;
     break;}
 case 77:
-#line 929 "engine/base/parser.y"
+#line 929 ".\base/parser.y"
 {
-  yyval.val.sttType = STT_FLOAT;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    yyval.val.fFloat = yyvsp[0].val.fFloat;
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    yyval.val.fFloat = FLOAT(yyvsp[0].val.iIndex);
-  } else if (yyvsp[0].val.sttType == STT_STRING) {
-    yyval.val.fFloat = atof(yyvsp[0].val.strString);
-  } else {
-    _pShell->ErrorF("Cannot convert to FLOAT");
-    yyval.val.sttType = STT_VOID;
-  }
+	yyval.val.sttType = STT_FLOAT;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		yyval.val.fFloat = yyvsp[0].val.fFloat;
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		yyval.val.fFloat = FLOAT(yyvsp[0].val.iIndex);
+	} else if (yyvsp[0].val.sttType == STT_STRING) {
+		yyval.val.fFloat = atof(yyvsp[0].val.strString);
+	} else {
+		_pShell->ErrorF("Cannot convert to FLOAT");
+		yyval.val.sttType = STT_VOID;
+	}
 ;
     break;}
 case 78:
-#line 943 "engine/base/parser.y"
+#line 943 ".\base/parser.y"
 {
-  yyval.val.sttType = STT_INDEX;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    yyval.val.iIndex = INDEX(yyvsp[0].val.fFloat);
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    yyval.val.iIndex = yyvsp[0].val.iIndex;
-  } else if (yyvsp[0].val.sttType == STT_STRING) {
-    yyval.val.iIndex = atol(yyvsp[0].val.strString);
-  } else {
-    _pShell->ErrorF("Cannot convert to INDEX");
-    yyval.val.sttType = STT_VOID;
-  }
+	yyval.val.sttType = STT_INDEX;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		yyval.val.iIndex = INDEX(yyvsp[0].val.fFloat);
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		yyval.val.iIndex = yyvsp[0].val.iIndex;
+	} else if (yyvsp[0].val.sttType == STT_STRING) {
+		yyval.val.iIndex = atol(yyvsp[0].val.strString);
+	} else {
+		_pShell->ErrorF("Cannot convert to INDEX");
+		yyval.val.sttType = STT_VOID;
+	}
 ;
     break;}
 case 79:
-#line 957 "engine/base/parser.y"
+#line 957 ".\base/parser.y"
 {
-  CTString &strNew = _shell_astrTempStrings.Push();
-  yyval.val.sttType = STT_STRING;
-  if (yyvsp[0].val.sttType == STT_FLOAT) {
-    strNew.PrintF("%g", yyvsp[0].val.fFloat);
-  } else if (yyvsp[0].val.sttType == STT_INDEX) {
-    strNew.PrintF("%d", yyvsp[0].val.iIndex);
-  } else if (yyvsp[0].val.sttType == STT_STRING) {
-    strNew = yyvsp[0].val.strString;
-  } else {
-    _pShell->ErrorF("Cannot convert to CTString");
-    yyval.val.sttType = STT_VOID;
-  }
-  yyval.val.strString = (const char*)strNew;
+	CTString &strNew = _shell_astrTempStrings.Push();
+	yyval.val.sttType = STT_STRING;
+	if (yyvsp[0].val.sttType == STT_FLOAT) {
+		strNew.PrintF("%g", yyvsp[0].val.fFloat);
+	} else if (yyvsp[0].val.sttType == STT_INDEX) {
+		strNew.PrintF("%d", yyvsp[0].val.iIndex);
+	} else if (yyvsp[0].val.sttType == STT_STRING) {
+		strNew = yyvsp[0].val.strString;
+	} else {
+		_pShell->ErrorF("Cannot convert to CTString");
+		yyval.val.sttType = STT_VOID;
+	}
+	yyval.val.strString = (const char*)strNew;
 ;
     break;}
 case 80:
-#line 974 "engine/base/parser.y"
+#line 974 ".\base/parser.y"
 {
-  // if the identifier is not declared
-  if (!yyvsp[-3].pssSymbol->IsDeclared()) {
-    // error
-    _pShell->ErrorF("Identifier '%s' is not declared", yyvsp[-3].pssSymbol->ss_strName);
-  // if the identifier is declared
-  } else {
-    // get its type
-    ShellType &stFunc = _shell_ast[yyvsp[-3].pssSymbol->ss_istType];
+	// if the identifier is not declared
+	if (!yyvsp[-3].pssSymbol->IsDeclared()) {
+		// error
+		_pShell->ErrorF("Identifier '%s' is not declared", yyvsp[-3].pssSymbol->ss_strName);
+	// if the identifier is declared
+	} else {
+		// get its type
+		ShellType &stFunc = _shell_ast[yyvsp[-3].pssSymbol->ss_istType];
 
-    // if the identifier is a function
-    if (stFunc.st_sttType==STT_FUNCTION) {
-      // determine result type
-      ShellType &stResult =  _shell_ast[stFunc.st_istBaseType];
-      // match argument list result to that result
-      _shell_ast[_shell_ast[yyvsp[-1].arg.istType].st_istBaseType].st_sttType = stResult.st_sttType;
-      // if types are same
-      if (ShellTypeIsSame(yyvsp[-1].arg.istType, yyvsp[-3].pssSymbol->ss_istType)) {
+		// if the identifier is a function
+		if (stFunc.st_sttType==STT_FUNCTION) {
+			// determine result type
+			ShellType &stResult =  _shell_ast[stFunc.st_istBaseType];
+			// match argument list result to that result
+			_shell_ast[_shell_ast[yyvsp[-1].arg.istType].st_istBaseType].st_sttType = stResult.st_sttType;
+			// if types are same
+			if (ShellTypeIsSame(yyvsp[-1].arg.istType, yyvsp[-3].pssSymbol->ss_istType)) {
 
 #define PUSHPARAMS \
-  memcpy(_alloca(yyvsp[-1].arg.ctBytes), _ubStack+_iStack-yyvsp[-1].arg.ctBytes, yyvsp[-1].arg.ctBytes);
+	memcpy(_alloca(yyvsp[-1].arg.ctBytes), _ubStack+_iStack-yyvsp[-1].arg.ctBytes, yyvsp[-1].arg.ctBytes);
 
-        // if void
-        if (stResult.st_sttType==STT_VOID) {
-          // just call the function
-          yyval.val.sttType = STT_VOID;
-          //PUSHPARAMS;
-          ((void (*)(void*))yyvsp[-3].pssSymbol->ss_pvValue)(_ubStack+_iStack-yyvsp[-1].arg.ctBytes);
-        // if index
-        } else if (stResult.st_sttType==STT_INDEX) {
-          // call the function and return result
-          yyval.val.sttType = STT_INDEX;
-          PUSHPARAMS;
-          yyval.val.iIndex = ((INDEX (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
-        // if float
-        } else if (stResult.st_sttType==STT_FLOAT) {
-          // call the function and return result
-          yyval.val.sttType = STT_FLOAT;
-          PUSHPARAMS;
-          yyval.val.fFloat = ((FLOAT (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
-        // if string
-        } else if (stResult.st_sttType==STT_STRING) {
-          // call the function and return result
-          yyval.val.sttType = STT_STRING;
-          CTString &strNew = _shell_astrTempStrings.Push();
-          PUSHPARAMS;
-          strNew = ((CTString (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
-          yyval.val.strString = (const char*)strNew;
-        } else {
-          ASSERT(FALSE);
-          yyval.val.sttType = STT_FLOAT;
-          yyval.val.fFloat = -666.0f;
-        }
-      // if types are different
-      } else {
-        // error
-        yyval.val.sttType = STT_VOID;
-        _pShell->ErrorF("Wrong parameters for '%s'", yyvsp[-3].pssSymbol->ss_strName);
-      }
-    // if the identifier is something else
-    } else {
-      // error
-      yyval.val.sttType = STT_VOID;
-      _pShell->ErrorF("Can't call '%s'", yyvsp[-3].pssSymbol->ss_strName);
-    }
-  }
+				// if void
+				if (stResult.st_sttType==STT_VOID) {
+					// just call the function
+					yyval.val.sttType = STT_VOID;
+					PUSHPARAMS;
+					((void (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
+				// if index
+				} else if (stResult.st_sttType==STT_INDEX) {
+					// call the function and return result
+					yyval.val.sttType = STT_INDEX;
+					PUSHPARAMS;
+					yyval.val.iIndex = ((INDEX (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
+				// if float
+				} else if (stResult.st_sttType==STT_FLOAT) {
+					// call the function and return result
+					yyval.val.sttType = STT_FLOAT;
+					PUSHPARAMS;
+					yyval.val.fFloat = ((FLOAT (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
+				// if string
+				} else if (stResult.st_sttType==STT_STRING) {
+					// call the function and return result
+					yyval.val.sttType = STT_STRING;
+					CTString &strNew = _shell_astrTempStrings.Push();
+					PUSHPARAMS;
+					strNew = ((CTString (*)(void))yyvsp[-3].pssSymbol->ss_pvValue)();
+					yyval.val.strString = (const char*)strNew;
+				} else {
+					ASSERT(FALSE);
+					yyval.val.sttType = STT_FLOAT;
+					yyval.val.fFloat = -666.0f;
+				}
+			// if types are different
+			} else {
+				// error
+				yyval.val.sttType = STT_VOID;
+				_pShell->ErrorF("Wrong parameters for '%s'", yyvsp[-3].pssSymbol->ss_strName);
+			}
+		// if the identifier is something else
+		} else {
+			// error
+			yyval.val.sttType = STT_VOID;
+			_pShell->ErrorF("Can't call '%s'", yyvsp[-3].pssSymbol->ss_strName);
+		}
+	}
 
-  // pop arguments and free type info
-  _iStack-=yyvsp[-1].arg.ctBytes;
-  ShellTypeDelete(yyvsp[-1].arg.istType);
+	// pop arguments and free type info
+	_iStack-=yyvsp[-1].arg.ctBytes;
+	ShellTypeDelete(yyvsp[-1].arg.istType);
 ;
     break;}
 case 81:
-#line 1046 "engine/base/parser.y"
+#line 1046 ".\base/parser.y"
 {
-  yyval.val = yyvsp[-1].val;
+	yyval.val = yyvsp[-1].val;
 ;
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 487 "bison.simple"
+#line 498 "bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -2066,7 +2059,7 @@ yyerrlab1:   /* here on error raised explicitly by an action */
 
   if (yyerrstatus == 3)
     {
-      /* if just tried and failed to reuse lookahead token after an error, discard it.  */
+      /* if just tried and failed to reuse lookahead token after an error, discard it.	*/
 
       /* return failure if at end of input */
       if (yychar == YYEOF)
@@ -2153,5 +2146,5 @@ yyerrhandle:
   yystate = yyn;
   goto yynewstate;
 }
-#line 1051 "engine/base/parser.y"
+#line 1051 ".\base/parser.y"
 

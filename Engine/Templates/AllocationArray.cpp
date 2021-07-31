@@ -66,6 +66,23 @@ inline void CAllocationArray<Type>::Delete(void) {
   ASSERT(FALSE);
 }
 
+/* Preallocate to fixate memory usage. */
+template<class Type>
+void CAllocationArray<Type>::PreAllocate(INDEX ctCount)
+{
+  // must be empty when calling this
+  ASSERT(aa_aiFreeElements.Count()==0 && CStaticArray<Type>::Count()==0);
+  // expand the array to that size
+  Expand(ctCount);
+
+  // fill all elements as free
+  INDEX *piNewFree = aa_aiFreeElements.Push(ctCount);
+  // fill them up
+  for(INDEX iNew=0; iNew<ctCount; iNew++) {
+    piNewFree[iNew] = iNew;
+  }
+}
+
 /* Alocate a new object. */
 template<class Type>
 inline INDEX CAllocationArray<Type>::Allocate(void)
@@ -179,7 +196,7 @@ template<class Type>
 INDEX CAllocationArray<Type>::Index(Type *ptObject)
 {
   ASSERT(this!=NULL);
-  INDEX i = CStaticArray<Type>::Index(ptMember);
+  INDEX i = CStaticArray<Type>::Index(ptObject);
   ASSERT(IsAllocated(i));
   return i;
 }

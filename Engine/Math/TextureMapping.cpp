@@ -8,6 +8,7 @@
 #include <Engine/Math/Projection.h>
 #include <Engine/Math/Projection_DOUBLE.h>
 
+
 // calculate default texture mapping control points from a plane
 void CMappingVectors::FromPlane(const FLOATplane3D &plPlane)
 {
@@ -29,15 +30,20 @@ void CMappingVectors::FromPlane(const FLOATplane3D &plPlane)
   // use cross product of plane normal and +s axis as +t axis
   mv_vV = mv_vU*(FLOAT3D &)plPlane;
 }
+
+
 void CMappingVectors::FromPlane_DOUBLE(const DOUBLEplane3D &plPlane)
 {
   FromPlane(DOUBLEtoFLOAT(plPlane));
 }
+
+
 // calculate plane from default mapping vectors
 void CMappingVectors::ToPlane(FLOATplane3D &plPlane) const
 {
   plPlane = FLOATplane3D(mv_vV*mv_vU, mv_vO);
 }
+
 
 // convert to human-friendly format
 void CMappingDefinition::ToUI(CMappingDefinitionUI &mdui) const
@@ -67,6 +73,7 @@ void CMappingDefinition::ToUI(CMappingDefinitionUI &mdui) const
   mdui.mdui_fVOffset  = md_fVOffset;
 }
 
+
 // convert from human-friendly format
 void CMappingDefinition::FromUI(const CMappingDefinitionUI &mdui)
 {
@@ -85,59 +92,46 @@ void CMappingDefinition::FromUI(const CMappingDefinitionUI &mdui)
   md_fVOffset = mdui.mdui_fVOffset;
 }
 
+
 // make mapping vectors for this mapping
 void CMappingDefinition::MakeMappingVectors( const CMappingVectors &mvSrc, CMappingVectors &mvDst) const
 {
-  const FLOAT uos = md_fUoS;
-  const FLOAT uot = md_fUoT;
-  const FLOAT vos = md_fVoS;
-  const FLOAT vot = md_fVoT;
-  const FLOAT ood = 1.0f / (uos*vot-uot*vos);
-  const FLOAT sou = +vot*ood;  const FLOAT sov = -uot*ood;
-  const FLOAT tov = +uos*ood;  const FLOAT tou = -vos*ood;
+  const FLOAT ood = 1.0f / (md_fUoS*md_fVoT - md_fUoT*md_fVoS);
   mvDst.mv_vO = mvSrc.mv_vO
-              + mvSrc.mv_vU * (md_fUOffset*sou + md_fVOffset*sov)
-              + mvSrc.mv_vV * (md_fUOffset*tou + md_fVOffset*tov);
-  mvDst.mv_vU = mvSrc.mv_vU*uos + mvSrc.mv_vV*uot;
-  mvDst.mv_vV = mvSrc.mv_vU*vos + mvSrc.mv_vV*vot;
+              + mvSrc.mv_vU * (md_fUOffset*md_fVoT - md_fVOffset*md_fUoT) *ood
+              + mvSrc.mv_vV * (md_fVOffset*md_fUoS - md_fUOffset*md_fVoS) *ood;
+  mvDst.mv_vU = mvSrc.mv_vU*md_fUoS + mvSrc.mv_vV*md_fUoT;
+  mvDst.mv_vV = mvSrc.mv_vU*md_fVoS + mvSrc.mv_vV*md_fVoT;
 }
+
 
 // transform default mapping vectors to mapping vectors for this mapping
 void CMappingDefinition::TransformMappingVectors( const CMappingVectors &mvSrc, CMappingVectors &mvDst) const
 {
-  const FLOAT uos = md_fUoS;
-  const FLOAT uot = md_fUoT;
-  const FLOAT vos = md_fVoS;
-  const FLOAT vot = md_fVoT;
-  mvDst.mv_vU = mvSrc.mv_vU*uos + mvSrc.mv_vV*uot;
-  mvDst.mv_vV = mvSrc.mv_vU*vos + mvSrc.mv_vV*vot;
+  mvDst.mv_vU = mvSrc.mv_vU*md_fUoS + mvSrc.mv_vV*md_fUoT;
+  mvDst.mv_vV = mvSrc.mv_vU*md_fVoS + mvSrc.mv_vV*md_fVoT;
 
-  {
-    FLOAT sou2 = mvDst.mv_vU%mvDst.mv_vU;
-    FLOAT sov2 = mvDst.mv_vV%mvDst.mv_vU;
-    FLOAT tou2 = mvDst.mv_vU%mvDst.mv_vV;
-    FLOAT tov2 = mvDst.mv_vV%mvDst.mv_vV;
+  const FLOAT sou2 = mvDst.mv_vU % mvDst.mv_vU;
+  const FLOAT sov2 = mvDst.mv_vV % mvDst.mv_vU;
+  const FLOAT tou2 = mvDst.mv_vU % mvDst.mv_vV;
+  const FLOAT tov2 = mvDst.mv_vV % mvDst.mv_vV;
 
-    FLOAT ood2 = 1/(sou2*tov2-sov2*tou2);
-    FLOAT uos2 = +tov2*ood2; FLOAT uot2 = -sov2*ood2;
-    FLOAT vot2 = +sou2*ood2; FLOAT vos2 = -tou2*ood2;
+  const FLOAT ood2 = 1.0f / (sou2*tov2-sov2*tou2);
+  const FLOAT uos2 = +tov2*ood2;  const FLOAT uot2 = -sov2*ood2;
+  const FLOAT vot2 = +sou2*ood2;  const FLOAT vos2 = -tou2*ood2;
 
-    mvDst.mv_vO = mvSrc.mv_vO
-                + mvDst.mv_vU * (md_fUOffset*uos2 + md_fVOffset*vos2)
-                + mvDst.mv_vV * (md_fUOffset*vos2 + md_fVOffset*vot2);
-  }
+  mvDst.mv_vO = mvSrc.mv_vO
+              + mvDst.mv_vU * (md_fUOffset*uos2 + md_fVOffset*vos2)     // !!!! uot2 ???? offsets ????
+              + mvDst.mv_vV * (md_fUOffset*vos2 + md_fVOffset*vot2);
 }
+
 
 // convert to mapping vectors
 void CMappingDefinition::ToMappingVectors( const CMappingVectors &mvDefault, CMappingVectors &mvVectors) const
 {
-  const FLOAT uos = md_fUoS;
-  const FLOAT uot = md_fUoT;
-  const FLOAT vos = md_fVoS;
-  const FLOAT vot = md_fVoT;
-  const FLOAT ood = 1.0f /(uos*vot-uot*vos);
-  const FLOAT sou = +vot*ood;  const FLOAT sov = -uot*ood;
-  const FLOAT tov = +uos*ood;  const FLOAT tou = -vos*ood;
+  const FLOAT ood = 1.0f /(md_fUoS*md_fVoT - md_fUoT*md_fVoS);
+  const FLOAT sou = +md_fVoT*ood;  const FLOAT sov = -md_fUoT*ood;
+  const FLOAT tov = +md_fUoS*ood;  const FLOAT tou = -md_fVoS*ood;
   mvVectors.mv_vO = mvDefault.mv_vO
                   + mvDefault.mv_vU * (md_fUOffset*sou + md_fVOffset*sov)
                   + mvDefault.mv_vV * (md_fUOffset*tou + md_fVOffset*tov);
@@ -145,30 +139,25 @@ void CMappingDefinition::ToMappingVectors( const CMappingVectors &mvDefault, CMa
   mvVectors.mv_vV = mvDefault.mv_vU*sov + mvDefault.mv_vV*tov;
 }
 
+
 // convert from mapping vectors
-void CMappingDefinition::FromMappingVectors(
-  const CMappingVectors &mvDefault, const CMappingVectors &mvVectors)
+void CMappingDefinition::FromMappingVectors( const CMappingVectors &mvDefault, const CMappingVectors &mvVectors)
 {
-  FLOAT sou = mvVectors.mv_vU%mvDefault.mv_vU;
-  FLOAT sov = mvVectors.mv_vV%mvDefault.mv_vU;
-  FLOAT tou = mvVectors.mv_vU%mvDefault.mv_vV;
-  FLOAT tov = mvVectors.mv_vV%mvDefault.mv_vV;
+  const FLOAT sou = mvVectors.mv_vU % mvDefault.mv_vU;
+  const FLOAT sov = mvVectors.mv_vV % mvDefault.mv_vU;
+  const FLOAT tou = mvVectors.mv_vU % mvDefault.mv_vV;
+  const FLOAT tov = mvVectors.mv_vV % mvDefault.mv_vV;
 
-  FLOAT ood = 1/(sou*tov-sov*tou);
-  FLOAT uos = +tov*ood; FLOAT uot = -sov*ood;
-  FLOAT vot = +sou*ood; FLOAT vos = -tou*ood;
+  const FLOAT ood = 1.0f / (sou*tov - sov*tou);
+  md_fUoS = +tov*ood;  md_fUoT = -sov*ood;
+  md_fVoT = +sou*ood;  md_fVoS = -tou*ood;
 
-  md_fUoS = uos;
-  md_fUoT = uot;
-  md_fVoS = vos;
-  md_fVoT = vot;
+  const FLOAT3D vOffset = mvVectors.mv_vO - mvDefault.mv_vO;
+  const FLOAT s = vOffset % mvDefault.mv_vU;
+  const FLOAT t = vOffset % mvDefault.mv_vV;
 
-  FLOAT3D vOffset = mvVectors.mv_vO-mvDefault.mv_vO;
-  FLOAT s = vOffset%mvDefault.mv_vU;
-  FLOAT t = vOffset%mvDefault.mv_vV;
-
-  md_fUOffset = uos*s+uot*t;
-  md_fVOffset = vos*s+vot*t;
+  md_fUOffset = md_fUoS*s + md_fUoT*t;
+  md_fVOffset = md_fVoS*s + md_fVoT*t;
 }
 
 
@@ -197,42 +186,40 @@ void CMappingDefinition::ReadOld_t(CTStream &strm) // throw char *
   md_fVoT = +fCos;
 }
 
+
 /* Find texture coordinates for an object-space point. */
 void CMappingDefinition::GetTextureCoordinates(
   const CMappingVectors &mvDefault, const FLOAT3D &vSpace, MEX2D &vTexture) const
 {
-  FLOAT3D vOffset = vSpace-mvDefault.mv_vO;
-  FLOAT s = mvDefault.mv_vU%vOffset;
-  FLOAT t = mvDefault.mv_vV%vOffset;
-  FLOAT u = s*md_fUoS+t*md_fUoT;
-  FLOAT v = s*md_fVoS+t*md_fVoT;
-
-  vTexture(1) = FloatToInt((u+md_fUOffset)*1024.0f);
-  vTexture(2) = FloatToInt((v+md_fVOffset)*1024.0f);
+  const FLOAT3D vOffset = vSpace-mvDefault.mv_vO;
+  const FLOAT s = mvDefault.mv_vU % vOffset;
+  const FLOAT t = mvDefault.mv_vV % vOffset;
+  const FLOAT u = s*md_fUoS + t*md_fUoT;
+  const FLOAT v = s*md_fVoS + t*md_fVoT;
+  vTexture(1) = FloatToInt( (u+md_fUOffset)*1024.0f);
+  vTexture(2) = FloatToInt( (v+md_fVOffset)*1024.0f);
 }
+
+
 /* Find object-space coordinates for a texture point. */
 void CMappingDefinition::GetSpaceCoordinates(
   const CMappingVectors &mvDefault, const MEX2D &vTexture, FLOAT3D &vSpace) const
 {
-  FLOAT uos = md_fUoS;
-  FLOAT uot = md_fUoT;
-  FLOAT vos = md_fVoS;
-  FLOAT vot = md_fVoT;
+  const FLOAT ood = 1.0f / (md_fUoS*md_fVoT - md_fUoT*md_fVoS);
+  const FLOAT sou = +md_fVoT*ood;  const FLOAT sov = -md_fUoT*ood;
+  const FLOAT tov = +md_fUoS*ood;  const FLOAT tou = -md_fVoS*ood;
 
-  FLOAT ood = 1/(uos*vot-uot*vos);
-  FLOAT sou = +vot*ood; FLOAT sov = -uot*ood;
-  FLOAT tov = +uos*ood; FLOAT tou = -vos*ood;
-
-  FLOAT u = (vTexture(1)/1024.0f)+md_fUOffset;
-  FLOAT v = (vTexture(2)/1024.0f)+md_fVOffset;
-  FLOAT s = u*sou+v*sov;
-  FLOAT t = u*tou+v*tov;
-
-  vSpace = mvDefault.mv_vO+mvDefault.mv_vU*s+mvDefault.mv_vV*t;
+  const FLOAT u = (vTexture(1)/1024.0f) + md_fUOffset;
+  const FLOAT v = (vTexture(2)/1024.0f) + md_fVOffset;
+  const FLOAT s = u*sou + v*sov;
+  const FLOAT t = u*tou + v*tov;
+  vSpace = mvDefault.mv_vO + mvDefault.mv_vU*s + mvDefault.mv_vV*t;
 }
+
+
 // project another mapping on this one
-void CMappingDefinition::ProjectMapping(const FLOATplane3D &plOriginal, const CMappingDefinition &mdOriginal,
-  const FLOATplane3D &pl)
+void CMappingDefinition::ProjectMapping( 
+  const FLOATplane3D &plOriginal, const CMappingDefinition &mdOriginal, const FLOATplane3D &pl)
 {
   // make original mapping vectors
   CMappingVectors mvDefaultOrg;
@@ -254,6 +241,8 @@ void CMappingDefinition::ProjectMapping(const FLOATplane3D &plOriginal, const CM
   mvDefault.FromPlane(pl);
   FromMappingVectors(mvDefault, mv);
 }
+
+
 // translate mapping in 3D
 void CMappingDefinition::Translate(const CMappingVectors &mvDefault, const FLOAT3D &vTranslation)
 {
@@ -267,6 +256,8 @@ void CMappingDefinition::Translate(const CMappingVectors &mvDefault, const FLOAT
   // convert back from new mapping vectors
   FromMappingVectors(mvDefault, mv);
 }
+
+
 // rotate mapping in 3D
 void CMappingDefinition::Rotate(const CMappingVectors &mvDefault, 
   const FLOAT3D &vRotationOrigin, ANGLE aRotation)
@@ -291,6 +282,8 @@ void CMappingDefinition::Rotate(const CMappingVectors &mvDefault,
   md_fUOffset += (vmexRotationOrigin1(1)-vmexRotationOrigin0(1))/1024.0f;
   md_fVOffset += (vmexRotationOrigin1(2)-vmexRotationOrigin0(2))/1024.0f;
 }
+
+
 // center mapping to given point in 3D
 void CMappingDefinition::Center(const CMappingVectors &mvDefault, 
   const FLOAT3D &vNewOrigin)
@@ -305,6 +298,8 @@ void CMappingDefinition::Center(const CMappingVectors &mvDefault,
   // convert back from new mapping vectors
   FromMappingVectors(mvDefault, mv);
 }
+
+
 // transform mapping from one placement to another
 void CMappingDefinition::Transform(const FLOATplane3D &plSourcePlane,
     const CPlacement3D &plSource, const CPlacement3D &plTarget)
@@ -324,6 +319,8 @@ CTStream &operator>>(CTStream &strm, CMappingDefinition &md)
   strm.Read_t(&md, sizeof(md));
   return strm;
 }
+
+
 CTStream &operator<<(CTStream &strm, const CMappingDefinition &md)
 {
   strm.Write_t(&md, sizeof(md));

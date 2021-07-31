@@ -6,6 +6,13 @@
 #include "EntitiesMP/Lightning.h"
 %}
 
+event EStormEnvironmentStart {
+};
+event EStormStart {
+};
+event EStormStop {
+};
+
 class CStormController: CRationalEntity {
 name      "Storm controller";
 thumbnail "Thumbnails\\StormController.tbn";
@@ -15,8 +22,8 @@ properties:
   1 CEntityPointer m_penwsc,      // ptr to world settings controller
   2 CTString m_strName              "Name" 'N' = "Storm controller",         // class name
   3 FLOAT m_fNextLightningDelay = 0.0f,
-  4 BOOL m_bStormOn = FALSE,
-  5 FLOAT m_fNextLightningStrike = 0.0f,
+  4 BOOL m_bStormOn = FALSE features(EPROPF_NETSEND),
+  5 FLOAT m_fNextLightningStrike = 0.0f features(EPROPF_NETSEND),
   10 CEntityPointer m_penLightning00  "Lightning 1" 'T' COLOR(C_MAGENTA|0xFF),    // lightning
   11 CEntityPointer m_penLightning01  "Lightning 2" 'Y' COLOR(C_MAGENTA|0xFF),    // lightning
   12 CEntityPointer m_penLightning02  "Lightning 3" 'U' COLOR(C_MAGENTA|0xFF),    // lightning
@@ -51,14 +58,14 @@ properties:
   53 COLOR m_colShadeStop "Color shade stop" = COLOR(C_GRAY|CT_OPAQUE),
 
 components:
-  1 model   MODEL_STORM_CONTROLLER     "Models\\Editor\\StormController.mdl",
-  2 texture TEXTURE_STORM_CONTROLLER   "Models\\Editor\\StormController.tex"
+  1 editor model   MODEL_STORM_CONTROLLER     "Data\\Models\\Editor\\StormController.mdl",
+  2 editor texture TEXTURE_STORM_CONTROLLER   "Data\\Models\\Editor\\StormController.tex"
 
 functions:
   // check if one lightning target is valid 
   void CheckOneLightningTarget(CEntityPointer &pen)
   {
-    if (pen!=NULL && !IsOfClass(pen, "Lightning"))
+    if (pen!=NULL && !IsOfClass(pen, &CLightning_DLLClass))
     {
       WarningMessage("Target '%s' is not of class Lightning!", pen->GetName());
       pen=NULL;
@@ -91,6 +98,48 @@ functions:
     return 20;
   }
 
+  
+  BOOL SetUpWorldSettingsController()
+  {
+    SetFlagOn(ENF_CLIENTHANDLING);
+    // obtain bcg viewer entity
+    CBackgroundViewer *penBcgViewer = (CBackgroundViewer *) GetWorld()->GetBackgroundViewer();
+    if( penBcgViewer == NULL)
+    {
+      // don't do anything
+      return FALSE;
+    }
+
+    // obtain world settings controller 
+    m_penwsc = penBcgViewer->m_penWorldSettingsController;
+    if( m_penwsc == NULL)
+    {
+      // don't do anything
+      return FALSE;
+    }
+  
+    // must be world settings controller entity
+    if (!IsOfClass(m_penwsc, &CWorldSettingsController_DLLClass))
+    {
+      // don't do anything
+      return FALSE;
+    }
+
+    CWorldSettingsController *pwsc=(CWorldSettingsController *)&*m_penwsc;
+    pwsc->m_colBlendStart = m_colBlendStart;
+    pwsc->m_colBlendStop = m_colBlendStop;
+    pwsc->m_colShadeStart = m_colShadeStart;
+    pwsc->m_colShadeStop = m_colShadeStop;
+    pwsc->m_tmStormAppearTime = m_tmStormAppearTime;
+    pwsc->m_tmStormDisappearTime = m_tmStormDisappearTime;
+
+    m_bStormOn = FALSE;
+
+
+    return true;
+  };
+
+
 procedures:
   Storm()
   {
@@ -102,6 +151,11 @@ procedures:
 
   StormInternal()
   {
+    if (m_penwsc == NULL) {
+      if (!SetUpWorldSettingsController()) {
+        return EReturn();
+      }
+    }
     while(m_bStormOn &&
           _pTimer->CurrentTick()<((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd+m_tmStormDisappearTime)
     {
@@ -123,8 +177,18 @@ procedures:
           }
           on (ETimer) : { stop; }
         }
+        if (m_penwsc == NULL) {
+          if (!SetUpWorldSettingsController()) {
+            return EReturn();
+          }
+        }
       }
       autowait(_pTimer->TickQuantum);
+      if (m_penwsc == NULL) {
+        if (!SetUpWorldSettingsController()) {
+          return EReturn();
+        }
+      }
 
       // calculate next lightning strike time
       FLOAT fLightningStart=((CWorldSettingsController *)&*m_penwsc)->m_tmStormStart+m_fFirstLightningDelay;
@@ -194,44 +258,20 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+    SetFlagOn(ENF_CLIENTHANDLING); 
 
     // set appearance
     SetModel(MODEL_STORM_CONTROLLER);
-    SetModelMainTexture(TEXTURE_STORM_CONTROLLER);
-    
+    SetModelMainTexture(TEXTURE_STORM_CONTROLLER);    
+
     // spawn in world editor
     autowait(0.1f);
 
     // obtain bcg viewer entity
-    CBackgroundViewer *penBcgViewer = (CBackgroundViewer *) GetWorld()->GetBackgroundViewer();
-    if( penBcgViewer == NULL)
-    {
+    if (!SetUpWorldSettingsController()) {
       // don't do anything
       return;
     }
-
-    // obtain world settings controller 
-    m_penwsc = penBcgViewer->m_penWorldSettingsController;
-    if( m_penwsc == NULL)
-    {
-      // don't do anything
-      return;
-    }
-    
-    // must be world settings controller entity
-    if (!IsOfClass(m_penwsc, "WorldSettingsController"))
-    {
-      // don't do anything
-      return;
-    }
-
-    CWorldSettingsController *pwsc=(CWorldSettingsController *)&*m_penwsc;
-    pwsc->m_colBlendStart = m_colBlendStart;
-    pwsc->m_colBlendStop = m_colBlendStop;
-    pwsc->m_colShadeStart = m_colShadeStart;
-    pwsc->m_colShadeStop = m_colShadeStop;
-    pwsc->m_tmStormAppearTime = m_tmStormAppearTime;
-    pwsc->m_tmStormDisappearTime = m_tmStormDisappearTime;
 
     m_bStormOn = FALSE;
     while (TRUE)
@@ -239,8 +279,20 @@ procedures:
       wait()
       {
         // immediate storm now
-        on (EEnvironmentStart eEnvironmentStart) :
+        on (EEnvironmentStart) :
         {
+          if (_pNetwork->IsServer()) {
+            SendEvent(EStormEnvironmentStart(),TRUE);
+          }
+          resume;
+        }
+        on (EStormEnvironmentStart) : 
+        {
+          if (m_penwsc == NULL) {
+            if (!SetUpWorldSettingsController()) {
+              resume;
+            }
+          }
           TIME tmNow = _pTimer->CurrentTick();
           ((CWorldSettingsController *)&*m_penwsc)->m_tmStormStart = tmNow-m_tmStormAppearTime;
           ((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd = 1e6;
@@ -249,10 +301,21 @@ procedures:
           call StormInternal();
           resume;
         }
-        on (EStart eStart) :
+        on (EStart) :
         {
-          if( !m_bStormOn)
-          {
+          if (_pNetwork->IsServer()) {
+            SendEvent(EStormStart(),TRUE);
+          }
+          resume;
+        }
+        on (EStormStart) :
+        {
+          if( !m_bStormOn) {
+            if (m_penwsc == NULL) {
+              if (!SetUpWorldSettingsController()) {
+                resume;
+              }
+            }
             TIME tmNow = _pTimer->CurrentTick();
             ((CWorldSettingsController *)&*m_penwsc)->m_tmStormStart = tmNow;
             ((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd = 1e6;
@@ -263,8 +326,19 @@ procedures:
         }
         on (EStop eStop) :
         {
-          if( m_bStormOn)
-          {
+          if (_pNetwork->IsServer()) {
+            SendEvent(EStormStop(),TRUE);
+          }
+          resume;
+        }
+        on (EStormStop) :
+        {
+          if( m_bStormOn) {
+            if (m_penwsc == NULL) {
+              if (!SetUpWorldSettingsController()) {
+                resume;
+              }
+            }
             TIME tmNow = _pTimer->CurrentTick();
             ((CWorldSettingsController *)&*m_penwsc)->m_tmStormEnd = tmNow;
           }

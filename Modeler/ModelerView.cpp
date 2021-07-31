@@ -657,7 +657,7 @@ void CModelerView::RenderView( CDrawPort *pDrawPort)
         try
         {
           pDoc->m_soSoundObject.Stop();
-          pDoc->m_soSoundObject.SetVolume( SL_VOLUME_MAX, SL_VOLUME_MAX);
+          pDoc->m_soSoundObject.SetVolume(1.0f);
           if( asSound.as_bLooping)
             pDoc->m_soSoundObject.Play_t( asSound.as_fnAttachedSound, SOF_LOOP);
           else
@@ -732,14 +732,14 @@ void CModelerView::RenderView( CDrawPort *pDrawPort)
     // obtain translation speed value
     CString csSpeed;
     pmf->m_ctrlZSpeed.GetWindowText( csSpeed);
-    CTString strSpeed = CStringA(csSpeed);
+    CTString strSpeed = csSpeed;
     FLOAT fSpeed;
     BOOL bSpeedValid = strSpeed.ScanF( "%g", &fSpeed);
     
     // obtain loop value
     CString csLoop;
     pmf->m_ctrlZLoop.GetWindowText( csLoop);
-    CTString strLoop = CStringA(csLoop);
+    CTString strLoop = csLoop;
     INDEX iLoop;
     BOOL bLoopValid = strLoop.ScanF( "%d", &iLoop);
     
@@ -1096,7 +1096,7 @@ void CModelerView::OnDraw(CDC* pDC)
       // prepare pane text line
       sprintf( achrLine, "%s", pDoc->m_emEditModel.GetSurfaceName( pDoc->m_iCurrentMip, iSurface));
       // print active surface
-      pMainFrame->m_wndStatusBar.SetPaneText( ACTIVE_SURFACE_PANE, CString(achrLine));
+      pMainFrame->m_wndStatusBar.SetPaneText( ACTIVE_SURFACE_PANE, achrLine);
     }
   }
   _pSound->UpdateSounds();
@@ -2150,8 +2150,8 @@ void CModelerView::OnFileRemoveTexture()
 void CModelerView::OnScriptOpen() 
 {
 	CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnDocName = CTString(CStringA(pDoc->GetPathName()));
-  AfxGetApp()->OpenDocumentFile( CString(fnDocName.FileDir() + fnDocName.FileName() + ".scr"));
+  CTFileName fnDocName = CTString(pDoc->GetPathName());
+  AfxGetApp()->OpenDocumentFile( fnDocName.FileDir() + fnDocName.FileName() + ".scr");
 }
 
 void CModelerView::OnScriptUpdateAnimations() 
@@ -2163,7 +2163,7 @@ BOOL CModelerView::UpdateAnimations(void)
 {
   CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd());
   CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnModelName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnModelName = CTString(pDoc->GetPathName());
   CTFileName fnScriptName = fnModelName.FileDir() + fnModelName.FileName() + ".scr";
 	
   pDoc->OnSaveDocument( pDoc->GetPathName());
@@ -2180,7 +2180,7 @@ BOOL CModelerView::UpdateAnimations(void)
   {
     pMainFrame->m_NewProgress.DestroyWindow();
     pDoc->OnCloseDocument();       // explicit delete on error
-    AfxMessageBox( CString(str_err));
+    AfxMessageBox( str_err);
     return FALSE;
   }
   pMainFrame->m_NewProgress.DestroyWindow();
@@ -2195,10 +2195,10 @@ void CModelerView::OnScriptUpdateMipmodels()
 {
   CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd());
   CModelerDoc *pDoc = (CModelerDoc *) GetDocument();
-  CTFileName fnModelName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnModelName = CTString(pDoc->GetPathName());
   CTFileName fnScriptName = fnModelName.FileDir() + fnModelName.FileName() + ".scr";
 	
-  if( ::MessageBoxA( this->m_hWnd, "Updating mip-models will discard current mip-model mapping "
+  if( ::MessageBox( this->m_hWnd, "Updating mip-models will discard current mip-model mapping "
                                   "and colorizing data. Are you sure that you want that?",
              "Warning !", MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON1|
              MB_SYSTEMMODAL | MB_TOPMOST) == IDYES)
@@ -2213,7 +2213,7 @@ void CModelerView::OnScriptUpdateMipmodels()
     }
     catch( char *str_err)
     {
-      AfxMessageBox( CString(str_err));
+      AfxMessageBox( str_err);
     }
   }
   pMainFrame->m_NewProgress.DestroyWindow();
@@ -2614,7 +2614,7 @@ void CModelerView::OnTakeScreenShoot()
     iiImageInfo.SaveTGA_t( fnSSFileName);
   }
   catch(char *strError) {
-    AfxMessageBox(CString(strError));
+    AfxMessageBox(strError);
   }
   dlg.DestroyWindow();
 }
@@ -2918,7 +2918,7 @@ void CModelerView::OnSaveThumbnail()
   // mark that thumbnail settings have been set
   pDoc->m_emEditModel.edm_tsThumbnailSettings.ts_bSet = TRUE;
   SaveThumbnail();
-  STATUS_LINE_MESSAGE( L"Thumbnail saved."); 
+  STATUS_LINE_MESSAGE( "Thumbnail saved."); 
 }
 
 void CModelerView::SaveThumbnail() 
@@ -2962,7 +2962,7 @@ void CModelerView::SaveThumbnail()
       pDrawPort->Unlock();
     }
     
-    CTFileName fnDocName = CTString(CStringA(GetDocument()->GetPathName()));
+    CTFileName fnDocName = CTString(GetDocument()->GetPathName());
     CTFileName fnThumbnail = fnDocName.FileDir() + fnDocName.FileName() + ".tbn";
 
     pDrawPort->GrabScreen( iiImageInfo);
@@ -2970,7 +2970,7 @@ void CModelerView::SaveThumbnail()
     try {
       fnThumbnail.RemoveApplicationPath_t();
       // create texture
-      TD.Create_t( &iiImageInfo, 128, MAX_MEX_LOG2, FALSE);
+      TD.Create_t( &iiImageInfo, 128, MAX_MEX_LOG2);
       // save the thumbnail
       CTFileStream File;
       File.Create_t( fnThumbnail);
@@ -2980,7 +2980,7 @@ void CModelerView::SaveThumbnail()
     // if failed
     catch (char *strError) {
       // report error
-      AfxMessageBox(CString(strError));
+      AfxMessageBox(strError);
     }
 
     m_ModelObject.SetManualMipLevel( iCurrentMip);
@@ -3167,7 +3167,7 @@ BOOL CModelerView::PreTranslateMessage(MSG* pMsg)
     plMeasureVtx.AbsoluteToRelative( m_plModelPlacement);
     FLOAT3D vDelta = plMeasureVtx.pl_PositionVector;
     strStatusLine.PrintF("Measure vertex offset: %g, %g, %g", vDelta(1), vDelta(2), vDelta(3));
-    STATUS_LINE_MESSAGE( CString(strStatusLine));
+    STATUS_LINE_MESSAGE( strStatusLine);
   }
   // if we caught key or button down message
   else if(
@@ -3186,17 +3186,17 @@ BOOL CModelerView::PreTranslateMessage(MSG* pMsg)
       // nothing
       if( !bShift && !bAlt && !bControl && !bSpace && !bLMB && !bRMB)
       {
-        STATUS_LINE_MESSAGE( L"Try: Space, Ctrl+Space"); 
+        STATUS_LINE_MESSAGE( "Try: Space, Ctrl+Space"); 
       }
       // space
       else if( !bShift && !bAlt && !bControl && bSpace && !bLMB && !bRMB)
       {
-        STATUS_LINE_MESSAGE( L"Move with LMB, zoom with RMB, center with LMBx2. Try: Ctrl+Space");
+        STATUS_LINE_MESSAGE( "Move with LMB, zoom with RMB, center with LMBx2. Try: Ctrl+Space");
       }
       // ctrl+space
       else if( !bShift && !bAlt && bControl && bSpace && !bLMB && !bRMB)
       {
-        STATUS_LINE_MESSAGE( L"LMB zooms in, RMB zooms out");
+        STATUS_LINE_MESSAGE( "LMB zooms in, RMB zooms out");
       }
     }
     // model view mode
@@ -3206,27 +3206,27 @@ BOOL CModelerView::PreTranslateMessage(MSG* pMsg)
       if( !bShift && !bAlt && !bControl && !bSpace && !bLMB && !bRMB)
       {
         // nothing pressed
-        STATUS_LINE_MESSAGE( L"Try: Space, Ctrl+Space, Ctrl, Shift"); 
+        STATUS_LINE_MESSAGE( "Try: Space, Ctrl+Space, Ctrl, Shift"); 
       }
       // space
       else if( !bShift && !bAlt && !bControl && bSpace && !bLMB && !bRMB && !m_bMappingMode)
       {
-        STATUS_LINE_MESSAGE( L"LMB moves, RMB zoomes, LMB+RMB rotates viewer. Try: Ctrl+Space");
+        STATUS_LINE_MESSAGE( "LMB moves, RMB zoomes, LMB+RMB rotates viewer. Try: Ctrl+Space");
       }
       // ctrl+space
       else if( !bShift && !bAlt && bControl && bSpace && !bLMB && !bRMB && !m_bMappingMode)
       {
-        STATUS_LINE_MESSAGE( L"LMB zooms in, RMB zoomes out");
+        STATUS_LINE_MESSAGE( "LMB zooms in, RMB zoomes out");
       }
       // ctrl
       else if( !bShift && !bAlt && bControl && !bSpace && !bLMB && !bRMB && !m_bMappingMode)
       {
-        STATUS_LINE_MESSAGE( L"LMB moves, RMB zoomes, LMB+RMB rotates model");
+        STATUS_LINE_MESSAGE( "LMB moves, RMB zoomes, LMB+RMB rotates model");
       }
       // shift
       else if( bShift && !bAlt && !bControl && !bSpace && !bLMB && !bRMB && !m_bMappingMode)
       {
-        STATUS_LINE_MESSAGE( L"RMB zoomes, LMB+RMB rotates light");
+        STATUS_LINE_MESSAGE( "RMB zoomes, LMB+RMB rotates light");
       }
     }
   }
@@ -3311,7 +3311,7 @@ void CModelerView::OnRecreateTexture()
     ptdTextureToReload = _pTextureStock->Obtain_t( fnTextureName);
   }
   catch ( char *err_str) {
-    AfxMessageBox( CString(err_str));
+    AfxMessageBox( err_str);
     return;
   }    
   // reload the texture
@@ -3347,7 +3347,7 @@ void CModelerView::OnCreateMipModels()
 	char achrRestFrameFullPath[ PATH_MAX] = "";
 
   CModelerDoc* pDoc = GetDocument();
-  CTFileName fnModelName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnModelName = CTString(pDoc->GetPathName());
   CTFileName fnScriptName = fnModelName.FileDir() + fnModelName.FileName() + ".scr";
   try
   {
@@ -3460,8 +3460,7 @@ void CModelerView::OnCreateMipModels()
       // copy mapping from main mip model
       pDoc->m_emEditModel.SaveMapping_t( CTString("Temp\\ForAutoMipMapping.map"), 0);
       // paste mapping over all smaller mip models
-      INDEX iMipModel=1;
-      for( ; iMipModel<pDoc->m_emEditModel.edm_md.md_MipCt; iMipModel++)
+      for( INDEX iMipModel=1; iMipModel<pDoc->m_emEditModel.edm_md.md_MipCt; iMipModel++)
       {
         pDoc->m_emEditModel.LoadMapping_t( CTString("Temp\\ForAutoMipMapping.map"), iMipModel);
       }
@@ -3494,9 +3493,9 @@ void CModelerView::OnCreateMipModels()
   }
   catch( char *pStrError)
   {
-    // destroy progress window
+    // distroy progres window
     pMainFrame->m_NewProgress.DestroyWindow();
-    AfxMessageBox( CString(pStrError));
+    AfxMessageBox( pStrError);
   }
   pDoc->SelectMipModel( 0);
   pDoc->SelectSurface( 0, TRUE);
@@ -3533,7 +3532,7 @@ void CModelerView::OnPickVertex()
     sprintf( achrLine, "Vertex index = %d (%g, %g, %g)",
     iClosestVertex, vClosestVertex(1), vClosestVertex(2), vClosestVertex(3));
     CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd());
-    pMainFrame->m_wndStatusBar.SetPaneText( CLOSEST_SURFACE_PANE, CString(achrLine));
+    pMainFrame->m_wndStatusBar.SetPaneText( CLOSEST_SURFACE_PANE, achrLine);
   }
 }
 
@@ -3727,7 +3726,7 @@ void CModelerView::OnExportSurfaces()
 {
   CTFileName fnExportFileName = _EngineGUI.FileRequester( "Select export file name",
                             FILTER_TXT FILTER_END, "Open model directory",
-                            "Models\\", "", NULL, FALSE);
+                            "Data\\Models\\", "", NULL, FALSE);
   if( fnExportFileName == "") return;
 
   CModelerDoc* pDoc = GetDocument();
@@ -3779,7 +3778,7 @@ void CModelerView::OnWindowTogglemax()
 void CModelerView::OnExportForSkining() 
 {
   CModelerDoc* pDoc = GetDocument();
-  CTFileName fnDocName = CTString(CStringA(pDoc->GetPathName()));
+  CTFileName fnDocName = CTString(pDoc->GetPathName());
   CTFileName fnDirectory = fnDocName.FileDir();
   CTFileName fnDefaultSelected = fnDocName.FileName()+CTString(".tga");
 
@@ -3789,7 +3788,7 @@ void CModelerView::OnExportForSkining()
   }
   catch( char *str_err)
   {
-    AfxMessageBox( CString(str_err));
+    AfxMessageBox( str_err);
     return;
   }
 
@@ -3801,11 +3800,11 @@ void CModelerView::OnExportForSkining()
   if( fnExportName == "") return;
 
   CTFileName fnFullPath = _fnmApplicationPath+fnExportName;
-  if( GetFileAttributesA( fnFullPath) != -1)
+  if( GetFileAttributes( fnFullPath) != -1)
   {
     CTString strMsg;
-    strMsg.PrintF( "File \"%s\" already exist. Do you want to replace it?", fnFullPath);
-    if( ::MessageBoxA( this->m_hWnd, strMsg, "Warning !", MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON1|
+    strMsg.PrintF( "File \"%s\" allready exist. Do you want to replace it?", fnFullPath);
+    if( ::MessageBox( this->m_hWnd, strMsg, "Warning !", MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON1|
                MB_SYSTEMMODAL | MB_TOPMOST) != IDYES)
     {
       return;
@@ -3867,7 +3866,7 @@ void CModelerView::OnExportForSkining()
   }
   catch (char *strError)
   {
-    AfxMessageBox(CString(strError));
+    AfxMessageBox(strError);
   }
   
   _pGfx->DestroyWorkCanvas( pdp);

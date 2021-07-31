@@ -25,8 +25,8 @@ properties:
   
 
 components:
-  1 model   MODEL_MANAGER     "ModelsMP\\Editor\\TacticsChanger.mdl",
-  2 texture TEXTURE_MANAGER   "ModelsMP\\Editor\\TacticsChanger.tex"
+  1 editor model   MODEL_MANAGER     "Data\\ModelsMP\\Editor\\TacticsChanger.mdl",
+  2 editor texture TEXTURE_MANAGER   "Data\\ModelsMP\\Editor\\TacticsChanger.tex"
 
 functions:
   const CTString &GetDescription(void) const {

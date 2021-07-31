@@ -6,57 +6,29 @@
 
 #include <Engine/Base/Synchronization.h>
 #include <Engine/Templates/StaticStackArray.h>
-#include <Engine/Network/NetworkMessage.h>
+#include <Engine/Network/EMsgBuffer.h>
+#include <Engine/Network/Common.h>
+//#include <Engine/Network/NetworkMessage.h>
 #include <Engine/Network/PlayerTarget.h>
+#include <Engine/Network/CharacterTarget.h>
+#include <Engine/Network/MobTarget.h>
+#include <Engine/Network/PetTarget.h>
+#include <Engine/Network/SlaveTarget.h>
+#include <Engine/Network/ItemTarget.h>
 #include <Engine/Network/SessionSocket.h>
 #include <Engine/Base/Timer.h>
-
-#define DEBUG_SYNCSTREAMDUMPING 0
-
-#if DEBUG_SYNCSTREAMDUMPING
-  /* 
-   * Obtain valid session dump memory stream
-   */
-  CTMemoryStream *GetDumpStream(void);
-  /* 
-   * Clear session dump memory stream
-   */
-  void ClearDumpStream(void);
-#endif
-
-// checksum of world snapshot at given point in time - used for sync-checking
-class CSyncCheck {
-public:
-  TIME sc_tmTick;       // time of snapshot
-  INDEX sc_iSequence;   // sequence number last processed before this checksum
-  ULONG sc_ulCRC;       // checksum
-  INDEX sc_iLevel;  // checksum of level filename
-  CSyncCheck(void) { sc_tmTick = -1.0f; sc_iSequence = -1; sc_ulCRC = 0; sc_iLevel = 0; }
-  void Clear(void) { sc_tmTick = -1.0f; sc_iSequence = -1; sc_ulCRC = 0; sc_iLevel = 0; }
-};
-
-// info about an event that was predicted to happen
-class CPredictedEvent {
-public:
-  TIME pe_tmTick;
-  ULONG pe_ulEntityID;
-  ULONG pe_ulTypeID;
-  ULONG pe_ulEventID;
-
-  CPredictedEvent(void);
-  void Clear(void) {};
-};
+//0105
+#include <Engine/Network/Cmd.h>
+#include <Engine/GlobalDefinition.h>
 
 /*
  * Session state, manipulates local copy of the world
  */
 class ENGINE_API CSessionState {
 public:
-  CStaticArray<CPlayerTarget> ses_apltPlayers; // client targets for all players in game
-  CStaticStackArray<CPredictedEvent> ses_apeEvents; // for event prediction
+//  CStaticArray<CPlayerTarget> ses_apltPlayers; // client targets for all players in game
 
   CTString ses_strMOTD;               // MOTD as sent from the server
-  INDEX ses_iLevel;                   // for counting level changes
   INDEX ses_iLastProcessedSequence;   // sequence of last processed stream block
   CNetworkStream ses_nsGameStream;    // stream of blocks from server
 
@@ -68,9 +40,6 @@ public:
   TIME ses_tmInitializationTick2;     // tick when the session state was started
 
   TIME ses_tmLastProcessedTick;      // last tick when all actions were processed
-  TIME ses_tmPredictionHeadTick;     // newest tick that was ever predicted
-  TIME ses_tmLastSyncCheck;          // last time sync-check was generated
-  TIME ses_tmLastPredictionProcessed;  // for determining when to do a new prediction cycle
 
   INDEX ses_iMissingSequence;       // first missing sequence
   CTimerValue ses_tvResendTime;     // timer for missing sequence retransmission
@@ -80,26 +49,34 @@ public:
   TIME ses_tmLastDemoSequence;    // synchronization timer for demo playing
   ULONG ses_ulRandomSeed;         // seed for pseudo-random number generation
   ULONG ses_ulSpawnFlags;         // spawn flags for current game
-  TIME ses_tmSyncCheckFrequency;  // frequency of sync-checking
-  BOOL ses_iExtensiveSyncCheck;   // set if syncheck should be extensive - for debugging purposes
 
   BOOL ses_bKeepingUpWithTime;     // set if the session state is keeping up with the time
   TIME ses_tmLastUpdated;
   CListHead ses_lhRememberedLevels;   // list of remembered levels
   BOOL ses_bAllowRandom;            // set while random number generation is valid
-  BOOL ses_bPredicting;             // set if the game is currently doing prediction
   
   BOOL ses_bPause;      // set while game is paused
   BOOL ses_bWantPause;  // set while wanting to have paused
   BOOL ses_bGameFinished;  // set when game has finished
   BOOL ses_bWaitingForServer;        // wait for server after level change
   CTString ses_strDisconnected; // explanation of disconnection or empty string if not disconnected
+  UBYTE ses_ubNumLevelChanges; // number of server level changes
 
   INDEX ses_ctMaxPlayers; // maximum number of players allowed in game
   BOOL ses_bWaitAllPlayers; // if set, wait for all players to join before starting
   FLOAT ses_fRealTimeFactor;  // enables slower or faster time for special effects
-  CTMemoryStream *ses_pstrm;  // debug stream for sync check examination
-  
+
+  CEMsgBuffer     ses_embReceiveBuffer; // buffer used for receiving tick data from the server
+  CEntityMessage  ses_emEntityMessage;  // message object used to decode messages from the buffer
+  TIME            ses_tmLastTickTime;    // time of the last tick data block received
+  ULONG           ses_ulMsgId; // GORAN: temp - to be removed
+
+  // these variables are used for synchronisation with server time
+  double ses_dtmOldTickTime;     
+  double ses_dtmOldRealTime;
+  double ses_dtmAccumulatedDelta; // accumulated difference between server real time and server tick time (detects server stalls)
+  BOOL ses_bRestartLocalTime;     // resets the local time delta
+
   CSessionSocketParams ses_sspParams; // local copy of server-side parameters
 public:
   // network message waiters
@@ -132,50 +109,37 @@ public:
 
   // do physics for a game tick
   void HandleMovers(void);
+  // let the client move the entities around
+  void HandleMovers_client(void);
   // do thinking for a game tick
   void HandleTimers(TIME tmCurrentTick);
+  // do thinking for a game tick, on the client
+  void HandleClientTimers(TIME tmCurrentTick);
   // do a warm-up run of the world for a few ticks
   void WarmUpWorld(void);
   // reset random number generator (always randomizes to same sequence!)
   void ResetRND(void);
   /* Process a game tick. */
   void ProcessGameTick(CNetworkMessage &nmMessage, TIME tmCurrentTick);
-  /* Process a predicted game tick. */
-  void ProcessPredictedGameTick(INDEX iPredictionStep, FLOAT fFactor, TIME tmCurrentTick);
   /* Process a gamestream block. */
   void ProcessGameStreamBlock(CNetworkMessage &nmMessage);
   /* Process all eventual avaliable gamestream blocks. */
   void ProcessGameStream(void);
-  // flush prediction actions that were already processed
-  void FlushProcessedPredictions(void);
-  /* Find out how many prediction steps are currently pending. */
-  INDEX GetPredictionStepsCount(void);
-  /* Process all eventual avaliable prediction actions. */
-  void ProcessPrediction(void);
   /* Get number of active players. */
   INDEX GetPlayersCount(void);
-  /* Remember predictor positions of all players. */
-  void RememberPlayerPredictorPositions(void);
-  /* Get player position. */
-  const FLOAT3D &GetPlayerPredictorPosition(INDEX iPlayer);
+  // attach a player entity to this session 
+  void AddPlayer(INDEX iPlayerIndex,CPlayerCharacter &pcCharacter,ULONG &ulEntityID,ULONG &ulWeaponsID,ULONG &ulAnimatorID,INDEX iClient);
 
-  // check an event for prediction, returns true if already predicted
-  BOOL CheckEventPrediction(CEntity *pen, ULONG ulTypeID, ULONG ulEventID);
-
-  // make synchronization test message and send it to server (if client), or add to buffer (if server)
-  void MakeSynchronisationCheck(void);
-  // create a checksum value for sync-check
-  void ChecksumForSync(ULONG &ulCRC, INDEX iExtensiveSyncCheck);
-  // dump sync data to text file
-  void DumpSync_t(CTStream &strm, INDEX iExtensiveSyncCheck);  // throw char *
 
   /* Read session state information from a stream. */
-  void Read_t(CTStream *pstr);   // throw char *
-  void ReadWorldAndState_t(CTStream *pstr);   // throw char *
+  void Read_t(CTStream *pstr,BOOL bNetwork = FALSE);   // throw char *
+  void ReadState_t(CTStream *pstr);            // throw char *
+  void ReadWorldAndState_t(CTStream *pstr);    // throw char *
   void ReadRememberedLevels_t(CTStream *pstr);   // throw char *
   /* Write session state information into a stream. */
-  void Write_t(CTStream *pstr);  // throw char *
+  void Write_t(CTStream *pstr,BOOL bNetwork = FALSE);  // throw char *
   void WriteWorldAndState_t(CTStream *pstr);   // throw char *
+  void WriteState_t(CTStream *pstr);           // throw char *
   void WriteRememberedLevels_t(CTStream *pstr);   // throw char *
 
   // remember current level
@@ -187,15 +151,148 @@ public:
   // forget all remembered levels
   void ForgetOldLevels(void);
 
+  /* adjust local time for the remote client */
+  void AdjustLocalTime();
   /* Session state loop. */
   void SessionStateLoop(void);
-  /* Session sync dump functions. */
-  void DumpSyncToFile_t(CTStream &strm, INDEX iExtensiveSyncCheck); // throw char *
-#if DEBUG_SYNCSTREAMDUMPING
-  void DumpSyncToMemory(void);
-#endif
+ 
+  // demo playback tick data processing
+//  void RunDemoTick();
+  // extract an entity message from the buffer and process it
+  BOOL ReceiveMessage();
+  // get the tick data from a network message
+  void ReceiveTick(TIME tmTickTime,UBYTE* pubData,SLONG slSize);
+  // send an acknowledge for a recieved tick
+  void SendAcknowledge(TIME tmTickTime);
+
+//0105
+  void ProcessOneSentence(char *msg);
+  char* AnyOneArg(char *argument, char *first_arg);
+  void SkipSpaces(char **string);
+  void StartGame();
+  char		m_commIn[2048], m_commInTmp[1024], m_commOut[512], m_oneSentence[512];
+  CCmd		*m_pCmd;
+
+  void SwapItem( int tab, int row, int col, int tab2, int row2, int col2 );
+  
+  //0714 kwon
+  void ReceiveUIMessage(CNetworkMessage *istr);
+  void ReceiveStatMessage(CNetworkMessage *istr);
+  void ReceiveSkillMessage(CNetworkMessage *istr);
+  void ReceiveSSkillMessage(CNetworkMessage *istr);
+  void ReceiveQuickSlotMessage(CNetworkMessage *istr);
+  void ReceiveExchangeMessage(CNetworkMessage *istr);
+  void ReceiveDamageMessage(CNetworkMessage *istr);
+  void ReceiveAttackMessage(CNetworkMessage *istr);
+  void ReceiveItemMessage(CNetworkMessage *istr);
+  void ReceiveGoZoneMessage(CNetworkMessage *istr);
+  void ReceivePartyMessage(CNetworkMessage *istr);
+  void ReceiveInventoryMessage(CNetworkMessage *istr);
+  void ReceiveGmMessage(CNetworkMessage *istr);
+// [KH_070316] 변경 프리미엄 메모리 관련
+  void ReceiveMemPosMessage(UBYTE recvMSG, CNetworkMessage *istr);
+  void ReceiveGoToMessage(CNetworkMessage *istr);
+  void ReceiveMoveMessage(CNetworkMessage *istr);
+  void ReceiveStatusMessage(CNetworkMessage *istr);
+  void ReceiveAtMessage(CNetworkMessage *istr);
+  void ReceiveDisappearMessage(CNetworkMessage *istr);
+  void ReceiveAppearMessage(CNetworkMessage *istr);
+  
+  void ReceiveMobAppearMessage(CNetworkMessage *istr);			// Mob Appear
+  void ReceiveCharacterAppearMessage(CNetworkMessage *istr);	// Character Appear
+  void ReceivePetAppearMessage(CNetworkMessage *istr,BOOL isNew);
+  void ReceiveSummonAppearMessage(CNetworkMessage *istr);		// Summon Appear
+  void ReceiveWildPetAppearMessage(CNetworkMessage *istr);		// Wild Pet Appear
+  // 로그인 관련 메시지...
+  void ReceiveLoginMessage(CNetworkMessage *istr);
+  void ReceiveServerListMessage(CNetworkMessage *istr);
+  void ReceiveChatMessage(CNetworkMessage *istr);
+  void ReceiveNpcRegenMessage(CNetworkMessage *istr);
+  void ReceiveSystemMessage( CNetworkMessage *istr );
+  void ReceiveRebirthMessage( CNetworkMessage *istr );
+  void ReceiveEffectMessage( CNetworkMessage *istr );
+  void ReceiveEXPMessage( CNetworkMessage *istr );
+  
+  void ReceiveActionMessage( CNetworkMessage *istr );
+  void ReceiveQuestMessage(CNetworkMessage *istr);
+  
+  void ReceiveEnvMessage( CNetworkMessage *istr );//1013
+  void ReceiveMobStatusMessage( CNetworkMessage *istr );//1013
+  void ReceiveAssistMessage( CNetworkMessage *istr );
+  void ReceiveWarpMessage(CNetworkMessage *istr);
+  void ReceivePkMessage(CNetworkMessage *istr);
+  void ReceiveEventMessage(CNetworkMessage *istr);
+  void ReceivePersonalShopMessage(CNetworkMessage *istr);
+  void ReceiveLegitimateMessage(CNetworkMessage *istr);
+  void ReceiveWareHouseMessage(CNetworkMessage *istr);
+
+  void ReceiveGuildMessage(CNetworkMessage *istr);
+  void ReceiveTeachMessage(CNetworkMessage *istr);
+  void ReceiveChangeJobMessage(CNetworkMessage *istr);  
+  void ReceiveBillingMessage( CNetworkMessage *istr ); // Date : 2005-05-06(오후 9:20:21), By Lee Ki-hwan
+  void ReceiveMessengerMessage( CNetworkMessage *istr ); 
+  void ReceiveMessengerExMessage( CNetworkMessage *istr ); 
+  void ReceiveTradeAgentMessage( CNetworkMessage *istr ); //경매 시스템
+  //wooss 050818
+  void ReceiveExtendMessage(CNetworkMessage *istr);	//확장 메시지
+  void ReceiveFailMessage(CNetworkMessage *istr); // 실패 메시지 출력
+ 
+  // eons 061206
+  void ReceiveExHairChange(CNetworkMessage *istr); // 산타모자 관련( 헤어 변경 )
+  void ReceiveExPlayerStateChange(CNetworkMessage *istr); // 게임서포터 관련( 특정아이템 착용시 이펙트 적용 )
+// [KH_070413] 스승의날 이벤트 관련 추가
+  void ReceiveEventMaster(CNetworkMessage *istr);
+  ///////////////////////////////////////////////////////////////////////////////////
+
+  // WSS_NPROTECT 070402 ------------------------------->>
+ #ifndef NO_GAMEGUARD
+  void ReceiveExnProtect(CNetworkMessage *istr);
+ #endif
+  // ---------------------------------------------------<<
+  
+  void ReceivePetStatusMessage( CNetworkMessage *istr ); 
+  void ReceivePetMountMessage( CNetworkMessage *istr );
+  void ReceivePetLearnMessage( CNetworkMessage *istr );
+  void ReceivePetSkillListMessage( CNetworkMessage *istr );
+  void ReceivePetResetSkillMessage( CNetworkMessage *istr );
+  void ReceivePetSellInfoMessage( CNetworkMessage *istr );
+  void ReceivePetChangeMountMessage( CNetworkMessage *istr );
+  void ReceivePetLevelUpMessage( CNetworkMessage *istr );
+  void ReceviePetItemMixMessage( CNetworkMessage *istr ); // eons
+  void ReceviePetItemChangeMessage( CNetworkMessage *istr ); // eons
+  void ReceviePetRebirthMessage( CNetworkMessage *istr ); // eons
+  
+  void ReceivePartyRecall( CNetworkMessage *istr );  // wooss 060306
+  
+  void ReceiveElementalStatusMessage( CNetworkMessage *istr );
+  void ReceiveElementalDeleteMessage( CNetworkMessage *istr );
+  void ReceiveEvocationStart( CNetworkMessage *istr );
+  void ReceiveEvocationStop( CNetworkMessage *istr );
+  // [070613: Su-won] 펫 명찰 아이템 메시지 처리
+  void ReceiveExPetNameChange(CNetworkMessage *istr);
+
+  // [070824: Su-won] PET_COLOR_CHANGE
+  void ReceiveExPetColorChange(CNetworkMessage *istr);
+
+  void SetRecentServer(int iRecentGroup, int iRecentServer);
+  int GetRecentGroup()	{	return m_iRecentGroup;	}
+  int GetRecentServer()	{	return m_iRecentServer;	}
+
+  // EDIT : BS
+  void MoveOtherServer(ULONG zone, CTString ip, ULONG port);
+  // --- EDIT : BS
+  // 판매대행 상인
+  void ReceiveCashPersonShopMessage(CNetworkMessage *istr);
+
+  void ReceiveExWildPetMessage(UBYTE index, CNetworkMessage *istr);
+
+protected:
+	int		m_iRecentGroup;
+	int		m_iRecentServer;
 };
 
+BOOL PCStartEffectGroup(const char *szEffectGroupName, SLONG slPCIndex, CEntity *penPC = NULL, float fDelayTime=0.0f);
+BOOL ENGINE_API WildPetStartEffectGroup(const char *szEffectGroupName, SLONG slPetIndex, CEntity *penPet = NULL );
 
 #endif  /* include-once check. */
 

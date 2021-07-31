@@ -31,7 +31,7 @@ void CNameTable_TYPE::Clear(void)
   nt_antsSlots.Clear();
 }
 
-// internal finding
+// internal finding, returns pointer to the the item
 CNameTableSlot_TYPE *CNameTable_TYPE::FindSlot(ULONG ulKey, const CTString &strName)
 {
   ASSERT(nt_ctCompartments>0 && nt_ctSlotsPerComp>0);
@@ -62,6 +62,46 @@ CNameTableSlot_TYPE *CNameTable_TYPE::FindSlot(ULONG ulKey, const CTString &strN
   return NULL;
 }
 
+// internal finding, returns the index of the item in the nametable
+INDEX CNameTable_TYPE::FindSlotIndex(ULONG ulKey, const CTString &strName)
+{
+  ASSERT(nt_ctCompartments>0 && nt_ctSlotsPerComp>0);
+
+  // find compartment number
+  INDEX iComp = ulKey%nt_ctCompartments;
+  
+  // for each slot in the compartment
+  INDEX iSlot = iComp*nt_ctSlotsPerComp;
+  for(INDEX iSlotInComp=0; iSlotInComp<nt_ctSlotsPerComp; iSlotInComp++, iSlot++) {
+    CNameTableSlot_TYPE *pnts = &nt_antsSlots[iSlot];
+    // if empty
+    if (pnts->nts_ptElement==NULL) {
+      // skip it
+      continue;
+    }
+    // if it has same key
+    if (pnts->nts_ulKey==ulKey) {
+      // if it is same element
+      if (COMPARENAMES(pnts->nts_ptElement->GetName(), strName)) {
+        // return it
+        return iSlot;
+      }
+    }
+  }
+
+  // not found
+  return -1;
+}
+
+
+const CTString CNameTable_TYPE::GetNameFromIndex(INDEX iIndex)
+{
+  ASSERT(nt_ctCompartments>0 && nt_ctSlotsPerComp>0);
+  ASSERT(iIndex>=0 && iIndex<nt_ctCompartments*nt_ctSlotsPerComp);
+
+  return nt_antsSlots[iIndex].nts_ptElement->GetName();
+}
+
 /* Set allocation parameters. */
 void CNameTable_TYPE::SetAllocationParameters(
   INDEX ctCompartments, INDEX ctSlotsPerComp, INDEX ctSlotsPerCompStep)
@@ -85,6 +125,16 @@ TYPE *CNameTable_TYPE::Find(const CTString &strName)
   if (pnts==NULL) return NULL;
   return pnts->nts_ptElement;
 }
+
+
+// find an object by name, return it's index
+INDEX CNameTable_TYPE::FindIndex(const CTString &strName)
+{
+  ASSERT(nt_ctCompartments>0 && nt_ctSlotsPerComp>0);
+
+  return FindSlotIndex(strName.GetHash(), strName);
+}
+
 
 // expand the name table to next step
 void CNameTable_TYPE::Expand(void)

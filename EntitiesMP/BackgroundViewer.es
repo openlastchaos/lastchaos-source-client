@@ -1,9 +1,13 @@
 211
 %{
 #include "StdH.h"
+#include "EntitiesMP/WorldSettingsController.h"
 %}
 
 uses "EntitiesMP/Marker";
+
+event ESetViewer {
+};
 
 class CBackgroundViewer: CMarker {
 name      "Background Viewer";
@@ -15,8 +19,8 @@ properties:
   2 CEntityPointer m_penWorldSettingsController  "World settings controller" 'W',
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\Axis.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Axis.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Vector.tex"
 
 functions:
   // Validate offered target for one property
@@ -29,13 +33,18 @@ functions:
     // if gradient marker
     if( slPropertyOffset==offsetof(CBackgroundViewer, m_penWorldSettingsController))
     {
-      return IsOfClass(penTarget, "WorldSettingsController");
+      return IsOfClass( penTarget, &CWorldSettingsController_DLLClass);
     }
     return TRUE;
   }
 
   BOOL HandleEvent(const CEntityEvent &ee) {
     if (ee.ee_slEvent == EVENTCODE_EStart) {
+      if (_pNetwork->IsServer()) {
+        SendEvent(ESetViewer(),TRUE);
+      }
+      return TRUE;
+    } else if (ee.ee_slEvent == EVENTCODE_ESetViewer) {
       GetWorld()->SetBackgroundViewer(this);
       return TRUE;
     }

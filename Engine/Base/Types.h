@@ -7,17 +7,6 @@
 #include <Engine/Base/Base.h>
 #include <Engine/Graphics/gl_types.h>
 
-typedef signed long  int    SLONG;
-typedef signed short int    SWORD;
-typedef signed char	        SBYTE;
-typedef signed int          SINT;
-
-typedef unsigned long  int  ULONG;
-typedef unsigned short int  UWORD;
-typedef unsigned char       UBYTE;
-typedef unsigned int        UINT;
-
-
 #ifdef PLATFORM_UNIX  /* rcg10042001 */
     #define __forceinline inline
 
@@ -49,6 +38,18 @@ typedef unsigned int        UINT;
     } RECT;
 #endif
 
+typedef signed __int64     SQUAD;
+typedef signed long  int   SLONG;
+typedef signed short int   SWORD;
+typedef signed char	       SBYTE;
+typedef signed int         SINT;
+
+typedef unsigned __int64   UQUAD;
+typedef unsigned long  int ULONG;
+typedef unsigned short int UWORD;
+typedef unsigned char      UBYTE;
+typedef unsigned int       UINT;
+
 
 #define MAX_SLONG ((SLONG)0x7FFFFFFFL)
 #define MAX_SWORD ((UWORD)0x7FFF)
@@ -65,6 +66,11 @@ typedef unsigned int        UINT;
 #define MAX_ULONG ((ULONG)0xFFFFFFFFL)
 #define MAX_UWORD ((UWORD)0xFFFF)
 #define MAX_UBYTE ((UBYTE)0xFF)
+
+#define MAX_FLOAT  (+3E38f)
+#define MIN_FLOAT  (-3E38f)
+#define MAX_DOUBLE (+1E308)
+#define MIN_DOUBLE (-1E308)
 
 typedef int BOOL;		        // this is for TRUE/FALSE
 typedef long int RESULT;		// for error codes
@@ -99,15 +105,15 @@ typedef long int INDEX;     // for indexed values and quantities
 // standard types
 
 // simple types
-typedef SLONG   PIX;    // pixel coordinates
-typedef SLONG   TEX;    // texel coordinates
-typedef SLONG   MEX;    // texels in mip-level 0
-typedef float   FLOAT;
-typedef double  DOUBLE;
-typedef float   ANGLE;
-typedef float   TIME;
-typedef FLOAT   RANGE;
-typedef ULONG   COLOR;  // color is always in 32 bit true-color format
+typedef SLONG  PIX;    // pixel coordinates
+typedef SLONG  TEX;    // texel coordinates
+typedef SLONG  MEX;    // texels in mip-level 0
+typedef float  FLOAT;
+typedef double DOUBLE;
+typedef float  ANGLE;
+typedef float  TIME;
+typedef FLOAT  RANGE;
+typedef ULONG  COLOR;  // color is always in 32 bit true-color format
 
 // macros for windows/croteam true color conversion
 #define CLRF_CLR(clr) ( ((clr & 0xff000000) >> 24) | \
@@ -118,8 +124,8 @@ typedef ULONG   COLOR;  // color is always in 32 bit true-color format
                            ((clrref & 0x00ff0000) >>  8))
 
 // z-buffer depth constants
-#define ZBUF_FRONT  (0.0f)
-#define ZBUF_BACK   (1.0f)
+#define ZBUF_FRONT (0.0f)
+#define ZBUF_BACK  (1.0f)
 
 // alpha factor constants
 #define CT_OPAQUE      MAX_UBYTE
@@ -144,7 +150,12 @@ typedef ULONG   COLOR;  // color is always in 32 bit true-color format
 #define _TY412_    0xF000F000
 
 // some mexels constants
-#define MAX_MEX_LOG2 10
+// [070626: Su-won]
+// Attribute 맵 텍스쳐의 경우 때 텍스쳐의 크기가 2^10을 넘어가서
+// 에디터 상에서 텍스쳐를 나타낼 수 없어서 크기를 12로 늘림...
+//#define MAX_MEX_LOG2 10
+#define MAX_MEX_LOG2 12
+
 #define MIN_MEX_LOG2  0
 #define MAX_MEX     (1L<<MAX_MEX_LOG2)
 #define MIN_MEX     (1L<<MIN_MEX_LOG2)
@@ -155,21 +166,17 @@ typedef ULONG   COLOR;  // color is always in 32 bit true-color format
 
 #define ARRAYCOUNT(array) (sizeof(array)/sizeof((array)[0]))
 
-// sound volume constants
-#define SL_VOLUME_MIN (0.0f)
-#define SL_VOLUME_MAX (4.0f)
+inline DOUBLE FLOATtoDOUBLE(const FLOAT f)  { return DOUBLE(f); }
+inline FLOAT  DOUBLEtoFLOAT(const DOUBLE d) { return FLOAT(d);  }
 
-inline DOUBLE FLOATtoDOUBLE(const FLOAT f) { return DOUBLE(f); }
-inline FLOAT DOUBLEtoFLOAT(const DOUBLE d) { return FLOAT(d);  }
-
-inline float UpperLimit(float x) { return +3E38f; }
-inline float LowerLimit(float x) { return -3E38f; }
-inline double UpperLimit(double x) { return +1E308; }
-inline double LowerLimit(double x) { return -1E308; }
-inline SLONG UpperLimit(SLONG x) { return MAX_SLONG; }
-inline SLONG LowerLimit(SLONG x) { return MIN_SLONG; }
-inline SWORD UpperLimit(SWORD x) { return MAX_SWORD; }
-inline SWORD LowerLimit(SWORD x) { return MIN_SWORD; }
+inline DOUBLE UpperLimit(DOUBLE x) { return MAX_DOUBLE; }
+inline DOUBLE LowerLimit(DOUBLE x) { return MIN_DOUBLE; }
+inline FLOAT  UpperLimit(FLOAT x)  { return MAX_FLOAT;  }
+inline FLOAT  LowerLimit(FLOAT x)  { return MIN_FLOAT;  }
+inline SLONG  UpperLimit(SLONG x)  { return MAX_SLONG;  }
+inline SLONG  LowerLimit(SLONG x)  { return MIN_SLONG;  }
+inline SWORD  UpperLimit(SWORD x)  { return MAX_SWORD;  }
+inline SWORD  LowerLimit(SWORD x)  { return MIN_SWORD;  }
 
 // class predeclarations
 class CAnimData;
@@ -196,6 +203,8 @@ class CTerrain;
 class CTerrainTile;
 class CTerrainLayer;
 class CTerrainArchive;
+class CTerrainImp;
+class CTerrainLayerImp;
 class CCastRay;
 class CChangeable;
 class CChangeableRT;
@@ -228,6 +237,7 @@ class CLiveEntity;
 class CMesh;
 class CMessageDispatcher;
 class CModelInstance;
+class CModelInstanceSerial;
 class CModelObject;
 class CModelData;
 class CMovableBrushEntity;
@@ -268,6 +278,7 @@ class CShadingInfo;
 class CShadowMap;
 class CSimpleProjection3D;
 class CSimpleProjection3D_DOUBLE;
+class CShader;
 class CShadowMapMaker;
 class CShell;
 class CShellSymbol;
@@ -277,8 +288,6 @@ class CSoundData;
 class CSoundLibrary;
 class CSoundObject;
 class CSoundListener;
-class CSoundParameters;
-class CSoundParameters3D;
 class CSurfaceType;
 class CTCriticalSection;
 class CTextureData;
@@ -289,9 +298,11 @@ class CTMemoryStream;
 class CTSingleLock;
 class CTStream;
 class CTString;
+class CTWString;
 class CTimer;
 class CTimerHandler;
 class CTimerValue;
+class CTRect;
 class CObject3D;
 class CObjectSector;
 class CObjectPolygon;
@@ -305,6 +316,10 @@ class CWorkingVertex;
 class CWorkingPlane;
 class CWorkingEdge;
 class CWorld;
+
+struct GFXVertex;
+struct GFXColor;
+struct ShaderParams;
 
 // template class predeclarations
 template<class Type, int iOffset> class CListIter;
@@ -343,6 +358,7 @@ typedef Vector<FLOAT, 2>        FLOAT2D;
 typedef Vector<FLOAT, 3>        FLOAT3D;
 typedef Vector<DOUBLE, 2>       DOUBLE2D;
 typedef Vector<DOUBLE, 3>       DOUBLE3D;
+typedef Vector<PIX, 2>          CTPoint;
 
 // planes
 typedef Plane<FLOAT, 3>         FLOATplane3D;
@@ -368,6 +384,7 @@ typedef Matrix<FLOAT, 2, 2>     FLOATmatrix2D;
 typedef Matrix<FLOAT, 3, 3>     FLOATmatrix3D;
 typedef Matrix<DOUBLE, 3, 3>    DOUBLEmatrix3D;
 typedef FLOAT Matrix12[12];
+typedef FLOAT Matrix16[16];
 
 // quaternions
 typedef Quaternion<FLOAT>       FLOATquat3D;

@@ -4,6 +4,7 @@
 
 #define TYPE CSkeleton
 #define CStock_TYPE CStock_CSkeleton
+#define DESCRIPTION "CStock_CSkeleton"
 #define CNameTable_TYPE CNameTable_CSkeleton
 #define CNameTableSlot_TYPE CNameTableSlot_CSkeleton
 
@@ -11,6 +12,7 @@
 #include <Engine/Templates/Stock.cpp>
 
 #undef CStock_TYPE
+#undef DESCRIPTION
 #undef CNameTableSlot_TYPE
 #undef CNameTable_TYPE
 #undef TYPE

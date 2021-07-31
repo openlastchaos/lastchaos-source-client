@@ -43,6 +43,7 @@ typedef CTString CTStringTrans;
 // Classes and macros for defining entity properties
 
 #define EPROPF_HIDEINPERSPECTIVE    (1UL<<0)  // not visualized in perspective view (for ranges)
+#define EPROPF_NETSEND              (1UL<<1)  // send this property to clients over network when connecting
 
 class ENGINE_API CEntityProperty {
 public:
@@ -128,7 +129,12 @@ enum EntityComponentType {  // DO NOT RENUMBER!
   ECT_MODEL     = 2,    // model data
   ECT_CLASS     = 3,    // entity class
   ECT_SOUND     = 4,    // sound data
+  ECT_SKAMODEL  = 5,    // ska model
 };
+
+// Entity component flags (DO NOT RENUMBER!)
+#define CF_EDITOR (1UL<<1)
+
 
 class ENGINE_API CEntityComponent {
 public:
@@ -142,25 +148,34 @@ public:
 public:
   EntityComponentType ec_ectType;       // type of component
   ULONG ec_slID;      // component ID in this class
+  ULONG ec_ulFlags;   // component flags
 
   CTFileName ec_fnmComponent;  // component file name
 
   // this one is auto-filled by SCape on DLL initialization
   union { // pointer to component
-    CTextureData *ec_ptdTexture;      // for textures
-    CModelData   *ec_pmdModel;        // for models
-    CSoundData   *ec_psdSound;        // for sounds
-    CEntityClass *ec_pecEntityClass;  // for entity classes
+    CTextureData   *ec_ptdTexture;       // for textures
+    CModelData     *ec_pmdModel;         // for models
+    CSoundData     *ec_psdSound;         // for sounds
+    CEntityClass   *ec_pecEntityClass;   // for entity classes
+    CModelInstanceSerial *ec_pmisModelInstance; // for ska models
     void *ec_pvPointer;   // for comparison needs
   };
 
   // NOTE: This uses special EFNM initialization for CTFileName class!
   CEntityComponent(EntityComponentType ectType,
-    ULONG ulID, char *strEFNMComponent)
+    ULONG ulID, ULONG ulFlags, char *strEFNMComponent)
     : ec_ectType(ectType)
     , ec_slID(ulID)
+    , ec_ulFlags(ulFlags)
     , ec_fnmComponent(strEFNMComponent, 4) { ec_pvPointer = NULL; };
   CEntityComponent(void) { ec_slID = (ULONG) -1; ec_pvPointer = NULL; };
+};
+
+class ENGINE_API CDLLEntityEvent {
+public:
+  SLONG dee_slEvent;                // event code
+  CEntityEvent *(*dee_New)(void);   // pointer to function that creates an event of this type
 };
 
 /////////////////////////////////////////////////////////////////////
@@ -168,6 +183,9 @@ public:
 
 class ENGINE_API CDLLEntityClass {
 public:
+  CDLLEntityEvent **dec_adeeEvents; // array of events
+  INDEX dec_ctEvents;               // number of events
+
   CEntityProperty *dec_aepProperties; // array of properties
   INDEX dec_ctProperties;             // number of properties
 
@@ -209,6 +227,7 @@ public:
   class CEntityComponent *ComponentForPointer(void *pv);
   // precache given component
   void PrecacheModel(SLONG slID);
+  void PrecacheSkaModel(SLONG slID);
   void PrecacheTexture(SLONG slID);
   void PrecacheSound(SLONG slID);
   void PrecacheClass(SLONG slID, INDEX iUser = -1);
@@ -225,6 +244,8 @@ public:
 #define ENTITY_CLASSDEFINITION(classname, basename, descriptivename, iconfilename, id)\
   extern "C" DECLSPEC_DLLEXPORT CDLLEntityClass classname##_DLLClass; \
   CDLLEntityClass classname##_DLLClass = {                            \
+    classname##_events,                                               \
+    classname##_eventsct,                                             \
     classname##_properties,                                           \
     classname##_propertiesct,                                         \
     classname##_handlers,                                             \
@@ -249,12 +270,16 @@ public:
 #define ENTITY_CLASSDEFINITION_BASE(classname, id)                    \
   extern "C" DECLSPEC_DLLEXPORT CDLLEntityClass classname##_DLLClass; \
   CDLLEntityClass classname##_DLLClass = {                            \
-    NULL,0, NULL,0, NULL,0, "", "", id,                               \
+    NULL,0, NULL,0, NULL,0, NULL,0, "", "", id,                       \
     NULL, NULL,NULL,NULL,NULL, NULL,NULL,NULL,NULL                    \
   }
 
 inline ENGINE_API void ClearToDefault(FLOAT &f) { f = 0.0f; };
 inline ENGINE_API void ClearToDefault(INDEX &i) { i = 0; };
+inline ENGINE_API void ClearToDefault(UBYTE &ub) { ub = 0; };
+inline ENGINE_API void ClearToDefault(SBYTE &sb) { sb = 0; };
+inline ENGINE_API void ClearToDefault(UWORD &uw) { uw = 0; };
+inline ENGINE_API void ClearToDefault(SWORD &sw) { sw = 0; };
 inline ENGINE_API void ClearToDefault(BOOL &b) { b = FALSE; };
 inline ENGINE_API void ClearToDefault(CEntityPointer &pen) { pen = NULL; };
 inline ENGINE_API void ClearToDefault(CTString &str) { str = ""; };
@@ -263,6 +288,7 @@ inline ENGINE_API void ClearToDefault(FLOAT3D &v) { v = FLOAT3D(0,1,0); };
 inline ENGINE_API void ClearToDefault(COLOR &c) { c = 0xFFFFFFFF; };
 inline ENGINE_API void ClearToDefault(CModelData *&pmd) { pmd = NULL; };
 inline ENGINE_API void ClearToDefault(CTextureData *&pmt) { pmt = NULL; };
+inline ENGINE_API void ClearToDefault(CEntityID &peid) { peid.eid_ulEntityID = -1; };
 
 
 #endif  /* include-once check. */

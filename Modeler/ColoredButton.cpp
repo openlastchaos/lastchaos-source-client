@@ -145,7 +145,7 @@ void CColoredButton::OnClicked()
 {
   if( m_iColorIndex != -1) return;
   // colored button can call eather custom palette window for choosing colors (where variable
-  // to receive result color is pointed with _pcolColorToSet) eather trough MFC-provided
+  // to recieve result color is pointed with _pcolColorToSet) eather trough MFC-provided
   // color picker
   ASSERT( m_ptPickerType != PT_CUSTOM);
   COLORREF TmpColor = CLRF_CLR( m_colColor);
@@ -270,8 +270,8 @@ int CColoredButton::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const
   
   CTString strColor;
   strColor.PrintF( "HSV=(%d,%d,%d),   RGB=(%d,%d,%d),    Alpha=%d", ubH, ubS, ubV, ubR, ubG, ubB, ubA);
-  pTI->lpszText = (wchar_t *)malloc( sizeof(wchar_t) * (strlen(strColor)+1));
-  wcscpy( pTI->lpszText, CString(strColor));
+  pTI->lpszText = (char *)malloc( strlen(strColor)+1);
+  strcpy( pTI->lpszText, strColor);
   RECT rectToolTip;
   rectToolTip.left = 50;
   rectToolTip.right = 60;

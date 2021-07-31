@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine.vcproj", "{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		FinalDebug = FinalDebug
+		FinalRelease = FinalRelease
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.Debug.ActiveCfg = Debug|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.Debug.Build.0 = Debug|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.FinalDebug.ActiveCfg = FinalDebug|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.FinalDebug.Build.0 = FinalDebug|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.FinalRelease.ActiveCfg = FinalRelease|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.FinalRelease.Build.0 = FinalRelease|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.Release.ActiveCfg = Release|Win32
+		{1EFDCFE9-5039-4AF5-BDDE-540F28151AA9}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

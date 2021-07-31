@@ -17,6 +17,7 @@ extern INDEX con_iLastLines;
 extern BOOL con_bCapture = FALSE;
 extern CTString con_strCapture = "";
 
+static void(*_pPutTextCallback)(CTString strText) = NULL;
 
 // Constructor.
 CConsole::CConsole(void)
@@ -47,6 +48,26 @@ CConsole::~CConsole(void)
   }
 }
 
+// Create log for console if not allready created
+void CConsole::CreateLogFile(const CTFileName &fnmLog)
+{
+//안태훈 수정 시작	//(Block Log)(0.1)
+  if(con_fLog!=NULL) {
+    return;
+  }
+
+  BOOL bWriteStuffToLog = TRUE;
+
+  if(bWriteStuffToLog) {
+    // open console file
+    con_fLog = fopen(fnmLog, "wt");
+    if (con_fLog==NULL) {
+      FatalError("%s", strerror(errno));
+    }
+  }
+//안태훈 수정 끝	//(Block Log)(0.1)
+}
+
 // Initialize the console.
 void CConsole::Initialize(const CTFileName &fnmLog, INDEX ctCharsPerLine, INDEX ctLines)
 {
@@ -59,7 +80,7 @@ void CConsole::Initialize(const CTFileName &fnmLog, INDEX ctCharsPerLine, INDEX 
   con_ctLines        = ctLines;
   con_ctLinesPrinted = 0;
   // note: we add +1 for '\n' perline and +1 '\0' at the end of buffer
-  con_strBuffer = (char *)AllocMemory((ctCharsPerLine+1)*ctLines+1);
+  con_strBuffer = (char *)AllocMemory((ctCharsPerLine+2)*ctLines+1);
   con_strLineBuffer = (char *)AllocMemory(ctCharsPerLine+2); // includes '\n' and '\0'
   con_atmLines = (TIME*)AllocMemory((ctLines+1)*sizeof(TIME));
   // make it empty
@@ -73,12 +94,9 @@ void CConsole::Initialize(const CTFileName &fnmLog, INDEX ctCharsPerLine, INDEX 
   con_strLastLine = con_strBuffer+(ctCharsPerLine+1)*(ctLines-1);
   con_strCurrent = con_strLastLine;
 
-  // open console file
-  con_fLog = fopen(fnmLog, "wt");
-
-  if (con_fLog==NULL) {
-    FatalError("%s", strerror(errno));
-  }
+//안태훈 수정 시작	//(Block Log)(0.1)
+//  CreateLogFile(fnmLog);	//nProtect 로그파일 생성을 막는다.
+//안태훈 수정 끝	//(Block Log)(0.1)
 
   // print one dummy line on start
   CPrintF("\n");
@@ -111,22 +129,26 @@ void CConsole::DiscardLastLineTimes(void)
   }
 }
 
+
 // Get number of lines newer than given time
 INDEX CConsole::NumberOfLinesAfter(TIME tmLast)
 {
-  if (this==NULL) {
-    return 0;
-  }
+  // don't display last lines if no console or grabbing animation frames
+  extern INDEX dem_iAnimFrame;
+  if( this==NULL || dem_iAnimFrame>=0) return 0;
+
+
   // clamp console variable
   con_iLastLines = Clamp( con_iLastLines, 0L, (INDEX)CONSOLE_MAXLASTLINES);
   // find number of last console lines to be displayed on screen
-  for(INDEX i=0; i<con_iLastLines; i++) {
-    if (con_atmLines[con_ctLines-1-i]<tmLast) {
+  for( INDEX i=0; i<con_iLastLines; i++) {
+    if( con_atmLines[con_ctLines-1-i]<tmLast) {
       return i;
     }
   }
   return con_iLastLines;
 }
+
 
 // Get one of last lines
 CTString CConsole::GetLastLine(INDEX iLine)
@@ -201,10 +223,12 @@ void CConsole::PutString(const char *strString)
   // if in debug version, report it to output window
   _RPT1(_CRT_WARN, "%s", strString);
   // first append that string to the console output file
+//안태훈 수정 시작	//(Block Log)(0.1)
   if (con_fLog!=NULL) {
     fprintf(con_fLog, "%s", strString);
     fflush(con_fLog);
   }
+//안태훈 수정 끝	//(Block Log)(0.1)
   // if needed, append to capture string
   if (con_bCapture) {
     con_strCapture+=strString;
@@ -244,6 +268,9 @@ void CConsole::PutString(const char *strString)
     }
     // otherwise, add the char to buffer
     *con_strCurrent++ = c;
+  }
+  if(_pPutTextCallback!=NULL) {
+    _pPutTextCallback(strString);
   }
 }
 
@@ -322,4 +349,10 @@ INDEX CON_GetBufferSize(void)
     return 1;
   }
   return _pConsole->GetBufferSize();
+}
+
+
+extern void SetPutTextCallback(void(*pPutTextCallback)(CTString strText))
+{
+  _pPutTextCallback = pPutTextCallback;
 }

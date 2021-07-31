@@ -19,6 +19,8 @@ event EChangeAnim {
   BOOL  bAmbientLightLoop,
   COLOR colAmbient,
   COLOR colDiffuse,
+  CTString strAnimation,
+  FLOAT fBlendTime,
 };
 
 class CAnimationChanger : CRationalEntity {
@@ -41,9 +43,13 @@ properties:
   12 COLOR m_colAmbient      "Ambient Light Color" 'A' = C_dBLUE,
   13 COLOR m_colDiffuse      "Diffuse Light Color" 'C' = C_GRAY,
 
+  20 CTString m_strModelAnim    "Model Animation (SKA only)" = "",
+  21 FLOAT m_fBlendTime         "Blend Time (SKA only)" = 0.05f,
+
 components:
-  1 model   MODEL_CHANGER     "Models\\Editor\\AnimationChanger.mdl",
-  2 texture TEXTURE_CHANGER   "Models\\Editor\\AnimationChanger.tex"
+  1 editor model   MODEL_CHANGER     "Data\\Models\\Editor\\AnimationChanger.mdl",
+  2 editor texture TEXTURE_CHANGER   "Data\\Models\\Editor\\AnimationChanger.tex"
+
 
 functions:
   const CTString &GetDescription(void) const {
@@ -136,7 +142,9 @@ procedures:
         eChange.bLightLoop        =m_bLightLoop  ;
         eChange.colAmbient        =m_colAmbient  ;
         eChange.colDiffuse        =m_colDiffuse  ;
-        m_penTarget->SendEvent(eChange);
+        eChange.strAnimation      = m_strModelAnim;
+        eChange.fBlendTime        = m_fBlendTime  ;
+        m_penTarget->SendEvent(eChange,TRUE);
         resume;
       }
     }

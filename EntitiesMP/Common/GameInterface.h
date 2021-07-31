@@ -12,9 +12,10 @@ DECL_DLL extern void *ctl_pvPlayerControls;
 DECL_DLL extern const SLONG ctl_slPlayerControlsSize;
 // called to compose action packet from current controls
 DECL_DLL extern void ctl_ComposeActionPacket(const CPlayerCharacter &pc, CPlayerAction &paAction, BOOL bPreScan);
+DECL_DLL extern void CheckEntityVersion();
 
 // game sets this for player hud and statistics
-DECL_DLL extern INDEX plr_iHiScore;
+//DECL_DLL extern INDEX plr_iHiScore;
 
 // computer's declarations
 

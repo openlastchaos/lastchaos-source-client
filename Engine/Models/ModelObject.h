@@ -32,18 +32,19 @@ private:
   void RenderModel_Mask( CRenderModel &rm);
 
 public:
-  CTextureObject mo_toTexture;				   					// texture used for model rendering
-  CTextureObject mo_toReflection;				   	  		// texture used for reflection
-  CTextureObject mo_toSpecular;				   					// texture used for specularity
-  CTextureObject mo_toBump;   				   					// texture used for bump
-  FLOAT3D mo_Stretch;															// dynamic stretching vector, (usually 1,1,1)
-  ULONG mo_ColorMask;															// mask telling what parts (colors) are visible
-  INDEX mo_iLastRenderMipLevel;                   // last rendered mip model index remembered
-  COLOR mo_colBlendColor;													// dynamic blend color (alpha is applied)
-  CListHead mo_lhAttachments;                     // list of currently active attachment models
+  CTextureObject mo_toTexture;		  // texture used for model rendering
+  CTextureObject mo_toReflection;		// texture used for reflection
+  CTextureObject mo_toSpecular;			// texture used for specularity
+  CTextureObject mo_toBump;   			// texture used for bump
+  FLOAT3D mo_Stretch;								// dynamic stretching vector, (usually 1,1,1)
+  ULONG mo_ColorMask;								// mask telling what parts (colors) are visible
+  INDEX mo_iLastRenderMipLevel;     // last rendered mip model index remembered
+  COLOR mo_colBlendColor;						// dynamic blend color (alpha is applied)
+  CListHead mo_lhAttachments;       // list of currently active attachment models
+  BOOL mo_bSkipOcclusionTest;       // skip occlussion culling test (for weapons and selectors)
 
-	CModelObject(void);                             // default constructor
-	~CModelObject(void);                            // destructor
+	CModelObject(void);               // default constructor
+	~CModelObject(void);              // destructor
   // copy from another object of same class
   void Copy(CModelObject &moOther);
 

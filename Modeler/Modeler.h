@@ -126,7 +126,6 @@ public:
 	CChangeable m_chGlobal;
 
   CModelerApp();
-  ~CModelerApp();
 
 // Overrides
 	// ClassWizard generated virtual function overrides

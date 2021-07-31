@@ -10,7 +10,7 @@
 // display mode bit-depth
 enum DisplayDepth
 {
-  DD_NODEPTH = -1,
+  DD_NONE    = -1,
   DD_DEFAULT =  0,
   DD_16BIT   =  1,
   DD_32BIT   =  2,
@@ -32,11 +32,10 @@ public:
 
   // get depth string
   CTString DepthString(void) const;
-  // check if mode is dualhead
-  BOOL IsDualHead(void);
-  // check if mode is widescreen
+  // check if mode is dualhead, triplehead, widescreen or fullscreen
+  BOOL IsDualHead(  void);
+  BOOL IsTripleHead(void);
   BOOL IsWideScreen(void);
-  // check if mode is fullscreen
   BOOL IsFullScreen(void);
 };
 

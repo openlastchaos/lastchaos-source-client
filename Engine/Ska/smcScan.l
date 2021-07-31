@@ -20,8 +20,8 @@ int syywrap(void)
 // declarations for recursive SMC script parsing
 struct BufferStackEntry {
   YY_BUFFER_STATE bse_bs;
-  const char *bse_strName;
-  const char *bse_strContents;
+  char *bse_strName;
+  char *bse_strContents;
   int bse_iLineCt;
   BOOL bse_bParserEnd;
 };
@@ -33,8 +33,8 @@ void SMCPushBuffer(const char *strName, const char *strBuffer, BOOL bParserEnd)
 {
   _ibsBufferStackTop++;
 
-  _abseBufferStack[_ibsBufferStackTop].bse_strContents = strdup(strBuffer);
-  _abseBufferStack[_ibsBufferStackTop].bse_strName = strdup(strName);
+  _abseBufferStack[_ibsBufferStackTop].bse_strContents = StringDuplicate(strBuffer);
+  _abseBufferStack[_ibsBufferStackTop].bse_strName = StringDuplicate(strName);
   _abseBufferStack[_ibsBufferStackTop].bse_iLineCt = 1;
   _abseBufferStack[_ibsBufferStackTop].bse_bParserEnd = bParserEnd;
 
@@ -45,8 +45,8 @@ void SMCPushBuffer(const char *strName, const char *strBuffer, BOOL bParserEnd)
 BOOL SMCPopBuffer(void)
 {
   syy_delete_buffer( _abseBufferStack[_ibsBufferStackTop].bse_bs);
-  free((void*)_abseBufferStack[_ibsBufferStackTop].bse_strName);
-  free((void*)_abseBufferStack[_ibsBufferStackTop].bse_strContents);
+  StringFree(_abseBufferStack[_ibsBufferStackTop].bse_strName);
+  StringFree(_abseBufferStack[_ibsBufferStackTop].bse_strContents);
   BOOL bParserEnd = _abseBufferStack[_ibsBufferStackTop].bse_bParserEnd;
 
   _ibsBufferStackTop--;
@@ -106,8 +106,9 @@ EXP_FLT (({DIGIT}+("."({DIGIT}*)?)?)("E"|"e")("+"|"-")?{DIGIT}+)
 "ANIMSPEED"             { return(k_ANIMSPEED);}
 "COLOR"                 { return(k_COLOR);}
 "ALLFRAMESBBOX"         { return(k_ALLFRAMESBBOX);}
+"ANIMEFFECT"			{ return(k_ANIMEFFECT);}
 
-<INCLUDE>[ \t]*"\""      /* eat the whitespace */
+<INCLUDE>[ \t]*"TFNM"?[ \t]*"\""      /* eat the whitespace and optional TFNM*/
 <INCLUDE>[^"\""]*"\""   { /* got the include file name */
 
   if (SMCGetBufferStackDepth() >= SMC_MAX_INCLUDE_LEVEL) {

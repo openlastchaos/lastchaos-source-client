@@ -61,23 +61,6 @@ void CDynamicContainer<Type>::Add(Type *ptNewObject)
 }
 
 /*
- * Insert a given object to container at specified index.
- */
-template<class Type>
-void CDynamicContainer<Type>::Insert(Type *ptNewObject, const INDEX iPos/*=0*/)
-{
-  // get number of member that need moving and add new one
-  const INDEX ctMovees = CStaticStackArray<Type*>::Count() - iPos;
-  CStaticStackArray<Type*>::Push();
-  // move all members after insert position one place up
-  Type **pptInsertAt = this->sa_Array+iPos;
-  Type **pptMoveTo   = pptInsertAt +1;
-  memmove( pptMoveTo, pptInsertAt, sizeof(Type*)*ctMovees);
-  // store pointer to newly inserted member at specified position
-  *pptInsertAt = ptNewObject;
-}
-
-/*
  * Remove a given object from container.
  */
 template<class Type>
@@ -93,6 +76,7 @@ void CDynamicContainer<Type>::Remove(Type *ptOldObject)
   INDEX iMember=GetIndex(ptOldObject);
   // move last pointer here
   sa_Array[iMember]=sa_Array[Count()-1];
+  sa_Array[Count()-1] = NULL;
   Pop();
 }
 

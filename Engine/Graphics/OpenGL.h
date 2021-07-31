@@ -57,8 +57,22 @@ extern void  (__stdcall *pglFinishFenceNV)(GLuint fence);
 extern void  (__stdcall *pglGetFenceivNV)(GLuint fence, GLenum pname, GLint *params);
 
 // ATI GL_ATI[X]_pn_triangles
-extern void  (__stdcall *pglPNTrianglesiATI)( GLenum pname, GLint param);
-extern void  (__stdcall *pglPNTrianglesfATI)( GLenum pname, GLfloat param);
+extern void  (__stdcall *pglPNTrianglesiATI)(GLenum pname, GLint param);
+extern void  (__stdcall *pglPNTrianglesfATI)(GLenum pname, GLfloat param);
+
+// GL_NV_occlusion_query
+extern void (__stdcall *pglGenOcclusionQueriesNV)(GLsizei n, GLuint *ids);
+extern void (__stdcall *pglDeleteOcclusionQueriesNV)(GLsizei n, const GLuint *ids);
+extern void (__stdcall *pglBeginOcclusionQueryNV)(GLuint id);
+extern void (__stdcall *pglEndOcclusionQueryNV)(void);
+extern void (__stdcall *pglGetOcclusionQueryivNV)(GLuint id, GLenum pname, GLint *params);
+extern void (__stdcall *pglGetOcclusionQueryuivNV)(GLuint id, GLenum pname, GLuint *params);
+extern GLboolean (__stdcall *pglIsOcclusionQueryNV)(GLuint id);
+
+// some ARB texture compression functions
+extern void (__stdcall *pglCompressedTexImageARB)(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data);
+extern void (__stdcall *pglGetCompressedTexImageARB)(GLenum target, GLint lod, GLvoid *img);
+
 
 
 // additional tools -----------------------------------------------------
@@ -98,8 +112,6 @@ inline void glCOLOR( COLOR col)
 // check windows errors always
 extern void WIN_CheckError(BOOL bRes, const char *strDescription);
 #define WIN_CHECKERROR(result, string)   WIN_CheckError(result, string);
-
-extern BOOL glbUsingVARs;   // vertex_array_range
 
 // common textures
 extern GLuint _uiFillTextureNo;    // binding for flat fill emulator texture

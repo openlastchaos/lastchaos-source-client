@@ -26,6 +26,9 @@ enum EffectMarkerType {
  14 EMT_GLARE                     "Glare",                     // glare screen
 };
 
+event ENetTrigger {
+};
+
 %{
 extern void CBasicEffect_OnPrecache(CDLLEntityClass *pdec, INDEX iUser);
 %}
@@ -34,6 +37,7 @@ class CEffectMarker: CMarker
 {
 name      "Effect Marker";
 thumbnail "Thumbnails\\EffectMarker.tbn";
+features  "NotSentOverNet";
 
 properties:
 
@@ -56,8 +60,8 @@ properties:
 
 components:
 
-  1 model   MODEL_MARKER          "Models\\Editor\\Axis.mdl",
-  2 texture TEXTURE_MARKER        "Models\\Editor\\Vector.tex",
+  1 editor model   MODEL_MARKER          "Data\\Models\\Editor\\Axis.mdl",
+  2 editor texture TEXTURE_MARKER        "Data\\Models\\Editor\\Vector.tex",
   3 class   CLASS_EFFECTOR        "Classes\\Effector.ecl",
   4 class   CLASS_BASIC_EFFECT    "Classes\\BasicEffect.ecl",
 
@@ -83,10 +87,10 @@ functions:
       return FALSE;
     }
     // if should be modelobject
-    if( slPropertyOffset==offsetof(CEffectMarker, m_penModel) ||
-        slPropertyOffset==offsetof(CEffectMarker, m_penModel2) )
-    {
-      return IsOfClass(penTarget, "ModelHolder2");
+    if( slPropertyOffset==offsetof(CEffectMarker, m_penModel)
+     || slPropertyOffset==offsetof(CEffectMarker, m_penModel2)) {      
+      return( IsOfClass( penTarget, &CModelHolder2_DLLClass)
+           || IsOfClass( penTarget, &CModelHolder3_DLLClass));
     }
     return TRUE;
   }
@@ -122,6 +126,185 @@ functions:
           }
           break;
         }
+        case EMT_SHAKE_IT_BABY:
+        {
+          if (_pNetwork->IsServer()) {
+            SendEvent(ENetTrigger(),TRUE);
+          }
+          // ---------- Apply shake
+          CWorldSettingsController *pwsc = NULL;
+          // obtain bcg viewer
+          CBackgroundViewer *penBcgViewer = (CBackgroundViewer *) GetWorld()->GetBackgroundViewer();
+          if( penBcgViewer!=NULL && penBcgViewer->m_penWorldSettingsController!=NULL)
+          {
+            pwsc = (CWorldSettingsController *) &*penBcgViewer->m_penWorldSettingsController;
+            pwsc->m_tmShakeStarted = _pTimer->CurrentTick();
+            pwsc->m_vShakePos = GetPlacement().pl_PositionVector;
+            pwsc->m_fShakeFalloff = m_fShakeFalloff;
+            pwsc->m_fShakeFade = m_fShakeFade;
+            pwsc->m_fShakeIntensityZ = m_fShakeIntensityZ;
+            pwsc->m_tmShakeFrequencyZ = m_fShakeFrequencyZ;
+            pwsc->m_fShakeIntensityY = m_fShakeIntensityY;
+            pwsc->m_tmShakeFrequencyY = m_fShakeFrequencyY;
+            pwsc->m_fShakeIntensityB = m_fShakeIntensityB;
+            pwsc->m_tmShakeFrequencyB = m_fShakeFrequencyB;
+            pwsc->m_bShakeFadeIn = FALSE;
+          }
+          break;
+        }
+        case EMT_HIDE_ENTITY:
+        {
+          if (_pNetwork->IsServer()) {
+            SendEvent(ENetTrigger(),TRUE);
+          }
+          if( m_penTarget!=NULL)
+          {
+            m_penTarget->SetFlags(m_penTarget->GetFlags()|ENF_HIDDEN);
+          }
+          break;
+        }
+        case EMT_SHOW_ENTITY:
+        {
+          if (_pNetwork->IsServer()) {
+            SendEvent(ENetTrigger(),TRUE);
+          }
+          if( m_penTarget!=NULL)
+          {
+            m_penTarget->SetFlags(m_penTarget->GetFlags()&~ENF_HIDDEN);
+          }
+          break;
+        }
+        case EMT_PLAYER_APPEAR:
+           if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+
+            CModelObject *pmo = m_penModel->GetModelObject();
+            if( pmo != NULL) {
+              // spawn effect
+              CPlacement3D plFX= m_penModel->GetPlacement();
+              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
+              ESpawnEffector eSpawnFX;
+              eSpawnFX.tmLifeTime = m_tmEffectLife;
+              eSpawnFX.eetType = ET_PORTAL_LIGHTNING;
+              eSpawnFX.eidModel = m_penModel;
+              penFX->Initialize( eSpawnFX);
+            }
+          }
+          break;
+        case EMT_APPEARING_BIG_BLUE_FLARE:
+          {
+            // spawn effect
+            CPlacement3D plFX= GetPlacement();
+            CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
+            ESpawnEffector eSpawnFX;
+            eSpawnFX.tmLifeTime = m_tmEffectLife;
+            eSpawnFX.fSize = 1.0f;
+            eSpawnFX.eetType = ET_SIZING_BIG_BLUE_FLARE;
+            penFX->Initialize( eSpawnFX);
+            break;
+          }
+        case EMT_BLEND_MODELS:
+        if( (m_penModel !=NULL && IsOfClass( m_penModel,  &CModelHolder2_DLLClass) &&
+             m_penModel2!=NULL && IsOfClass( m_penModel2, &CModelHolder2_DLLClass)) ||
+            (m_penModel !=NULL && IsOfClass( m_penModel,  &CModelHolder3_DLLClass) &&
+             m_penModel2!=NULL && IsOfClass( m_penModel2, &CModelHolder3_DLLClass))) {
+          if( m_penEffector==NULL) {
+            CModelObject *pmo1 = m_penModel->GetModelObject();
+            CModelObject *pmo2 = m_penModel2->GetModelObject();
+            if( pmo1 != NULL && pmo2 != NULL) {
+              // spawn effect
+              CPlacement3D plFX= m_penModel->GetPlacement();
+              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
+              ESpawnEffector eSpawnFX;
+              eSpawnFX.tmLifeTime = m_tmEffectLife;
+              eSpawnFX.eetType = ET_MORPH_MODELS;
+              eSpawnFX.eidModel = m_penModel;
+              eSpawnFX.eidModel2 = m_penModel2;
+              penFX->Initialize( eSpawnFX);
+              m_penEffector = penFX;
+            }
+          }
+          else
+          {
+            if (_pNetwork->IsServer()) {
+              SendEvent(ENetTrigger(),TRUE);
+            }
+            m_penEffector->SendEvent(ETrigger());
+          }
+        }
+        break;
+        case EMT_DISAPPEAR_MODEL:
+        if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+          if( m_penEffector==NULL) {
+            CModelObject *pmo = m_penModel->GetModelObject();
+            if( pmo != NULL) {
+              // spawn effect
+              CPlacement3D plFX= m_penModel->GetPlacement();
+              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
+              ESpawnEffector eSpawnFX;
+              eSpawnFX.tmLifeTime = m_tmEffectLife;
+              eSpawnFX.eetType = ET_DISAPPEAR_MODEL;
+              eSpawnFX.eidModel = m_penModel;
+              penFX->Initialize( eSpawnFX);
+              m_penEffector = penFX;
+            }
+          } else {
+            m_penEffector->SendEvent(ETrigger());
+          }
+        }
+        break;
+        case EMT_APPEAR_MODEL:
+        if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+          if( m_penEffector==NULL) {
+            CModelObject *pmo = m_penModel->GetModelObject();
+            if( pmo != NULL) {
+              // spawn effect
+              CPlacement3D plFX= m_penModel->GetPlacement();
+              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
+              ESpawnEffector eSpawnFX;
+              eSpawnFX.tmLifeTime = m_tmEffectLife;
+              eSpawnFX.eetType = ET_APPEAR_MODEL;
+              eSpawnFX.eidModel = m_penModel;
+              penFX->Initialize( eSpawnFX);
+              m_penEffector = penFX;
+            }
+          } else {
+            m_penEffector->SendEvent(ETrigger());
+          }
+        }
+        break;
+        case EMT_BASIC_EFFECT:
+        {
+          // spawn effect
+          CPlacement3D plEffect = GetPlacement();
+          CEntityPointer penEffect = CreateEntity(plEffect, CLASS_BASIC_EFFECT);
+          ESpawnEffect eSpawnEffect;
+          eSpawnEffect.colMuliplier = C_WHITE|CT_OPAQUE;
+          eSpawnEffect.betType = m_betType;
+          eSpawnEffect.vStretch = FLOAT3D(m_fStretch,m_fStretch,m_fStretch);
+          penEffect->Initialize(eSpawnEffect);
+        }
+        break;
+        case EMT_GLARE:
+        CWorldSettingsController *pwsc = GetWSC(this);
+        if (pwsc!=NULL)
+        {
+          pwsc->m_colGlade=m_colColor;
+          pwsc->m_tmGlaringStarted = _pTimer->CurrentTick();
+          pwsc->m_tmGlaringEnded = pwsc->m_tmGlaringStarted+m_tmEffectLife,
+          pwsc->m_fGlaringFadeInRatio = 0.2f;
+          pwsc->m_fGlaringFadeOutRatio = 0.7f;
+        }
+        break;
+      }
+    } 
+    else if (ee.ee_slEvent==EVENTCODE_ENetTrigger)
+    {
+      if (_pNetwork->IsServer()) {
+        return TRUE;
+      }
+
+      switch(m_emtType)
+      {
         case EMT_SHAKE_IT_BABY:
         {
           // ---------- Apply shake
@@ -161,125 +344,36 @@ functions:
           }
           break;
         }
-        case EMT_PLAYER_APPEAR:
-          if( m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2") )
-          {
-            CModelObject *pmo = m_penModel->GetModelObject();
-            if( pmo != NULL) 
-            {
-              // spawn effect
-              CPlacement3D plFX= m_penModel->GetPlacement();
-              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
-              ESpawnEffector eSpawnFX;
-              eSpawnFX.tmLifeTime = m_tmEffectLife;
-              eSpawnFX.eetType = ET_PORTAL_LIGHTNING;
-              eSpawnFX.penModel = m_penModel;
-              penFX->Initialize( eSpawnFX);
+        case EMT_BLEND_MODELS:
+        {
+          if( (m_penModel !=NULL && IsOfClass(m_penModel,  &CModelHolder2_DLLClass) &&
+               m_penModel2!=NULL && IsOfClass(m_penModel2, &CModelHolder2_DLLClass)) ||
+              (m_penModel !=NULL && IsOfClass(m_penModel,  &CModelHolder3_DLLClass) &&
+               m_penModel2!=NULL && IsOfClass(m_penModel2, &CModelHolder3_DLLClass))) {
+            if( m_penEffector!=NULL) {
+             m_penEffector->SendEvent(ETrigger());
             }
           }
           break;
-        case EMT_APPEARING_BIG_BLUE_FLARE:
-          {
-            // spawn effect
-            CPlacement3D plFX= GetPlacement();
-            CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
-            ESpawnEffector eSpawnFX;
-            eSpawnFX.tmLifeTime = m_tmEffectLife;
-            eSpawnFX.fSize = 1.0f;
-            eSpawnFX.eetType = ET_SIZING_BIG_BLUE_FLARE;
-            penFX->Initialize( eSpawnFX);
-            break;
-          }
-        case EMT_BLEND_MODELS:
-        if(m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2") &&
-           m_penModel2!=NULL && IsOfClass(m_penModel2, "ModelHolder2") )
-        {
-          if( m_penEffector == NULL)
-          {
-            CModelObject *pmo1 = m_penModel->GetModelObject();
-            CModelObject *pmo2 = m_penModel2->GetModelObject();
-            if( pmo1 != NULL && pmo2 != NULL)
-            {
-              // spawn effect
-              CPlacement3D plFX= m_penModel->GetPlacement();
-              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
-              ESpawnEffector eSpawnFX;
-              eSpawnFX.tmLifeTime = m_tmEffectLife;
-              eSpawnFX.eetType = ET_MORPH_MODELS;
-              eSpawnFX.penModel = m_penModel;
-              eSpawnFX.penModel2 = m_penModel2;
-              penFX->Initialize( eSpawnFX);
-              m_penEffector = penFX;
-            }
-          }
-          else
-          {
-            m_penEffector->SendEvent(ETrigger());
-          }
         }
-        break;
         case EMT_DISAPPEAR_MODEL:
-        if(m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2"))
         {
-          if( m_penEffector == NULL)
-          {
-            CModelObject *pmo = m_penModel->GetModelObject();
-            if( pmo != NULL)
-            {
-              // spawn effect
-              CPlacement3D plFX= m_penModel->GetPlacement();
-              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
-              ESpawnEffector eSpawnFX;
-              eSpawnFX.tmLifeTime = m_tmEffectLife;
-              eSpawnFX.eetType = ET_DISAPPEAR_MODEL;
-              eSpawnFX.penModel = m_penModel;
-              penFX->Initialize( eSpawnFX);
-              m_penEffector = penFX;
+          if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+            if( m_penEffector!=NULL) {
+             m_penEffector->SendEvent(ETrigger());
             }
           }
-          else
-          {
-            m_penEffector->SendEvent(ETrigger());
-          }
+          break;
         }
-        break;
         case EMT_APPEAR_MODEL:
-        if(m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2"))
         {
-          if( m_penEffector == NULL)
-          {
-            CModelObject *pmo = m_penModel->GetModelObject();
-            if( pmo != NULL)
-            {
-              // spawn effect
-              CPlacement3D plFX= m_penModel->GetPlacement();
-              CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
-              ESpawnEffector eSpawnFX;
-              eSpawnFX.tmLifeTime = m_tmEffectLife;
-              eSpawnFX.eetType = ET_APPEAR_MODEL;
-              eSpawnFX.penModel = m_penModel;
-              penFX->Initialize( eSpawnFX);
-              m_penEffector = penFX;
+          if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+            if( m_penEffector!=NULL) {
+             m_penEffector->SendEvent(ETrigger());
             }
           }
-          else
-          {
-            m_penEffector->SendEvent(ETrigger());
-          }
+          break;
         }
-        break;
-        case EMT_BASIC_EFFECT:
-        {
-          // spawn effect
-          CPlacement3D plEffect = GetPlacement();
-          CEntityPointer penEffect = CreateEntity(plEffect, CLASS_BASIC_EFFECT);
-          ESpawnEffect eSpawnEffect;
-          eSpawnEffect.colMuliplier = C_WHITE|CT_OPAQUE;
-          eSpawnEffect.betType = m_betType;
-          eSpawnEffect.vStretch = FLOAT3D(m_fStretch,m_fStretch,m_fStretch);
-          penEffect->Initialize(eSpawnEffect);
-        }
-        break;
         case EMT_GLARE:
         CWorldSettingsController *pwsc = GetWSC(this);
         if (pwsc!=NULL)
@@ -292,24 +386,24 @@ functions:
         }
         break;
       }
+      return TRUE;
     }
     else if (ee.ee_slEvent==EVENTCODE_EActivate)
     {
       switch(m_emtType)
       {
         case EMT_APPEAR_DISAPPEAR:
-        if(m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2"))
-        {
+         if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+
           CModelObject *pmo = m_penModel->GetModelObject();
-          if( pmo != NULL)
-          {
+          if( pmo != NULL) {
             // spawn effect
             CPlacement3D plFX= m_penModel->GetPlacement();
             CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
             ESpawnEffector eSpawnFX;
             eSpawnFX.tmLifeTime = m_tmEffectLife;
             eSpawnFX.eetType = ET_APPEAR_MODEL_NOW;
-            eSpawnFX.penModel = m_penModel;
+            eSpawnFX.eidModel = m_penModel;
             penFX->Initialize( eSpawnFX);
             m_penEffector = penFX;
           }
@@ -322,18 +416,17 @@ functions:
       switch(m_emtType)
       {
         case EMT_APPEAR_DISAPPEAR:
-        if(m_penModel!=NULL && IsOfClass(m_penModel, "ModelHolder2"))
-        {
+         if( m_penModel!=NULL && IsOfClass( m_penModel, &CModelHolder2_DLLClass)) {
+
           CModelObject *pmo = m_penModel->GetModelObject();
-          if( pmo != NULL)
-          {
+          if( pmo != NULL) {
             // spawn effect
             CPlacement3D plFX= m_penModel->GetPlacement();
             CEntity *penFX = CreateEntity( plFX, CLASS_EFFECTOR);
             ESpawnEffector eSpawnFX;
             eSpawnFX.tmLifeTime = m_tmEffectLife;
             eSpawnFX.eetType = ET_DISAPPEAR_MODEL_NOW;
-            eSpawnFX.penModel = m_penModel;
+            eSpawnFX.eidModel = m_penModel;
             penFX->Initialize( eSpawnFX);
             m_penEffector = penFX;
           }
@@ -352,6 +445,10 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+
+    SetFlagOn(ENF_MARKDESTROY);
+    SetFlagOn(ENF_NONETCONNECT);
+    SetFlagOff(ENF_PROPSCHANGED);
 
     // set appearance
     SetModel(MODEL_MARKER);

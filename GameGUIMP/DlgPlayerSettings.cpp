@@ -131,7 +131,7 @@ void CDlgPlayerSettings::OnEditControls()
     INDEX iSelectedControls = m_listAvailableControls.GetCurSel();
     ASSERT( iSelectedControls != LB_ERR);
     CTFileName fnControlsName;
-    fnControlsName.PrintF( "Controls\\Controls%d.ctl", iSelectedControls);
+//    fnControlsName.PrintF( "Controls\\Controls%d.ctl", iSelectedControls);
     // load it from the file
     ctrlControls.Load_t( fnControlsName);
     

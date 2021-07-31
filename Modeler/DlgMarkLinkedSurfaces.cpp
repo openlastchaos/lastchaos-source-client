@@ -73,7 +73,7 @@ BOOL CDlgMarkLinkedSurfaces::OnInitDialog()
     MappingSurface &ms = mmi.mmpi_MappingSurfaces[ iSurface];
     CTString strListEntry;
     strListEntry.PrintF("%.02d %s (%d)", iSurface, ms.ms_Name, ms.ms_aiPolygons.Count());
-    int iAddedAs = m_listSurfaces.AddString( CString(strListEntry));
+    int iAddedAs = m_listSurfaces.AddString( strListEntry);
     m_listSurfaces.SetItemData( iAddedAs, (ULONG) &ms);
     if( ms.ms_ulRenderingFlags&SRF_SELECTED) m_listSurfaces.SetCheck( iAddedAs, 1);
     else m_listSurfaces.SetCheck( iAddedAs, 0);

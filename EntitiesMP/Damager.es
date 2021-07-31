@@ -19,8 +19,8 @@ properties:
  11 FLOAT m_tmLastDamage = 0.0f,
 
 components:
-  1 model   MODEL_TELEPORT     "Models\\Editor\\Copier.mdl",
-  2 texture TEXTURE_TELEPORT   "Models\\Editor\\Copier.tex",
+  1 editor model   MODEL_TELEPORT     "Data\\Models\\Editor\\Copier.mdl",
+  2 editor texture TEXTURE_TELEPORT   "Data\\Models\\Editor\\Copier.tex",
 
 functions:
   const CTString &GetDescription(void) const {

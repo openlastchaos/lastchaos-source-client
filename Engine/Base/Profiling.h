@@ -80,8 +80,7 @@ public:
   /* Constructor for profile form with given number of counters and timers.
    * NOTE: Reset() must be called on a profile form before using it!
    */
-  CProfileForm(const CTString &strTitle, const CTString &strAveragingUnits,
-    INDEX ctCounters, INDEX ctTimers);
+  CProfileForm(const CTString &strTitle, const CTString &strAveragingUnits, INDEX ctCounters, INDEX ctTimers);
   void Clear(void);
 
   // set/test profiling activation flag
@@ -91,6 +90,10 @@ public:
   // Measure profiling errors and set epsilon corrections.
   static void CalibrateProfilingTimers(void);
 
+  /* Get current value of a counter. */
+  INDEX GetCounterCount(INDEX iCounter);
+
+#if TIMER_PROFILING
   /* Increment averaging counter by given count. */
   inline void IncrementAveragingCounter(INDEX ctAdd=1) {
     pf_ctAveragingCounter += ctAdd;
@@ -100,10 +103,7 @@ public:
   inline void IncrementCounter(INDEX iCounter, INDEX ctAdd=1) {
     pf_apcCounters[iCounter].pc_ctCount += ctAdd;
   };
-  /* Get current value of a counter. */
-  INDEX GetCounterCount(INDEX iCounter);
 
-#if TIMER_PROFILING
   /* Start a timer. */
   inline void StartTimer(INDEX iTimer) {
     StartTimer_internal(iTimer);
@@ -131,6 +131,9 @@ public:
   #define SETTIMERNAME(a,b,c) SetTimerName_internal(a,b,c)
 
 #else //TIMER_PROFILING
+
+  inline void IncrementAveragingCounter(INDEX ctAdd=1) {};
+  inline void IncrementCounter(INDEX iCounter, INDEX ctAdd=1) {};
   inline void StartTimer(INDEX iTimer) {};
   inline void StopTimer(INDEX iTimer) {};
   inline void IncrementTimerAveragingCounter(INDEX iTimer, INDEX ctAdd=1) {};
@@ -138,6 +141,7 @@ public:
   inline void SetTimerName_internal(INDEX iTimer, const CTString &strName, const CTString &strAveragingName) {};
   #define SETCOUNTERNAME(a,b) SetCounterName_internal(a,"")
   #define SETTIMERNAME(a,b,c) SetTimerName_internal(a,"","")
+
 #endif
 
   /* Get current value of a timer in seconds or in percentage of module time. */
@@ -154,26 +158,16 @@ public:
 #endif // ENGINE_INTERNAL
 
   /* Reset all profiling values. */
-  ENGINE_API void  Reset(void);
+  ENGINE_API void Reset(void);
 
   /* Report profiling results. */
   ENGINE_API void Report(CTString &strReport);
 };
 
-// profile form for profiling gfx
-ENGINE_API extern CProfileForm &_pfGfxProfile;
-// profile form for profiling model rendering
-ENGINE_API extern CProfileForm &_pfModelProfile;
-// profile form for profiling sound
-ENGINE_API extern CProfileForm &_pfSoundProfile;
 // profile form for profiling network
 ENGINE_API extern CProfileForm &_pfNetworkProfile;
-// profile form for profiling rendering
-ENGINE_API extern CProfileForm &_pfRenderProfile;
 // profile form for profiling world editing
 ENGINE_API extern CProfileForm &_pfWorldEditingProfile;
-// profile form for profiling phisics
-ENGINE_API extern CProfileForm &_pfPhysicsProfile;
 
 
 #endif  /* include-once check. */

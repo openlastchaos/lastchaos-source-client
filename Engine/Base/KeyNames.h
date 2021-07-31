@@ -218,5 +218,9 @@
 #define CID_JOY_POV_S        46
 #define CID_JOY_POV_W        47
 
+
+// virtual keys left out from windows.h
+#define _VK_TILDE 192
+
 #endif  /* include-once check. */
 

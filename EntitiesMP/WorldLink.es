@@ -20,11 +20,11 @@ properties:
   1 CTString m_strGroup           "Group" 'G' = "",
   2 CTFileNameNoDep m_strWorld    "World" 'W' = "",
   3 BOOL m_bStoreWorld            "Store world" 'S' = FALSE,
-  4 enum WorldLinkType m_EwltType "Type" 'Y' = WLT_RELATIVE,
+  4 enum WorldLinkType m_EwltType "Type" 'Y' = WLT_FIXED,
 
 components:
-  1 model   MODEL_WORLDLINK     "Models\\Editor\\WorldLink.mdl",
-  2 texture TEXTURE_WORLDLINK   "Models\\Editor\\WorldLink.tex"
+  1 editor model   MODEL_WORLDLINK     "Data\\Models\\Editor\\WorldLink.mdl",
+  2 editor texture TEXTURE_WORLDLINK   "Data\\Models\\Editor\\WorldLink.tex"
 
 
 functions:

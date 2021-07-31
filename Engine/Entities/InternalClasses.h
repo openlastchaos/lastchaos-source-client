@@ -19,6 +19,11 @@
 #include <Engine/Classes/MovableModelEntity.h>
 #include <Engine/Classes/MovableBrushEntity.h>
 #include <Engine/Classes/PlayerEntity.h>
+
+#define MF_MOVEZ    (1L<<0)
+#define MF_ROTATEH  (1L<<1)
+#define MF_MOVEXZY  (1L<<2)
+
 #undef DECL_DLL
 
 

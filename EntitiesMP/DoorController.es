@@ -2,10 +2,14 @@
 %{
 #include "StdH.h"
 #include <Engine/CurrentVersion.h>
+#include <Engine/Interface/UIManager.h>
+
+#define CHECK_MIN_ENEMY		5
 %}
 
-uses "EntitiesMP/KeyItem";
+//uses "EntitiesMP/KeyItem";
 uses "EntitiesMP/Player";
+uses "EntitiesMP/MovingBrush";
 
 enum DoorType {
   0 DT_AUTO       "Auto",       // opens automatically
@@ -32,18 +36,22 @@ properties:
   8 enum DoorType m_dtType      "Type" 'Y' = DT_AUTO,
   9 CTStringTrans m_strLockedMessage "Locked message" 'L' = "",
   13 CEntityPointer m_penLockedTarget  "Locked target" COLOR(C_dMAGENTA|0xFF),   // target to trigger when locked
-  12 enum KeyItemType m_kitKey  "Key" 'K' = KIT_BOOKOFWISDOM,  // key type (for locked door)
   14 BOOL m_bTriggerOnAnything "Trigger on anything" = FALSE,
   15 BOOL m_bActive "Active" 'A' = TRUE,    // automatic door function can be activated/deactivated
 
   10 BOOL m_bLocked = FALSE,  // for lock/unlock door
   11 CEntityPointer m_penCaused,    // for trigger relaying
+//강동민 수정 시작 다중 공격 작업	08.27
+  17 BOOL m_bOpened	"Opened?"	= FALSE,
+  18 INDEX	m_iOpenMobNum		"Mob Count"	= 1,			// 문을 열때 몹이 몇마리 이하 남아있어야 하는가?
+  20 INDEX	m_iMaxCheckPoint	"Max Check Point"	= 0,	// MAX CHECK POINT
+//강동민 수정 끝 다중 공격 작업		08.27
 
 
 components:
 
-  1 model   MODEL_DOORCONTROLLER     "Models\\Editor\\DoorController.mdl",
-  2 texture TEXTURE_DOORCONTROLLER   "Models\\Editor\\DoorController.tex",
+  1 model   MODEL_DOORCONTROLLER     "Data\\Models\\Editor\\DoorController.mdl",
+  2 editor texture TEXTURE_DOORCONTROLLER   "Data\\Models\\Editor\\DoorController.tex",
 
 
 functions:
@@ -64,6 +72,14 @@ functions:
     return m_strDescription;
   }
 
+//강동민 수정 시작 다중 공격 작업	08.27
+  virtual void Read_t( CTStream *istr, BOOL bNetwork)
+  {
+	CRationalEntity::Read_t(istr,bNetwork);
+	// 공선전 지역 문을 월드 로드시에 열어 둔다.(월드 에디터에서 열어 둠)
+  }
+//강동민 수정 끝 다중 공격 작업		08.27
+
   // test if this door reacts on this entity
   BOOL CanReactOnEntity(CEntity *pen)
   {
@@ -75,7 +91,7 @@ functions:
       return FALSE;
     }
 
-    if (m_bPlayersOnly && !IsDerivedFromClass(pen, "Player")) {
+    if (m_bPlayersOnly && !IsDerivedFromClass(pen, &CPlayer_DLLClass)) {
       return FALSE;
     }
 
@@ -90,12 +106,76 @@ functions:
 
   void TriggerDoor(void)
   {
-    if (m_penTarget1!=NULL) {
-      SendToTarget(m_penTarget1, EET_TRIGGER, m_penCaused);
-    }
-    if (m_penTarget2!=NULL) {
-      SendToTarget(m_penTarget2, EET_TRIGGER, m_penCaused);
-    }
+		//m_bOpened = !m_bOpened;
+		// 왼쪽문과 오른쪽 문에 이벤트를 보내줌.
+		if (m_penTarget1!=NULL) 
+		{
+			//m_penTarget1->SetPhysicsFlags(EPF_MOVABLE | GetPhysicsFlags());
+			//SendToTarget(m_penTarget1, EET_TRIGGER, m_penCaused);			
+			// 메라크 공성 지역일때는...
+			if(g_slZone == 7 )
+			{					
+				if( ((CMovingBrush*)(CEntity*)m_penTarget1)->m_penTarget )
+				{
+					((CMovingBrush*)(CEntity*)m_penTarget1)->m_bForceStop		= TRUE;					
+					((CMovingBrush*)(CEntity*)m_penTarget1)->m_bMoveToMarker	= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget1)->m_bStopMoving		= TRUE;
+					((CMovingBrush*)(CEntity*)m_penTarget1)->m_bMoving			= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget1)->m_bRotating		= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget1)->SetDesiredTranslation(FLOAT3D(0.0f, 0.0f, 0.0f));
+					((CMovingBrush*)(CEntity*)m_penTarget1)->SetDesiredRotation(FLOAT3D(0.0f, 0.0f, 0.0f));
+					
+					if( !m_bOpened )
+					{
+						CEntity* penTarget = ((CMovingBrush*)(CEntity*)m_penTarget1)->m_penTarget->GetTarget();						
+						m_penTarget1->SetPlacement( penTarget->en_plPlacement );
+					}
+					else
+					{
+						CEntity* penTargetTemp = ((CMovingBrush*)(CEntity*)m_penTarget1)->m_penTarget->GetTarget();						
+						CEntity* penTarget = ((CMovingBrushMarker*)(CEntity*)penTargetTemp)->m_penTarget;						
+						m_penTarget1->SetPlacement( penTarget->en_plPlacement );
+					}
+				}
+			}
+			else
+			{
+				SendToTarget(m_penTarget1, EET_TRIGGER, m_penCaused);
+			}
+		}
+		if (m_penTarget2!=NULL) 
+		{
+			//m_penTarget2->SetPhysicsFlags(EPF_MOVABLE | GetPhysicsFlags());
+			// 메라크 공성 지역일때는...
+			if(g_slZone == 7 )
+			{				
+				if( ((CMovingBrush*)(CEntity*)m_penTarget2)->m_penTarget )
+				{
+					((CMovingBrush*)(CEntity*)m_penTarget2)->m_bForceStop		= TRUE;					
+					((CMovingBrush*)(CEntity*)m_penTarget2)->m_bMoveToMarker	= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget2)->m_bStopMoving		= TRUE;
+					((CMovingBrush*)(CEntity*)m_penTarget2)->m_bMoving			= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget2)->m_bRotating		= FALSE;
+					((CMovingBrush*)(CEntity*)m_penTarget2)->SetDesiredTranslation(FLOAT3D(0.0f, 0.0f, 0.0f));
+					((CMovingBrush*)(CEntity*)m_penTarget2)->SetDesiredRotation(FLOAT3D(0.0f, 0.0f, 0.0f));
+					if( !m_bOpened )
+					{
+						CEntity* penTarget = ((CMovingBrush*)(CEntity*)m_penTarget2)->m_penTarget->GetTarget();						
+						m_penTarget2->SetPlacement( penTarget->en_plPlacement );
+					}
+					else
+					{
+						CEntity* penTargetTemp = ((CMovingBrush*)(CEntity*)m_penTarget2)->m_penTarget->GetTarget();						
+						CEntity* penTarget = ((CMovingBrushMarker*)(CEntity*)penTargetTemp)->m_penTarget;						
+						m_penTarget2->SetPlacement( penTarget->en_plPlacement );
+					}
+				}
+			}
+			else
+			{
+				SendToTarget(m_penTarget2, EET_TRIGGER, m_penCaused);
+			}
+		}
   }
 
   // apply mirror and stretch to the entity
@@ -119,6 +199,32 @@ functions:
     return slUsedMemory;
   }
 
+  BOOL AnyPlayerHasKey(INDEX iKey)
+  {
+    ULONG ulKey = (1<<INDEX(iKey));
+    for(INDEX iplt=0; iplt<_pNetwork->ga_srvServer.srv_apltPlayers.Count(); iplt++) {
+      CPlayerTarget &plt = _pNetwork->ga_srvServer.srv_apltPlayers[iplt];          
+      if (plt.plt_bActive) {
+        CPlayer *penPlayer = (CPlayer *)plt.plt_penPlayerEntity;
+        if (penPlayer->m_ulKeys&ulKey) {
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
+  }
+
+  void RemoveKeyFromAllPlayers(INDEX iKey)
+  {
+    ULONG ulKey = (1<<INDEX(iKey));
+    for(INDEX iplt=0; iplt<_pNetwork->ga_srvServer.srv_apltPlayers.Count(); iplt++) {
+      CPlayerTarget &plt = _pNetwork->ga_srvServer.srv_apltPlayers[iplt];          
+      if (plt.plt_bActive) {
+        CPlayer *penPlayer = (CPlayer *)plt.plt_penPlayerEntity;
+        penPlayer->m_ulKeys&=~ulKey;        
+      }
+    }    
+  }
 
 procedures:
 
@@ -216,73 +322,110 @@ procedures:
   // door that wait to be triggered to open
   DoorTriggered()
   {
-    while (TRUE) {
+		while (TRUE) 
+		{
       // wait to someone enter
-      wait() {
-        on (EPass ePass) : {
-          if (CanReactOnEntity(ePass.penOther)) {
-            if (m_strLockedMessage!="") {
-              PrintCenterMessage(this, ePass.penOther, TranslateConst(m_strLockedMessage), 3.0f, MSS_INFO);
-            }
-            if (m_penLockedTarget!=NULL) {
-              SendToTarget(m_penLockedTarget, EET_TRIGGER, ePass.penOther);
-            }
-            resume;
-          }
-        }
-        on (ETrigger eTrigger) : {
-          m_penCaused = eTrigger.penCaused;
-          TriggerDoor();
-          jump DoorDummy();
-        }
-        otherwise() : {
-          resume;
-        };
-      };
+			wait() 
+			{
+				on (ETrigger eTrigger) : 
+				{
+					m_penCaused = eTrigger.penCaused;
+					TriggerDoor();
+					//jump DoorDummy();
+					//m_bActive = FALSE;
+					//jump DoorAutoInactive();					
+					resume;
+				}
+				on (EPass ePass) : 
+				{					
+					if (CanReactOnEntity(ePass.penOther)) 
+					{
+						if (m_strLockedMessage!="") 
+						{
+						    //PrintCenterMessage(this, ePass.penOther, TranslateConst(m_strLockedMessage), 3.0f, MSS_INFO);
+						}
+						if (m_penLockedTarget!=NULL) 
+						{
+							SendToTarget(m_penLockedTarget, EET_TRIGGER, ePass.penOther);
+						}
+						resume;
+					}
+				}				
+				otherwise() : 
+				{
+					resume;
+				};
+			};
       
-      // wait a bit to recover
-      autowait(0.1f);
-    }
+			// wait a bit to recover
+			autowait(0.1f);
+		}
   }
 
   // door that need a key to be unlocked to open
   DoorLocked()
   {
-    while (TRUE) {
+		while (TRUE) 
+		{
       // wait to someone enter
-      wait() {
-        on (EPass ePass) : {
-          if (IsDerivedFromClass(ePass.penOther, "Player")) {
-            CPlayer *penPlayer = (CPlayer*)&*ePass.penOther;
-            // if he has the key
-            ULONG ulKey = (1<<INDEX(m_kitKey));
-            if (penPlayer->m_ulKeys&ulKey) {
-              // use the key
-              penPlayer->m_ulKeys&=~ulKey;
-              // open the dook
-              TriggerDoor();
+			wait() 
+			{
+				on (EPass ePass) : 
+				{
+					if( IsDerivedFromClass( ePass.penOther, &CPlayer_DLLClass)) 
+					{
+			           CPlayer *penPlayer = (CPlayer*)&*ePass.penOther;
+						
+						// if someone has the key            
+					   if(_pNetwork->m_ubGMLevel > 1)
+					   {
+							CTString strMessage;
+							strMessage.PrintF("=====Remain Enemy : %d=====\n", _pNetwork->wo_dwEnemyCount);
+							_pNetwork->ClientSystemMessage(strMessage);
+							strMessage.PrintF("=====MAX Check Point : %X=====\n", m_iMaxCheckPoint);
+							_pNetwork->ClientSystemMessage(strMessage);
+							strMessage.PrintF("=====Check Point : %X=====\n", _pNetwork->wo_stCheckPoint.m_iCheckFlag);
+							_pNetwork->ClientSystemMessage(strMessage);
+							
+					   }
+//						if( _pNetwork->wo_dwEnemyCount <= m_iOpenMobNum && _pNetwork->m_bSingleMode)
+						if( _pNetwork->wo_stCheckPoint.m_iCheckFlag >= m_iMaxCheckPoint && 
+							_pNetwork->wo_dwEnemyCount  <= m_iOpenMobNum && 
+							_pNetwork->m_bSingleMode)
+						{
+							// EnemyCount Initialize
+							_pNetwork->wo_dwEnemyCount = 0;
 
-              /*
-              // tell the key bearer that the key was used
-              CTString strMsg;
-              strMsg.PrintF(TRANS("%s used"), GetKeyName(m_kitKey));
-              PrintCenterMessage(this, ePass.penOther, strMsg, 3.0f, MSS_INFO);
-              */
-              // become automatic door
-              jump DoorAuto();
-            // if he has no key
-            } else {
-              if (m_penLockedTarget!=NULL) {
-                SendToTarget(m_penLockedTarget, EET_TRIGGER, ePass.penOther);
-              }
-            }
-            resume;
-          }
-        }
-        otherwise() : {
-          resume;
-        };
-      };
+							// open the door
+							TriggerDoor();
+
+//강동민 수정 시작 다중 공격 작업	08.27
+							//m_bOpened = TRUE;
+
+							// 자동문으로 만듬(문제가 될듯함...)
+							// become automatic door
+							//jump DoorAuto();
+							jump DoorAutoInactive();
+//강동민 수정 끝 다중 공격 작업		08.27
+						}
+//강동민 수정 끝 싱글 던젼 작업		07.27
+						// if he has no key
+						else 
+						{	
+							if (m_penLockedTarget!=NULL) 
+							{
+								SendToTarget(m_penLockedTarget, EET_TRIGGER, ePass.penOther);
+							}
+						}
+						//resume;
+					}
+					resume;
+				}
+				otherwise() : 
+				{
+					resume;
+				};
+			};
       
       // wait a bit to recover
       autowait(0.1f);
@@ -302,7 +445,7 @@ procedures:
         on (EPass ePass) : {
           if (CanReactOnEntity(ePass.penOther)) {
             if (m_strLockedMessage!="") {
-              PrintCenterMessage(this, ePass.penOther, TranslateConst(m_strLockedMessage), 3.0f, MSS_INFO);
+              //PrintCenterMessage(this, ePass.penOther, TranslateConst(m_strLockedMessage), 3.0f, MSS_INFO);
             }
             if (m_penLockedTarget!=NULL) {
               SendToTarget(m_penLockedTarget, EET_TRIGGER, ePass.penOther);

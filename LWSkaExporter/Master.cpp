@@ -1,3 +1,7 @@
+/*
+Copyright (C) 2001-2002 Croteam, Ltd.
+See COPYING (GNU Library General Public License 2) for license
+*/
 #include "base.h"
 
 extern LWMessageFuncs *_msg = NULL;
@@ -287,13 +291,13 @@ char *astrFaceForward[] = {
   "not",
   "half-faceforward",
   "full-faceforward",
-	NULL
+  NULL
 };
 
 char *astrAnimOrder[] = {
   "Normal",
   "Reversed",
-	NULL
+  NULL
 };
 
 void Click_ExportAnim(LWXPanelID pan, int cid)
@@ -323,14 +327,14 @@ void Click_ExportSecAnim(LWXPanelID pan, int cid)
 LWXPanelID get_panel(LWInstance inst)
 {
    static LWXPanelControl xctl[] = {
-      { ID_FACEFORWARD,     "FaceForward",					"iPopChoice",  },
-      { ID_ANIM_ORDER,			"Animation order",			"iPopChoice", },
-      { ID_EXPORTMESH,			"Export Mesh",					"vButton",  },
-      { ID_EXPORTSKELETON,	"Export Skeleton",			"vButton",  },
-      { ID_EXPORTANIM,			"Export Animation",			"vButton",  },
-			{ ID_EXPORTBONES,			"Export Bones",					"vButton", },
-			{ ID_EXPORTSECANIM,		"Export Sections Anim",	"vButton", },
-      { ID_ABSPOSITIONS,		"Absolute positions",		"iBoolean", },
+      { ID_FACEFORWARD,     "FaceForward",          "iPopChoice",  },
+      { ID_ANIM_ORDER,      "Animation order",      "iPopChoice", },
+      { ID_EXPORTMESH,      "Export Mesh",          "vButton",  },
+      { ID_EXPORTSKELETON,  "Export Skeleton",      "vButton",  },
+      { ID_EXPORTANIM,      "Export Animation",     "vButton",  },
+      { ID_EXPORTBONES,     "Export Bones",         "vButton", },
+      { ID_EXPORTSECANIM,   "Export Sections Anim", "vButton", },
+      { ID_ABSPOSITIONS,    "Absolute positions",   "iBoolean", },
       { 0 }
    };
    static LWXPanelDataDesc xdata[] = {
@@ -345,8 +349,8 @@ LWXPanelID get_panel(LWInstance inst)
       XpBUTNOTIFY( ID_EXPORTMESH, Click_ExportMesh ),
       XpBUTNOTIFY( ID_EXPORTSKELETON, Click_ExportSkeleton),
       XpBUTNOTIFY( ID_EXPORTANIM, Click_ExportAnim),
-			XpBUTNOTIFY( ID_EXPORTBONES, Click_ExportBones),
-			XpBUTNOTIFY( ID_EXPORTSECANIM, Click_ExportSecAnim),
+      XpBUTNOTIFY( ID_EXPORTBONES, Click_ExportBones),
+      XpBUTNOTIFY( ID_EXPORTSECANIM, Click_ExportSecAnim),
       //XpCHGNOTIFY( /*ID_ABSPOSITIONS, */Click_AbsPositions),
       //XpCHGNOTIFY( /*ID_ANIM_BACKWARD , */Click_AnimBackward),
       //XpBUTNOTIFY( ID_COLOR, handle_color),
@@ -401,7 +405,7 @@ XCALL_(int) Interface_Master(long version, GlobalFunc *global, LWInterface *loca
 /*======================================================================
 Modeler Exporter
 
-	The next part of the CPP is for the modeler exporter plugin
+  The next part of the CPP is for the modeler exporter plugin
 ====================================================================== */
 
 
@@ -413,15 +417,15 @@ int msgbox_modeler( LWXPanelFuncs *xpanf, const char* msg )
   LWXPanelID panel;
   int ok = 0;
 
-	enum { ID_MSG = 0x8001 };
-	LWXPanelControl ctl[] = {
-		{ ID_MSG,    "Message: ",       "string",  },
-		{ 0 }
-	};
+  enum { ID_MSG = 0x8001 };
+  LWXPanelControl ctl[] = {
+    { ID_MSG,    "Message: ",       "string",  },
+    { 0 }
+  };
   LWXPanelDataDesc cdata[] = {
     { ID_MSG,    "Message: ",  "string",  },
     { 0 }
-	};
+  };
   LWXPanelHint hint[] = {
     XpLABEL( 0, "SE Mesh Exporter master controls" ),
     XpLABEL(ID_MSG, msg),
@@ -429,15 +433,15 @@ int msgbox_modeler( LWXPanelFuncs *xpanf, const char* msg )
   };
 
 
-	panel = xpanf->create( LWXP_FORM, ctl );
-	if ( !panel ) return 0;
+  panel = xpanf->create( LWXP_FORM, ctl );
+  if ( !panel ) return 0;
 
-	xpanf->describe( panel, cdata, NULL, NULL );
-	xpanf->hint( panel, 0, hint );
-	xpanf->formSet( panel, ID_MSG, (void*) msg );
-	
-	
-	ok = xpanf->post( panel );
+  xpanf->describe( panel, cdata, NULL, NULL );
+  xpanf->hint( panel, 0, hint );
+  xpanf->formSet( panel, ID_MSG, (void*) msg );
+  
+  
+  ok = xpanf->post( panel );
 
   xpanf->destroy( panel );
   return ok;
@@ -452,15 +456,15 @@ int get_user_modeler( LWXPanelFuncs *xpanf )
   LWXPanelID panel;
   int ok = 0;
 
-	enum { ID_FACEFORWARD = 0x8001, ID_ANIM_ORDER};
-	LWXPanelControl ctl[] = {
-		{ ID_FACEFORWARD,    "FaceForward",       "iPopChoice",  },
-		{ 0 }
-	};
+  enum { ID_FACEFORWARD = 0x8001, ID_ANIM_ORDER};
+  LWXPanelControl ctl[] = {
+    { ID_FACEFORWARD,    "FaceForward",       "iPopChoice",  },
+    { 0 }
+  };
   LWXPanelDataDesc cdata[] = {
     { ID_FACEFORWARD,    "FaceForward",  "integer",  },
     { 0 }
-	};
+  };
   LWXPanelHint hint[] = {
     XpLABEL( 0, "SE Mesh Exporter master controls" ),
     XpSTRLIST(ID_FACEFORWARD, astrFaceForward),
@@ -468,20 +472,20 @@ int get_user_modeler( LWXPanelFuncs *xpanf )
   };
 
 
-	panel = xpanf->create( LWXP_FORM, ctl );
-	if ( !panel ) return 0;
+  panel = xpanf->create( LWXP_FORM, ctl );
+  if ( !panel ) return 0;
 
-	xpanf->describe( panel, cdata, NULL, NULL );
-	xpanf->hint( panel, 0, hint );
-	xpanf->formSet( panel, ID_FACEFORWARD, 0 );
-	
-	
-	ok = xpanf->post( panel );
+  xpanf->describe( panel, cdata, NULL, NULL );
+  xpanf->hint( panel, 0, hint );
+  xpanf->formSet( panel, ID_FACEFORWARD, 0 );
+  
+  
+  ok = xpanf->post( panel );
 
   int iFaceForward = *(int*)_xpanf->formGet( panel, ID_FACEFORWARD);
   if ( ok ) {
-		ExportMesh_modeler(iFaceForward);
-	}
+    ExportMesh_modeler(iFaceForward);
+  }
 
   xpanf->destroy( panel );
   return ok;
@@ -492,47 +496,47 @@ int get_user_modeler( LWXPanelFuncs *xpanf )
 
 XCALL_ ( int ) Activate_ModelerMeshExporter( long version, GlobalFunc *global, MeshEditBegin *local, void *serverData ) {
 
-	_global     = global    ;
+  _global     = global    ;
   _serverData = serverData;
 
   if ( version != LWINTERFACE_VERSION ) return AFUNC_BADVERSION;
 
 
-  _meshEditOperations = local(1,1,OPSEL_GLOBAL);	
+  _meshEditOperations = local(1,1,OPSEL_GLOBAL);  
 
-	_xpanf = (LWXPanelFuncs *) _global( LWXPANELFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  _xpanf = (LWXPanelFuncs *) _global( LWXPANELFUNCS_GLOBAL, GFUSE_TRANSIENT );
   if (_xpanf==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	_msg = (LWMessageFuncs *) _global(LWMESSAGEFUNCS_GLOBAL, GFUSE_ACQUIRE );
+  _msg = (LWMessageFuncs *) _global(LWMESSAGEFUNCS_GLOBAL, GFUSE_ACQUIRE );
   if (_msg==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	
-	_objfunc = (LWObjectFuncs *) _global( LWOBJECTFUNCS_GLOBAL, GFUSE_TRANSIENT );
-	if (_objfunc==NULL) {
+  
+  _objfunc = (LWObjectFuncs *) _global( LWOBJECTFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  if (_objfunc==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	_statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
-	if (_statequery==NULL) {
+  _statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  if (_statequery==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
 
-	_srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
+  _srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
   if (_srf==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
   get_user_modeler(_xpanf);
-	global( LWXPANELFUNCS_GLOBAL, GFUSE_RELEASE );
-	global( LWMESSAGEFUNCS_GLOBAL, GFUSE_RELEASE );
-	global( LWSURFACEFUNCS_GLOBAL, GFUSE_RELEASE );
-	
-	_meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
+  global( LWXPANELFUNCS_GLOBAL, GFUSE_RELEASE );
+  global( LWMESSAGEFUNCS_GLOBAL, GFUSE_RELEASE );
+  global( LWSURFACEFUNCS_GLOBAL, GFUSE_RELEASE );
+  
+  _meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
 
   return(AFUNC_OK);
 };
@@ -543,7 +547,7 @@ XCALL_ ( int ) Activate_ModelerMeshExporter( long version, GlobalFunc *global, M
 /*===================================================================================
 Surface to weights
 
-	The next part of the CPP is for the surface->weights modeler converter plugin
+  The next part of the CPP is for the surface->weights modeler converter plugin
 ================================================================================== */
 
 
@@ -552,45 +556,45 @@ Surface to weights
 
 EDError AddToWeightmap (void *strSurf, const EDPolygonInfo *ppliPolyInfo)
 {
-	static float fWeightOne[] = {1.0f};
+  static float fWeightOne[] = {1.0f};
 
-	if (strcmp(ppliPolyInfo->surface, (char*)strSurf)==0) {
-		for (int i=0;i<ppliPolyInfo->numPnts;i++) {
-			_meshEditOperations->pntVMap(_state,ppliPolyInfo->points[i],LWVMAP_WGHT,(char*)strSurf,1,fWeightOne);
-		}
-	}
-	return EDERR_NONE;
+  if (strcmp(ppliPolyInfo->surface, (char*)strSurf)==0) {
+    for (int i=0;i<ppliPolyInfo->numPnts;i++) {
+      _meshEditOperations->pntVMap(_state,ppliPolyInfo->points[i],LWVMAP_WGHT,(char*)strSurf,1,fWeightOne);
+    }
+  }
+  return EDERR_NONE;
 };
 
 
 XCALL_(int) Activate_ModelerSurfaceToWeights( long version, GlobalFunc *global, MeshEditBegin *local, void *serverData )
 {
-	LWSurfaceID *asurSurfaces;
-	int ctSurfs;
-	char *strFileName;
+  LWSurfaceID *asurSurfaces;
+  int ctSurfs;
+  char *strFileName;
 
-	_global     = global;
+  _global     = global;
   _serverData = serverData;
 
   if ( version != LWINTERFACE_VERSION ) return AFUNC_BADVERSION;
 
 
   _meshEditOperations = local(1,1,OPSEL_GLOBAL);
-	_state = _meshEditOperations->state; 
+  _state = _meshEditOperations->state; 
 
-	_srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
+  _srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
   if (_srf==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	_statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
-	if (_statequery==NULL) {
+  _statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  if (_statequery==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	strFileName = strdup(_statequery->object());
+  strFileName = strdup(_statequery->object());
 
-	// get surfaces
+  // get surfaces
   asurSurfaces = _srf->byObject(strFileName);
 
   // count the surfaces
@@ -599,16 +603,16 @@ XCALL_(int) Activate_ModelerSurfaceToWeights( long version, GlobalFunc *global, 
     ctSurfs++;
   }
 
-	{for(int iSurf=0; iSurf<ctSurfs; iSurf++) {
+  {for(int iSurf=0; iSurf<ctSurfs; iSurf++) {
 
     const char *strSurf = _srf->name(asurSurfaces[iSurf]);
     // for each polygon in the surface, add weight map values for all it's points
-		// this does the job a few times for each point, but it's the simplest way to do it
-		_meshEditOperations->polyScan(_state,AddToWeightmap,(void*)strSurf,OPLYR_FG);
+    // this does the job a few times for each point, but it's the simplest way to do it
+    _meshEditOperations->polyScan(_state,AddToWeightmap,(void*)strSurf,OPLYR_FG);
   }}
 
 
-	_meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
+  _meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
 
   return(AFUNC_OK);
 
@@ -634,56 +638,56 @@ XCALL_(int) Activate_ModelerSurfaceToWeights( long version, GlobalFunc *global, 
 /*===================================================================================
 Copy weight maps
 
-	The next part of the CPP is for the CopyWeightMaps plugin that copies weight maps 
-	from the vertices in the background layers to the corresponding vertices in the
-	foreground layers. Vertices are matched by position.
+  The next part of the CPP is for the CopyWeightMaps plugin that copies weight maps 
+  from the vertices in the background layers to the corresponding vertices in the
+  foreground layers. Vertices are matched by position.
 ================================================================================== */
 
 
 XCALL_(int) Activate_CopyWeightMaps( long version, GlobalFunc *global, MeshEditBegin *local, void *serverData )
 {
-	char *strFileName;
+  char *strFileName;
 
-	_global     = global;
+  _global     = global;
   _serverData = serverData;
 
   if ( version != LWINTERFACE_VERSION ) return AFUNC_BADVERSION;
 
 
   _meshEditOperations = local(1,1,OPSEL_GLOBAL);
-	_state = _meshEditOperations->state; 
+  _state = _meshEditOperations->state; 
 
-	_srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
+  _srf = (LWSurfaceFuncs *) _global(LWSURFACEFUNCS_GLOBAL, GFUSE_ACQUIRE);
   if (_srf==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	_statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
-	if (_statequery==NULL) {
+  _statequery = (LWStateQueryFuncs *) _global( LWSTATEQUERYFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  if (_statequery==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	_objfunc = (LWObjectFuncs *) _global( LWOBJECTFUNCS_GLOBAL, GFUSE_TRANSIENT );
-	if (_objfunc==NULL) {
+  _objfunc = (LWObjectFuncs *) _global( LWOBJECTFUNCS_GLOBAL, GFUSE_TRANSIENT );
+  if (_objfunc==NULL) {
     return AFUNC_BADGLOBAL;
   }
 
-	strFileName = strdup(_statequery->object());
+  strFileName = strdup(_statequery->object());
 
-	
+  
 
-	ListWeightMaps();
-	ScanBackground();
+  ListWeightMaps();
+  ScanBackground();
 
-	// for each point in the foreground layers, look for it's match in the 
-	// background layer and copy the weight map value
-	_meshEditOperations->pointScan(_state,CopyWeightMaps,NULL,OPLYR_FG);
-	
+  // for each point in the foreground layers, look for it's match in the 
+  // background layer and copy the weight map value
+  _meshEditOperations->pointScan(_state,CopyWeightMaps,NULL,OPLYR_FG);
+  
 
-	_meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
+  _meshEditOperations->done( _meshEditOperations->state, EDERR_NONE, 0 );
 
 
-	FreeMem();
+  FreeMem();
 
   return(AFUNC_OK);
 

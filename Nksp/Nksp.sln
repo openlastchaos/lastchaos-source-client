@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nksp", "Nksp.vcproj", "{0513ECED-7482-4697-B0CB-69C9EAC5F927}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		FinalDebug = FinalDebug
+		FinalRelease = FinalRelease
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.Debug.ActiveCfg = Debug|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.Debug.Build.0 = Debug|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.FinalDebug.ActiveCfg = FinalDebug|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.FinalDebug.Build.0 = FinalDebug|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.FinalRelease.ActiveCfg = FinalRelease|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.FinalRelease.Build.0 = FinalRelease|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.Release.ActiveCfg = Release|Win32
+		{0513ECED-7482-4697-B0CB-69C9EAC5F927}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

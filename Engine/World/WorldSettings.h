@@ -104,12 +104,10 @@ class ENGINE_API CEnvironmentType {
 public:
   CTString et_strName;  // name of environment type
   INDEX et_iType;
-  FLOAT et_fSize;
   /* Default constructor. */
   CEnvironmentType(void) :
     et_strName(""),
-    et_iType(1),
-    et_fSize(7.5)
+    et_iType(1)
     {}
 };
 

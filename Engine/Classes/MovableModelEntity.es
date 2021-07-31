@@ -10,6 +10,7 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/Console.h>
 #include <Engine/Models/ModelObject.h>
+#include <Engine/Ska/ModelInstance.h>
 %}
 
 class export CMovableModelEntity : CMovableEntity {
@@ -24,24 +25,6 @@ components:
 
 
 functions:
-
-  // create a checksum value for sync-check
-  export void ChecksumForSync(ULONG &ulCRC, INDEX iExtensiveSyncCheck)
-  {
-    CMovableEntity::ChecksumForSync(ulCRC, iExtensiveSyncCheck);
-    if (iExtensiveSyncCheck>0) {
-      CRC_AddLONG(ulCRC, en_iCollisionBox);
-      CRC_AddLONG(ulCRC, en_iWantedCollisionBox);
-    }
-  }
-  // dump sync data to text file
-  export void DumpSync_t(CTStream &strm, INDEX iExtensiveSyncCheck)  // throw char *
-  {
-    CMovableEntity::DumpSync_t(strm, iExtensiveSyncCheck);
-    if (iExtensiveSyncCheck>0) {
-      strm.FPrintF_t("collision box: %d(%d)\n", en_iCollisionBox, en_iWantedCollisionBox);
-    }
-  }
 
   // prepare parameters for moving in this tick
   export void PreMoving(void) // override from CMovableEntity
@@ -98,7 +81,7 @@ functions:
     if(en_RenderType == CEntity::RT_SKAMODEL || en_RenderType == CEntity::RT_SKAEDITORMODEL) {
       if(GetModelInstance()!=NULL) {
         // change his colision box index
-        GetModelInstance()->mi_iCurentBBox = iNewCollisionBox;
+        GetModelInstance()->SetCurrentColisionBoxIndex(iNewCollisionBox);
       }
     }
     // remember new collision box
@@ -126,7 +109,7 @@ functions:
     if(en_RenderType == CEntity::RT_SKAMODEL || en_RenderType == CEntity::RT_SKAEDITORMODEL) {
       if(GetModelInstance()!=NULL) {
         // change his colision box index
-        GetModelInstance()->mi_iCurentBBox = iNewCollisionBox;
+        GetModelInstance()->SetCurrentColisionBoxIndex(iNewCollisionBox);
       }
     }
     // remember new collision box
@@ -150,14 +133,14 @@ functions:
     return *this;
   } */
   /* Read from stream. */
-  export void Read_t( CTStream *istr) // throw char *
+  export void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CMovableEntity::Read_t(istr);
+    CMovableEntity::Read_t(istr,bNetwork);
   }
   /* Write to stream. */
-  export void Write_t( CTStream *ostr) // throw char *
+  export void Write_t( CTStream *ostr,BOOL bNetwork) // throw char *
   {
-    CMovableEntity::Write_t(ostr);
+    CMovableEntity::Write_t(ostr,bNetwork);
   }
 
   // returns bytes of memory used by this object
@@ -166,6 +149,7 @@ functions:
     return( sizeof(CMovableModelEntity) - sizeof(CMovableEntity) + CMovableEntity::GetUsedMemory());
   }
 
+  virtual void DeathNow() {};
 
 procedures:
 

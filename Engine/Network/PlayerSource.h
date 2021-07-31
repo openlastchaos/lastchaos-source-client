@@ -5,7 +5,7 @@
 #endif
 
 #include <Engine/Base/Synchronization.h>
-#include <Engine/Network/NetworkMessage.h>
+//#include <Engine/Network/NetworkMessage.h>
 #include <Engine/Entities/PlayerCharacter.h>
 
 /*
@@ -19,7 +19,7 @@ public:
 
   CTCriticalSection pls_csAction;  // access to player action
   CPlayerAction pls_paAction;      // action that this player is currently doing
-#define PLS_MAXLASTACTIONS 3
+#define PLS_MAXLASTACTIONS 10
   CPlayerAction pls_apaLastActions[PLS_MAXLASTACTIONS]; // old actions remembered for resending
 public:
   /* Activate a new player. */
@@ -43,6 +43,11 @@ public:
   void SetAction(const CPlayerAction &paAction);
   // get mask of this player for chat messages
   ULONG GetChatMask(void);
+
+  /* Apply an action to the player locally - for local player prediction */
+  void ApplyActionLocally(const CPlayerAction &paAction);
+  /* Apply all actions generated later than the specified moment in time - for local player prediction */
+  void ApplyNewerActions(ULONG ulOldest);
 };
 
 

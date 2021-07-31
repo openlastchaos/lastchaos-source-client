@@ -10,6 +10,11 @@ enum EnvironmentParticlesHolderType {
   3 EPTH_SNOW    "Snow",
 };
 
+event EWeatherStart {
+};
+event EWeatherStop {
+};
+
 class CEnvironmentParticlesHolder: CRationalEntity {
 name      "EnvironmentParticlesHolder";
 thumbnail "Thumbnails\\EnvironmentParticlesHolder.tbn";
@@ -24,11 +29,11 @@ properties:
   4 enum EnvironmentParticlesHolderType m_eptType "Type" 'Y' = EPTH_NONE,
   5 CEntityPointer m_penNextHolder "Next env. particles holder" 'T',
 
- 10 FLOAT m_tmRainStart = -1.0f,                 // Rain start time
- 11 FLOAT m_tmRainEnd = -1.0f,                   // Rain end time
+ 10 FLOAT m_tmRainStart = -1.0f features(EPROPF_NETSEND),                 // Rain start time
+ 11 FLOAT m_tmRainEnd = -1.0f features(EPROPF_NETSEND),                   // Rain end time
 
- 12 FLOAT m_tmSnowStart = -1.0f,                 // Snow start time
- 13 FLOAT m_tmSnowEnd = -1.0f,                   // Snow end time
+ 12 FLOAT m_tmSnowStart = -1.0f features(EPROPF_NETSEND),                 // Snow start time
+ 13 FLOAT m_tmSnowEnd = -1.0f features(EPROPF_NETSEND),                   // Snow end time
 
  20 CModelObject m_moHeightMapHolder,
  22 CModelObject m_moParticleTextureHolder,
@@ -50,8 +55,17 @@ properties:
  58 FLOAT m_fParticlesSinkFactor        "Growth sink factor" = 0.0,
 
  // rain
- 70 FLOAT m_fRainAppearLen              "Rain start duration" = 10.0f,
- 71 FLOAT m_fSnowAppearLen              "Snow start duration" = 10.0f,
+ 70 FLOAT m_fRainAppearLen              "Rain start duration" = 10.0f features(EPROPF_NETSEND),
+ 71 FLOAT m_fSnowAppearLen              "Snow start duration" = 10.0f features(EPROPF_NETSEND),
+
+ 72	FLOAT	m_fParticleSize				"Particle Size Scale" = 1.0f,
+ 73	INDEX	m_iParticleCount			"Particle Count" = 32,
+ 74	FLOAT	m_vWindX					"Wind Direction X" = 0.0f,
+ 75	FLOAT	m_vWindZ					"Wind Direction Z" = 0.0f,
+ 76	FLOAT	m_vDropSpeed				"Drop Speed Scale" = 1.0f,
+ 77 COLOR	m_colParticle				"Particle Color" =C_WHITE,
+
+ 80 BOOL m_bRenderOutsideBox            "Render outside box" = FALSE features(EPROPF_NETSEND),
 
   {
     // linked list of growth caches 
@@ -59,8 +73,8 @@ properties:
   }
 
 components:
-  1 model   MODEL_ENVIRONMENT_PARTICLES_HOLDER    "ModelsMP\\Editor\\EnvironmentParticlesHolder.mdl",
-  2 texture TEXTURE_ENVIRONMENT_PARTICLES_HOLDER  "ModelsMP\\Editor\\EnvironmentParticlesHolder.tex"
+  1 editor model   MODEL_ENVIRONMENT_PARTICLES_HOLDER    "Data\\ModelsMP\\Editor\\EnvironmentParticlesHolder.mdl",
+  2 editor texture TEXTURE_ENVIRONMENT_PARTICLES_HOLDER  "Data\\ModelsMP\\Editor\\EnvironmentParticlesHolder.tex"
 
 
 functions:
@@ -69,17 +83,15 @@ functions:
   {
     CTextureData *ptdHeightMap = (CTextureData *) m_moHeightMapHolder.mo_toTexture.GetData();
     if( ptdHeightMap!=NULL) {
-      ptdHeightMap->Force(TEX_CONSTANT|TEX_STATIC|TEX_KEEPCOLOR);
+      ptdHeightMap->Force(TEX_CONSTANT|TEX_STATIC);
     }
   }
 
 
   BOOL IsTargetValid(SLONG slPropertyOffset, CEntity *penTarget)
   {
-    if( slPropertyOffset == offsetof(CEnvironmentParticlesHolder, m_penNextHolder))
-    {
-      if (IsOfClass(penTarget, "EnvironmentParticlesHolder")) { return TRUE; }
-      else { return FALSE; }
+    if( slPropertyOffset == offsetof(CEnvironmentParticlesHolder, m_penNextHolder)) {
+      return IsOfClass( penTarget, &CEnvironmentParticlesHolder_DLLClass);
     }   
     return CEntity::IsTargetValid(slPropertyOffset, penTarget);
   }
@@ -142,9 +154,6 @@ functions:
   void GetHeightMapData(CTextureData *&ptdHeightMap, FLOATaabbox3D &boxHeightMap)
   {
     ptdHeightMap = (CTextureData *) m_moHeightMapHolder.mo_toTexture.GetData();
-    if (ptdHeightMap!=NULL) {
-      ptdHeightMap->Force(TEX_CONSTANT|TEX_STATIC|TEX_KEEPCOLOR);
-    }
     boxHeightMap = m_boxHeightMap;
     boxHeightMap += GetPlacement().pl_PositionVector;
   }
@@ -168,6 +177,11 @@ procedures:
       try
       {
         m_moHeightMapHolder.mo_toTexture.SetData_t(m_fnHeightMap);
+        CTextureData *ptd=(CTextureData*) m_moHeightMapHolder.mo_toTexture.GetData();
+        if(ptd!=NULL)
+        {
+          ptd->Force(TEX_STATIC|TEX_CONSTANT);
+        }
       } catch (char *strError) {
         WarningMessage(strError);
       }
@@ -219,6 +233,12 @@ procedures:
       }
       on (EStart) :
       {
+        if (_pNetwork->IsServer()) {
+          SendEvent(EWeatherStart(),TRUE);
+        }
+        resume;
+      }
+      on (EWeatherStart) : {
         TIME tmNow = _pTimer->CurrentTick();
         m_tmRainStart = tmNow;
         m_tmRainEnd = 1e6;
@@ -228,6 +248,12 @@ procedures:
       }
       on (EStop) :
       {
+        if (_pNetwork->IsServer()) {
+          SendEvent(EWeatherStop(),TRUE);
+        }
+        resume;
+      }
+      on (EWeatherStop) : {
         TIME tmNow = _pTimer->CurrentTick();
         m_tmRainEnd = tmNow;
         m_tmSnowEnd = tmNow;

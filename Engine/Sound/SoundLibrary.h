@@ -5,45 +5,72 @@
 #endif
 
 
+#include <DSound.h>
 #include <Engine/Base/Lists.h>
-#include <Engine/Base/Timer.h>
 #include <Engine/Base/Synchronization.h>
+#include <Engine/Math/Vector.h>
+#include <Engine/Math/Matrix.h>
 #include <Engine/Templates/StaticArray.h>
 #include <Engine/Templates/StaticStackArray.h>
 #include <Engine/Templates/DynamicArray.h>
 
 #ifdef PLATFORM_WIN32 /* rcg10042001 */
-#include <Engine/Sound/DSound.h>
-#include <Engine/Sound/EAX.h>
+
+  #define DSBCAPS_GETPOS (DSBCAPS_GETCURRENTPOSITION2)
+  #define DSBCAPS_2D (DSBCAPS_LOCDEFER|DSBCAPS_CTRLVOLUME|DSBCAPS_CTRLFREQUENCY|DSBCAPS_CTRLPAN)
+  #define DSBCAPS_3D (DSBCAPS_LOCDEFER|DSBCAPS_CTRLVOLUME|DSBCAPS_CTRLFREQUENCY|DSBCAPS_CTRL3D|DSBCAPS_MUTE3DATMAXDISTANCE)
+
+
 #endif
+
+
+// enums for environment effects
+enum SndEnvFX
+{
+  SEFX_NORMAL      = 0,    // padded cell (or no-reverb)
+  SEFX_GENERIC     = 1,    
+  SEFX_LIVINGROOM  = 2,
+  SEFX_STONEROOM   = 3,
+  SEFX_AUDITORIUM  = 4,
+  SEFX_HALLWAY     = 5,
+  SEFX_ARENA       = 6,
+  SEFX_STONEHALL   = 7,    // corridor
+  SEFX_QUARRY      = 8,
+  SEFX_MOUNTAINS   = 9,
+  SEFX_PLAIN       = 10,
+  SEFX_CAVE        = 11,
+  SEFX_SEWERPIPE   = 12,
+  SEFX_HANGAR      = 13,
+  SEFX_FOREST      = 14,
+  SEFX_CONCERTHALL = 15,
+  SEFX_UNDERWATER  = 16,   // auto-set when player is in water
+};
+
+// buffers
+#define SND_MINBUFFERS (5L)
+#define SND_MAXBUFFERS (50L)
+
+// flags
+#define SLF_USINGWAVEOUT (1UL<<0)  // using WaveOut API (if not set, DirectSound is used)
+#define SLF_USINGDS3D    (1UL<<1)  // using DirectSound3D mixer and positioning 
+#define SLF_HASEFX       (1UL<<2)  // HW has environment effects (EAX and such)
+
 
 /* !!! FIXME: rcg10042001 This is going to need OpenAL or SDL_audio... */
 
 
-// Mixer
-// set master volume and resets mixer buffer (wipes it with zeroes and keeps pointers)
-void ResetMixer( const SLONG *pslBuffer, const SLONG slBufferSize);
-// copy mixer buffer to the output buffer(s)
-void CopyMixerBuffer_stereo( const SLONG slSrcOffset, const void *pDstBuffer, const SLONG slBytes);
-void CopyMixerBuffer_mono(   const SLONG slSrcOffset, const void *pDstBuffer, const SLONG slBytes);
-// normalize mixed sounds
-void NormalizeMixerBuffer( const FLOAT snd_fNormalizer, const SLONG slBytes, FLOAT &_fLastNormalizeValue);
-// mix in one sound object to mixer buffer
-void MixSound( class CSoundObject *pso);
-
-
-/*
- * Timer handler for sound mixing.
- */
-class ENGINE_API CSoundTimerHandler : public CTimerHandler {
-public:
-  /* This is called every TickQuantum seconds. */
-  virtual void HandleTimer(void);
+// holds the sound that is currently playing
+struct PlayingBuffer
+{
+  CSoundData   *pb_psd;     // what sound data is playing
+  CSoundObject *pb_pso;     // which sound object is playing
+  LPDIRECTSOUNDBUFFER   pb_pdsb;
+  LPDIRECTSOUND3DBUFFER pb_pdsb3d;  // (NULL if buffer is 2D)
+  LPKSPROPERTYSET pb_pksps;  // for setting properties of EAX (NULL for 2D)
 };
 
-/*
- *  Sound Library class
- */
+
+// main Sound Library class
 class ENGINE_API CSoundLibrary {
 public:
   enum SoundFormat {
@@ -54,90 +81,117 @@ public:
     SF_ILLEGAL  = 4
   };
 
-//private:
-public:
-  CTCriticalSection sl_csSound;          // sync. access to sounds
-  CSoundTimerHandler sl_thTimerHandler;  // handler for mixing sounds in timer
-
 /* rcg !!! FIXME: This needs to be abstracted. */
 #ifdef PLATFORM_WIN32
-  INDEX sl_ctWaveDevices;                // number of devices detected
-  BOOL  sl_bUsingDirectSound;
-  BOOL  sl_bUsingEAX;
   HWAVEOUT sl_hwoWaveOut;                   // wave out handle
   CStaticStackArray<HWAVEOUT> sl_ahwoExtra; // preventively taken channels
-
-  LPDIRECTSOUND   sl_pDS;                   // direct sound 'handle'
+  CStaticArray<WAVEHDR> sl_awhWOBuffers;    // wave-out buffers
+  INDEX sl_ctWaveDevices;                   // number of devices detected
+  UBYTE *sl_pubBuffersMemory;               // memory for wave-out buffers
+  LPDIRECTSOUNDBUFFER sl_pdsbPrimary;       // primary (for initialization on PC)
   LPKSPROPERTYSET sl_pKSProperty;           // for setting properties of EAX
-  LPDIRECTSOUNDBUFFER sl_pDSPrimary;        // and buffers
-  LPDIRECTSOUNDBUFFER sl_pDSSecondary;      // 2D usage 
-  LPDIRECTSOUNDBUFFER sl_pDSSecondary2; 
-  LPDIRECTSOUND3DLISTENER sl_pDSListener;   // 3D EAX
-  LPDIRECTSOUND3DBUFFER   sl_pDSSourceLeft;
-  LPDIRECTSOUND3DBUFFER   sl_pDSSourceRight;
 
-  UBYTE *sl_pubBuffersMemory;            // memory allocated for the sound buffer(s) output
-  CStaticArray<WAVEHDR> sl_awhWOBuffers; // the waveout buffers
+  LPDIRECTSOUND sl_pDS;                     // direct sound 'handle'
+  LPDIRECTSOUNDBUFFER sl_pdsbStream;        // streaming (for music)
+  LPDIRECTSOUND3DLISTENER sl_pds3dListener; // for 3D positioning and effects
 
-  SoundFormat  sl_EsfFormat;             // sound format (external)
-  WAVEFORMATEX sl_SwfeFormat;            // primary sound buffer format
-  SLONG *sl_pslMixerBuffer;              // buffer for mixing sounds (32-bit!)
-  SWORD *sl_pswDecodeBuffer;             // buffer for decoding encoded sounds (ogg, mpeg...)
-  SLONG  sl_slMixerBufferSize;           // mixer buffer size
-  SLONG  sl_slDecodeBufferSize;          // decoder buffer size
+  CListHead sl_lhActiveListeners;   // active listeners for current frame of listening
+  ULONG sl_ulFlags;                 // various flags (see #defines)
 
-  CListHead sl_ClhAwareList;	 					         // list of sound mode aware objects
-  CListHead sl_lhActiveListeners;                // active listeners for current frame of listening
+  SoundFormat  sl_sfFormat;         // sound format (external)
+  WAVEFORMATEX sl_wfeFormat;        // primary sound buffer format
+  SWORD *sl_pswMixerBuffer;         // buffer for mixing sounds
+  SWORD *sl_pswDecodeBuffer;        // buffer for decoding encoded sounds (ogg, mpg, wma...)
+  SLONG  sl_slMixerBufferSize;      // mixer buffer size
+  SLONG  sl_slDecodeBufferSize;     // decoder buffer size
 
-#else
+  // sound buffers for currently playing sounds
+  PlayingBuffer sl_appbPlaying[SND_MAXBUFFERS];
+  CListHead sl_lhPendingSounds; // list of sounds scheduled for playing (first couple from list are actually playing)
+  DOUBLE sl_tmMuteUntil;        // time to keep sounds muted
 
-  SoundFormat  sl_EsfFormat;
+#endif // PLATFORM_WIN32
 
-#endif
+private:
+  // internal stuff
+  void SetFormat_internal( CSoundLibrary::SoundFormat esfNew, BOOL bReport);
+  BOOL StartUp_waveout( BOOL bReport=TRUE);
+  BOOL StartUp_dsound(  BOOL bReport=TRUE);
+  void ShutDown_waveout(void);
+  void ShutDown_dsound(void);
+  void CopyMixerBuffer_waveout(void);
+  void CopyMixerBuffer_dsound( SLONG slMixedSize);
+ SLONG PrepareSoundBuffer_waveout(void);
+ SLONG PrepareSoundBuffer_dsound( void);
 
-  /* Return library state (active <==> format <> NONE */
-  inline BOOL IsActive(void) {return sl_EsfFormat != SF_NONE;};
-  /* Clear Library WaveOut */
-  void ClearLibrary(void);
+  BOOL DSFail( char *strError);
+  BOOL DSLockBuffer( LPDIRECTSOUNDBUFFER pBuffer, SLONG slSize, LPVOID &lpData, DWORD &dwSize);
+  void DSPlayMainBuffers(void);
+
+  // update dsound buffers (if using HW mixer)
+  void PlayBuffers(void);
+  // update SW mixer
+  void MixSounds(void);
+  // request a playing buffer (bWasUsed=TRUE if this buffer was in use before by some quieter sound)
+  INDEX CommitPlayingBuffer( CSoundObject &so, BOOL &bWasUsed);
+
 public:
-  /* Constructor */
   CSoundLibrary(void);
-  /* Destructor */
   ~CSoundLibrary(void);
   DECLARE_NOCOPYING(CSoundLibrary);
 
-  /* Initialization */
+  // return library state (active <==> format <> NONE
+  inline BOOL IsActive(void) {return sl_sfFormat != SF_NONE;};
+  // clear Library WaveOut or DirectSound structures and free memory
+  void ClearLibrary(void);
+
+  // init/clear
   void Init(void);
-  /* Clear Sound Library */
   void Clear(void);
 
-  /* Set Format */
-  SoundFormat SetFormat( SoundFormat EsfNew, BOOL bReport=FALSE);
-  /* Get Format */
-  inline SoundFormat GetFormat(void) { return sl_EsfFormat; };
+  // set/get format
+  void SetFormat( SoundFormat esfNew, BOOL bReport=FALSE);
+  inline SoundFormat GetFormat(void) { return sl_sfFormat; };
 
-  /* Update all 3d effects and copy internal data. */
+  // update states of all sounds
   void UpdateSounds(void);
-  /* Update Mixer */
-  void MixSounds(void);
-  /* Mute output until next UpdateSounds() */
-  void Mute(void);
+  // mute output until next UpdateSounds() or for next tmSeconds
+  void Mute( const TIME tmSeconds=0);
+  // stop all playing buffers
+  void Flush(void);
 
-  /* Set listener enviroment properties (EAX) */
-  BOOL SetEnvironment( INDEX iEnvNo, FLOAT fEnvSize=0);
+  // set listener enviroment properties (EAX)
+  void SetEnvironment( enum SndEnvFX eEnvFX);
 
-  /* Add sound in sound aware list */
-  void AddSoundAware( CSoundData &CsdAdd);
-  /* Remove a sound mode aware object */
-  void RemoveSoundAware( CSoundData &CsdRemove);
+  // add/remove object in pending list (and eventually release playing buffer, too)
+  void AddToPendingList( CSoundObject &so);
+  void RemoveFromPendingList( CSoundObject &so, const BOOL bReleaseNow=FALSE);
+
+  // remove references to sound object and eventaully release direct-sound playing buffer
+  void ReleasePlayingBuffer( const INDEX iBuffer, const BOOL bImmediately=FALSE);  
 
   // listen from this listener this frame
-  void Listen(CSoundListener &sl);
+  void Listen( CSoundListener &sli);
 };
 
 
 // pointer to global sound library object
 ENGINE_API extern CSoundLibrary *_pSound;
+
+
+// listener's perameters
+class CSoundListener {
+public:
+  CListNode sli_lnInActiveListeners;  // for linking for current frame of listening
+
+  FLOAT3D sli_vPosition;          // listener position
+  FLOATmatrix3D sli_mRotation;    // listener rotation matrix
+  FLOAT3D sli_vSpeed;             // speed of the listener
+  FLOAT sli_fVolume;              // listener volume (i.e. deaf factor)
+  FLOAT sli_fFilter;              // global filter for all sounds on this listener
+  CEntity *sli_penEntity;         // listener entity (for listener local sounds)
+  enum SndEnvFX sli_eEnvType;     // environment sound effect
+};
 
 
 #endif  /* include-once check. */

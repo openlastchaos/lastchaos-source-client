@@ -102,7 +102,7 @@ BOOL IFeel_InitDevice(HINSTANCE &hInstance, HWND &hWnd)
   if(_hLib!=NULL) return FALSE;
 
   UINT iOldErrorMode = SetErrorMode( SEM_NOOPENFILEERRORBOX|SEM_FAILCRITICALERRORS);
-  _hLib = LoadLibraryA(fnmExpanded);
+  _hLib = LoadLibrary(fnmExpanded);
   SetErrorMode(iOldErrorMode);
   if(_hLib==NULL)
   {

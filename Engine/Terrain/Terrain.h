@@ -1,267 +1,238 @@
 #ifndef SE_INCL_TERRAIN_H
 #define SE_INCL_TERRAIN_H
 #ifdef PRAGMA_ONCE
-  #pragma once
+	#pragma once
 #endif
 
 #include <Engine/Base/Lists.h>
-#include <Engine/Base/FileName.h>
-#include <Engine/Math/AABBox.h>
 #include <Engine/Brushes/BrushBase.h>
-#include <Engine/Graphics/Texture.h>
-#include <Engine/Terrain/TerrainLayer.h>
-#include <Engine/Terrain/TerrainTile.h>
-#include <Engine/Terrain/ArrayHolder.h>
-#include <Engine/Templates/StaticArray.cpp>
+#include <Engine/Terrain/TREditing.hpp>
+#include <Engine/Graphics/GfxLibrary.h>
 
-#define TR_REGENERATE              (1UL<<0) // terrain needs to be regenerated
-#define TR_REGENERATE_TOP_MAP      (1UL<<1) // regenerate terrain top map
-#define TR_ALLOW_TOP_MAP_REGEN     (1UL<<2) // allow top map regen (top map is not regenerate if this flag is not set)
-#define TR_REBUILD_QUADTREE        (1UL<<3) // rebuild higher levels of quad tree nodes (last levels are rebuild by tile flags)
-#define TR_UPDATE_SHADOWMAP        (1UL<<4) // update terrain shadow map       (NOT USED!)
-#define TR_ALLOW_SHADOW_MAP_UPDATE (1UL<<5) // allow terrain shadow map update (NOT USED!)
-#define TR_SHOW_SELECTION          (1UL<<6) // show selection
+#define TR_USES_TOPMAP             (1UL<<0) // does terrain uses top map
+#define TR_SYNC_TOPMAP             (1UL<<1) // terrain top map must be sync before saving
 #define TR_HAS_FOG                 (1UL<<7) // terrain has fog
 #define TR_HAS_HAZE                (1UL<<8) // terrain has haze
+#define TR_INITIALIZED             (1UL<<9) // if this flag is missing terrains isn't initialized
 
-struct QuadTreeNode
-{
-  FLOATaabbox3D qtn_aabbox;    // Bounding box for this quadtree node
-  INDEX         qtn_iTileIndex;// Index of tile that this node represents
-  INDEX         qtn_iChild[4]; // Indices of children for this quadtree node
-};
-
-struct QuadTreeLevel
-{
-  INDEX qtl_iFirstNode; // Index of first quadtree node in this level
-  INDEX qtl_ctNodes;    // Count of nodes in this level
-  INDEX qtl_ctNodesCol; // Count of nodes in col
-  INDEX qtl_ctNodesRow; // Count of nodes in row
-};
-
-struct Point {
-  Point() {}
-  ~Point() {}
-  Point(const Point &ptOther) {
-    *this = ptOther;
-  }
-  INDEX pt_iX;
-  INDEX pt_iY;
-};
-
-struct Rect {
-  Rect() {}
-  ~Rect() {}
-  Rect(const Rect &rcOther) {
-    *this = rcOther;
-  }
-  Rect(INDEX iLeft, INDEX iTop, INDEX iRight, INDEX iBottom) {
-    rc_iLeft   = iLeft;
-    rc_iTop    = iTop;
-    rc_iRight  = iRight;
-    rc_iBottom = iBottom;
-  }
-  INDEX Width() {return rc_iRight-rc_iLeft;}
-  INDEX Height() {return rc_iBottom-rc_iTop;}
-  INDEX rc_iLeft;
-  INDEX rc_iRight;
-  INDEX rc_iTop;
-  INDEX rc_iBottom;
-};
-
+// Terrain class
 class ENGINE_API CTerrain : public CBrushBase
 {
 public:
-  CTerrain();
-  ~CTerrain();
+	// Constructor
+	CTerrain(void);
+	// Destructor
+	~CTerrain(void);
 
-  // Render terrain tiles
-  void Render(CAnyProjection3D &apr, CDrawPort *pdp);
-  // Render terrain tiles in wireframe
-  void RenderWireFrame(CAnyProjection3D &apr, CDrawPort *pdp, COLOR &colEdges);
+	// Read from stream
+	void Read_t(CTStream *istrFile);
+	// Write to stream
+	void Write_t(CTStream *ostrFile);
+	// Clean terrain data
+	void Clear(void);
 
-  // Create empty terrain with given size
-  void CreateEmptyTerrain_t(PIX pixWidth,PIX pixHeight);
-  // Import height map from targa file
-  void ImportHeightMap_t(CTFileName fnHeightMap, BOOL bUse16b = TRUE);
-  // Export height map to targa file
-  void ExportHeightMap_t(CTFileName fnHeightMap, BOOL bUse16b = TRUE);
-  // Rebuild all terrain
-  void ReBuildTerrain(BOOL bDelayTileRegen=FALSE);
-  // Refresh terrain
-  void RefreshTerrain(void);
+	// Identify as terrain
+	INDEX GetBrushType(void)       { return CBrushBase::BT_TERRAIN; }
 
-  // Set height map size
-  void AllocateHeightMap(PIX pixWidth, PIX pixHeight);
-  // Change height map size
-  void ReAllocateHeightMap(PIX pixWidth, PIX pixHeight);
-  // Set terrain size
-  void SetTerrainSize(FLOAT3D vSize);
-  // Set shadow map size aspect (relative to height map size) and shading map aspect (relative to shadow map size)
-  void SetShadowMapsSize(INDEX iShadowMapAspect, INDEX iShadingMapAspect);
-
-  // Set size of top map texture
-  void SetGlobalTopMapSize(PIX pixTopMapSize);
-  // Set size of top map texture for tiles in lower lods
-  void SetTileTopMapSize(PIX pixLodTopMapSize);
-  // Set lod distance factor
-  void SetLodDistanceFactor(FLOAT fLodDistance);
-
-  // Get shadow map size
-  PIX GetShadowMapWidth(void);
-  PIX GetShadowMapHeight(void);
-  // Get shading map size
-  PIX GetShadingMapWidth(void);
-  PIX GetShadingMapHeight(void);
-
-  // Get reference to layer
-  CTerrainLayer &GetLayer(INDEX iLayer);
-  // Add new layer
-  CTerrainLayer &AddLayer_t(CTFileName fnTexture, LayerType ltType = LT_NORMAL, BOOL bUpdateTerrain=TRUE);
-  // Remove one layer
-  void RemoveLayer(INDEX iLayer, BOOL bUpdateTerrain=TRUE);
-  // Move layer to new position
-  INDEX SetLayerIndex(INDEX iLayer,INDEX iNewIndex, BOOL bUpdateTerrain=TRUE);
-
-  // Add tile to reqen queue
-  void AddTileToRegenQueue(INDEX iTileIndex);
-  // Add all tiles to regen queue
-  void AddAllTilesToRegenQueue(void);
-  // Clear current regen list
-  void ClearRegenList(void);
-
-  // Update shadow map
-  void UpdateShadowMap(FLOATaabbox3D *pbboxUpdate=NULL, BOOL bAbsoluteSpace=FALSE);
-  // Update top map
-  void UpdateTopMap(INDEX iTileIndex, Rect *prcDest = NULL);
-
-  // Terrain flags handling
-  inline ULONG &GetFlags(void)         { return tr_ulTerrainFlags; }
-  inline void SetFlags(ULONG ulFlags)  { tr_ulTerrainFlags  = ulFlags; }
-  inline void AddFlag(ULONG ulFlag)    { tr_ulTerrainFlags |= ulFlag; }
-  inline void RemoveFlag(ULONG ulFlag) { tr_ulTerrainFlags &= ~ulFlag; }
-
-  // get first quad tree node bounding box (all tiles box)
-  void GetAllTerrainBBox(FLOATaabbox3D &bbox);
-
-  INDEX GetBrushType(void) { return CBrushBase::BT_TERRAIN; } // this is terrain not brush
-  
-  // Get shading color from tex coords in shading map
-  COLOR GetShadeColor(CShadingInfo *psi);
-  // Get plane from given point
-  FLOATplane3D GetPlaneFromPoint(FLOAT3D &vAbsPoint);
-
-
-  // Sets number of quads in row of one tile
-  void SetQuadsPerTileRow(INDEX ctQuadsPerTileRow);
-  inline INDEX GetQuadsPerTileRow(void)    {return tr_ctQuadsInTileRow;}
-  inline INDEX GetVerticesPerTileRow(void) {return tr_ctVerticesInTileRow;}
- 
-  // Read from stream.
-  void ReadVersion_t( CTStream *istrFile, INDEX iSavedVersion);
-  // Read from stream.
-  void Read_t( CTStream *istrFile); // throw char *
-  // Write to stream.
-  void Write_t( CTStream *ostrFile);  // throw char *
-  // Copy terrain data from other terrain
-  void Copy(CTerrain &trOther);
-  // Clean terrain data (does not remove layers)
-  void Clean(BOOL bCleanLayers=TRUE);
-  // Clean terrain data
-  void Clear(void);
-
-
-  // Renders visible terrain tiles in wireframe 
-  void RenderWire(void);
-  // Render vertices of all terrain tiles
-  void RenderPoints(void);
-  // Generate terrain tiles 
-  void ReGenerate(void);
-  // Build terrain data
-  void BuildTerrainData(void);
-  // Build quadtree for terrain
-  void BuildQuadTree(void);
-  // Update quadtree for terrain
-  void UpdateQuadTree(void);
-  // Generate terrain top map
-  void GenerateTerrainTopMap(void);
-  // Draws one quad node and its children
-  void DrawQuadNode(INDEX iqn);
-  // Set Terrain stretch
-  void SetTerrainStretch(FLOAT3D vStretch);
-  // Add default layer
-  void AddDefaultLayer_t(void);
-
-  // Discard all cached shading info for models
-  void DiscardShadingInfos(void);
-
-  // Clear height map
-  void ClearHeightMap(void);
-  // Clear shadow map
-  void ClearShadowMap(void);
-  // Clear edge map
-  void ClearEdgeMap(void);
-  // Clear all topmaps
-  void ClearTopMaps(void);
-  // Clear tiles
-  void ClearTiles(void);
-  // Clear arrays
-  void ClearArrays(void);
-  // Clear quadtree
-  void ClearQuadTree(void);
-  // Clear layers
-  void ClearLayers(void);
+	void AddFlag(ULONG ulFlags)    { tr_ulTerrainFlags |= ulFlags;  } // Add terrain flag
+	void RemoveFlag(ULONG ulFlags) { tr_ulTerrainFlags &= ~ulFlags; } // Remove terrain flag
+	void SetFlags(ULONG ulFlags)   { tr_ulTerrainFlags = ulFlags;   } // Set terrain flags
+	ULONG GetFlags(void)           { return tr_ulTerrainFlags;      } // Get terrain flags
 
 public:
-  CListNode tr_lnInActiveTerrains; // for linking in list of active terrains in renderer
-  CListHead tr_lhShadingInfos;     // for linking shading infos of entities
-  CEntity *tr_penEntity;           // pointer to entity that holds this terrain
-
-  INDEX   tr_ctTiles;     // Terrain tiles count
-  INDEX   tr_ctTilesX;    // Terrain tiles count in row
-  INDEX   tr_ctTilesY;    // Terrain tiles count in col
-  INDEX   tr_iMaxTileLod; // Maximum lod in witch one tile can be
-
-  FLOAT3D tr_vStretch;    // Terrain stretch
-  FLOAT   tr_fDistFactor; // Distance for lod switching
-
-  CStaticStackArray<QuadTreeNode>        tr_aqtnQuadTreeNodes;  // Array of quadtree nodes
-  CStaticStackArray<QuadTreeLevel>       tr_aqtlQuadTreeLevels; // Array of quadtree levels
-  CStaticArray<class CTerrainTile>       tr_attTiles;           // Array of terrain tiles for terrain
-  CStaticArray<class CArrayHolder>       tr_aArrayHolders;      // Array of memory holders for each lod
-  CStaticStackArray<class CTerrainLayer> tr_atlLayers;          // Array of terrain layers
-  CDynamicContainer<class CTextureData>  tr_atdTopMaps;         // Array of top maps for each tile array (used by ArrayHolder)
-  CStaticStackArray<INDEX>               tr_auiRegenList;       // List of tiles that need to be regenerated
-
-  /* Do not change any of this params directly */
-  UWORD  *tr_auwHeightMap;        // Terrain height map
-  UWORD  *tr_auwShadingMap;       // Terrain shading map
-  UBYTE  *tr_aubEdgeMap;          // Terrain edge map
-  CTextureData tr_tdTopMap;       // Terrain top map
-  CTextureData tr_tdShadowMap;    // Terrain shadow map
-  CTextureData *tr_ptdDetailMap;  // Terrain detail map
-
-  PIX     tr_pixHeightMapWidth;   // Terrain height map widht
-  PIX     tr_pixHeightMapHeight;  // Terrain height map height
-
-  PIX     tr_pixTopMapWidth;         // Width  of terrain top map
-  PIX     tr_pixTopMapHeight;        // Height of terrain top map
-  PIX     tr_pixFirstMipTopMapWidth; // Width  of tile first mip top map
-  PIX     tr_pixFirstMipTopMapHeight;// Height of tile first mip top map
-
-  INDEX   tr_iShadowMapSizeAspect;   // Size of shadow map (relative to height map size)
-  INDEX   tr_iShadingMapSizeAspect;  // Size of shading map (relative to shadow map)
-
-  INDEX   tr_ctQuadsInTileRow;    // Count of quads in one row in tile
-  INDEX   tr_ctVerticesInTileRow; // Count of vertices in one row in tile
-  ULONG   tr_ulTerrainFlags;      // Terrain flags
-  FLOAT3D tr_vTerrainSize;        // Terrain size in metars
-
-  INDEX   tr_iSelectedLayer;      // Selected layer in we
-private:
-  INDEX   tr_ctDriverChanges;
+	INDEX			tr_iSelectedLayer;		// Selected layer
+	INDEX			tr_iSelectedShadowMap;	// Selected shadow map					// yjpark
+	ULONG			tr_ulTerrainFlags;		// Terrain flags
+	CListHead		tr_lhShadingInfos;		// For linking shading infos of entities
+	CListNode		tr_lnInActiveTerrains;	// For linking in list of active terrains in renderer
+	CListNode		tr_lnLoadedTerrains;	// For linking in list of all terrains loaded (for reloadtexture)
+	CEntity			*tr_penEntity;			// Pointer to entity that holds this terrain
+	CTerrainImp		*tr_ptrTerrain;			// Internal terrain object
 };
 
+
+// initialize batch terrain rendering
+ENGINE_API extern void TR_BeginRenderingView(CAnyProjection3D &apr, CDrawPort *pdp);
+// cleanup after batch terrain rendering
+ENGINE_API extern void TR_EndRenderingView(void);
+
+//강동민 수정 시작
+ENGINE_API extern void TR_GetStretchMatrix(Matrix12 &matStretch);
+ENGINE_API extern void TR_GetObjToViewMatrix(Matrix12 &matObjToView);
+//강동민 수정 끝
+
+// setup terrain position
+ENGINE_API extern void TR_SetTerrainPlacement(const CPlacement3D &pl);
+ENGINE_API extern void TR_SetTerrainPlacement(const FLOATmatrix3D &m, const FLOAT3D &v);
+// Additional viewers
+ENGINE_API extern void TR_AddTerrainViewer(const CTerrain *ptrTerrain, FLOAT3D vViewerAbs, FLOAT fDistFactor=-1.0f);
+
+// Renders one terrain
+ENGINE_API extern void TR_RenderTerrain(CTerrain *ptrTerrain);
+// Renders one terrain in wireframe 
+ENGINE_API extern void TR_RenderWireFrame(CTerrain *ptrTerrain, COLOR colEdges);
+// Render terrain lighting effect
+ENGINE_API extern void TR_RenderTerrainLighting( CTerrain *ptrTerrain, CTextureData* ptdTexture );	// yjpark
+// Render terrain mesh effect
+//ENGINE_API extern void TR_RenderTerrainMesh( CTerrain *ptrTerrain, CTextureData* ptdTextureGfxBlend, gfxSrcBlend, GfxBlend gfxDstBlend );	// yjpark
+// Cleans terrain rendering data
+ENGINE_API extern void TR_CleanRender(CTerrain *ptrTerrain);
+
+// Copy terrain from other terrain
+ENGINE_API extern void TR_CopyTerrain(CTerrain *ptrDest, const CTerrain *ptrSrc);
+
+// Rebuild terrain geometry
+ENGINE_API extern void TR_RegenerateAll(CTerrain *ptrTerrain);
+// Clear terrain 
+ENGINE_API extern void TR_ClearTerrain(CTerrain *ptrTerrain);
+// Update terrain shadow map
+ENGINE_API extern void TR_UpdateShadowMap(CTerrain *ptrTerrain, const Matrix12 &mObjToAbs, FLOATaabbox3D bboxUpdate,
+											BOOL bAutoColectLights = TRUE, BOOL bUpdateObjectShadow = FALSE );	// yjpark
+// Disacard all shading infos
+ENGINE_API extern void TR_DiscardShadingInfos(CTerrain *ptrTerrain);
+// Fill edge map with const value
+ENGINE_API extern void TR_FillEdgeMap(CTerrain *ptrTerrain, UBYTE ubFill);
+// Resize existing height map
+ENGINE_API extern void TR_SetHeightMapSize(CTerrain *ptrTerrain, PIX pixMapWidth, PIX pixMapHeight);
+// Resize existing top map
+ENGINE_API extern void TR_SetTopMapSize(CTerrain *ptrTerrain, PIX pixMapWidth, PIX pixMapHeight);
+// Bind textures used by terrain
+ENGINE_API extern void TR_BindTerrainTextures(CTerrain *ptrTerrain);
+// Unbind textures used by terrain
+ENGINE_API extern void TR_UnbindTerrainTextures(CTerrain *ptrTerrain);
+
+// Set terrain shadowmap size aspect (relative to height map size) and shading map aspect (relative to shadow map size)
+ENGINE_API extern void TR_SetShadowMapSize(CTerrain *ptrTerrain, INDEX iShadowMapAspect, INDEX iShadingMapAspect);
+// Set terrain metric size
+ENGINE_API extern void TR_SetTerrainSize(CTerrain *ptrTerrain, FLOAT3D vSize);
+// Add terrain lighting effect
+ENGINE_API extern void TR_AddTerrainLighting( CLightSource *plsTerrainLight );						// yjpark
+// Remove terrain lighting effect
+ENGINE_API extern void TR_RemoveTerrainLighting( CLightSource *plsTerrainLight );					// yjpark
+// Get index of soung of terrain layer
+ENGINE_API extern INDEX TR_GetTerrainLayerSound( FLOAT fX, FLOAT fZ );								// yjpark
+
+/*
+ * TerrainMisc
+ */
+// Get plane from given point
+ENGINE_API extern FLOATplane3D TR_GetPlaneFromPoint(const CTerrain *ptrTerrain, const Matrix12 &mTerrain, const FLOAT3D &vAbsPoint);
+// Get terrain bounding box
+ENGINE_API extern FLOATaabbox3D TR_GetTerrainBBox(const CTerrain *ptrTerrain);
+ENGINE_API extern FLOATaabbox3D TR_GetStretchedTerrainBBox(const CTerrain *ptrTerrain);
+
+ENGINE_API extern FLOAT TR_TestRayCastHit(CTerrain *ptrTerrain, const FLOATmatrix3D &mRotation, const FLOAT3D &vPosition, 
+																					FLOAT3D vOrigin, FLOAT3D vTarget,FLOAT fOldDistance, BOOL bHitInvisibleTris);
+
+ENGINE_API extern FLOAT TR_TestRayCastHit(CTerrain *ptrTerrain, const FLOATmatrix3D &mRotation, const FLOAT3D &vPosition, 
+																					FLOAT3D vOrigin, FLOAT3D vTarget,FLOAT fOldDistance, BOOL bHitInvisibleTris,
+																					FLOATplane3D &plHitPlane, FLOAT3D &vHitPoint);
+
+ENGINE_API extern void TR_ExtractPolygonsInBox(const CTerrain *ptrTerrain, const FLOATaabbox3D &bboxExtract,
+																							 const Matrix12 &mObjToAbs, FLOAT3D **pavVtx, INDEX &ctVtx,
+																							 UWORD **puwInd, INDEX &ctIndices);
+//강동민 수정 시작
+//ENGINE_API extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, const CTRect &rcExtract,
+//																								FLOAT3D **pavVtx, INDEX &ctVtx, UWORD **puwInd, INDEX &ctIndices);
+ENGINE_API extern void TR_ExtractPoligonsInRect(const CTerrain *ptrTerrain, CTRect &rcExtract,
+																								FLOAT3D **pavVtx, INDEX &ctVtx, UWORD **puwInd, INDEX &ctIndices);
+//강동민 수정 끝
+
+ENGINE_API extern FLOAT2D TR_CalcShadingTC(const CTerrain *ptrTerrain, const FLOAT3D &vPointAbs, const Matrix12 &mObjToAbs);
+
+ENGINE_API extern BOOL TR_IsTerrainBelowPoint(const CTerrain *ptrTerrain, const FLOAT3D &vPoint,
+												FLOAT fMaxDist, const FLOAT3D &vGravityDir);
+
+ENGINE_API extern void TR_GetMatrixFromEntity(Matrix12 &m, const CTerrain *ptrTerrain);
+
+ENGINE_API extern void TRS_UpdateRealShadowMap( CTerrain* ptrTerrain, INDEX iShadowMap,
+												GFXColor colObjShadow, FLOAT fShadowBlur,
+												BOOL bHitSka = FALSE, BOOL bHitMdl = FALSE,
+												BOOL bHitBrush = FALSE, BOOL bHitTerrain = FALSE );			// yjpark
+
+inline PIX GetShadowMapWidth(PIX pixHeightMapWidth, SLONG slSizeAspect) {
+	if(slSizeAspect<0) {
+		return (pixHeightMapWidth-1)>>(-slSizeAspect);
+	} else {
+		return (pixHeightMapWidth-1)<<( slSizeAspect);
+	}
+};
+#define GetShadowMapHeight  GetShadowMapWidth
+
+inline PIX GetShadingMapWidth(PIX pixShadowMapWidth, SLONG slSizeAspect) {
+	if(slSizeAspect<0) {
+		return (pixShadowMapWidth)>>(-slSizeAspect);
+	} else {
+		return (pixShadowMapWidth)<<( slSizeAspect);
+	}
+};
+
+#define GetShadingMapHeight GetShadingMapWidth
+
+// yjpark |<--
+//-------------------------------------------------------------------------------------------------
+// Desc : These contents aren't included in final version
+// ------------------------------------------------------------------------------------------------
+#ifndef FINALVERSION
+
+// LOD factor management
+ENGINE_API extern void TR_SetCurrentDistance(FLOAT fDistFactor);
+ENGINE_API extern void TR_ForceCustomTileLOD(INDEX iForcedLOD);
+// Fill height map with const value
+ENGINE_API extern void TR_FillHeightMap(CTerrain *ptrTerrain, UWORD uwFill);
+// Update terrain top map
+ENGINE_API extern void TR_UpdateTopMap(CTerrain *ptrTerrain);
+// Change distance factor (call TR_RegenerateAll after this)
+ENGINE_API extern void TR_SetDistanceFactor(CTerrain *ptrTerrain, FLOAT fDistFactor);
+// Get terrain metric size
+ENGINE_API extern FLOAT3D TR_GetTerrainSize(const CTerrain *ptrTerrain);
+// Get terrain stretch
+ENGINE_API extern FLOAT3D TR_GetTerrainStretch(const CTerrain *ptrTerrain);
+// Import * export height map from targa file
+ENGINE_API extern void TR_ImportHeightMap_t(CTerrain *ptrTerrain, const CTFileName &fnm, BOOL bUse16b = TRUE);
+ENGINE_API extern void TR_ExportHeightMap_t(CTerrain *ptrTerrain, const CTFileName &fnm, BOOL bUse16b = TRUE);
+// Import & export edge map from targa file
+ENGINE_API extern void TR_ImportEdgeMap_t(CTerrain *ptrTerrain, const CTFileName &fnm);
+ENGINE_API extern void TR_ExportEdgeMap_t(CTerrain *ptrTerrain, const CTFileName &fnm);
+
+// Get color for shading info
+ENGINE_API extern COLOR TR_GetShadeColor(const CTerrain *ptrTerrain, CShadingInfo *psi);
+// Get terrain height map width
+ENGINE_API extern PIX TR_GetHeightMapWidth(const CTerrain *ptrTerrain);
+// Get terrain height map height
+ENGINE_API extern PIX TR_GetHeightMapHeight(const CTerrain *ptrTerrain);
+// Get terrain top map width
+ENGINE_API extern PIX TR_GetTopMapWidth(const CTerrain *ptrTerrain);
+// Get terrain top map height
+ENGINE_API extern PIX TR_GetTopMapHeight(const CTerrain *ptrTerrain);
+// Get terrain info
+ENGINE_API extern CTString TR_GetTerrainInfo(const CTerrain *ptrTerrain);
+
+ENGINE_API extern CTPoint TR_RelFromAbsPoint(const CTerrain *ptrTerrain, const FLOAT3D &vPointAbs, const Matrix12 &mObjToAbs,
+											 BufferType btType = BT_HEIGHT_MAP, SLONG slStretch = 1);	// yjpark
+
+// Set terrain attribute map size
+ENGINE_API extern void TR_SetAttributeMapSize( CTerrain *ptrTerrain );									// yjpark
+
+// Shadow map functions
+ENGINE_API extern SLONG TR_GetShadowMapAspect(const CTerrain *ptrTerrain);								// yjpark |<--
+ENGINE_API extern SLONG TR_GetShadingMapAspect(const CTerrain *ptrTerrain);
+ENGINE_API extern void TRS_DeleteShadowMap( CTerrain *ptrTerrain, INDEX iTerrainLayer );
+ENGINE_API extern void TRS_AddShadowMap( CTerrain *ptrTerrain );
+ENGINE_API extern void TRS_SetShadowMapIndex( CTerrain *ptrTerrain, INDEX iShadowIndex, INDEX iNewShadowIndex);
+ENGINE_API extern void TRS_ClearRealShadowMap( CTerrain* ptrTerrain, INDEX iShadowMap );
+
+// Attribute map functions
+ENGINE_API extern void TR_GenerateAttributeMap( CTerrain *ptrTerrain, CWorld *pWorld );
+ENGINE_API extern void TR_ClearAttributeMap( CTerrain *ptrTerrain );
+ENGINE_API extern void TR_ImportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm );
+ENGINE_API extern void TR_ExportAttributeMap_t( CTerrain *ptrTerrain, CTFileName &fnm );
+
+// Server height map
+ENGINE_API extern void TR_ExportServerHeightMap_t( CTerrain *ptrTerrain, CTFileName &fnm );				// yjpark     -->|
+
+#endif	// FINALVERSION
+// yjpark     -->|
 
 
 #endif

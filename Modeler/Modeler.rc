@@ -520,8 +520,8 @@ END
 
 IDR_MAINFRAME ACCELERATORS PRELOAD MOVEABLE PURE 
 BEGIN
-    "-",            ID_TESSELLATE_LESS,     ASCII,  NOINVERT
-    "=",            ID_TESSELLATE_MORE,     ASCII,  NOINVERT
+    187,            ID_TESSELLATE_MORE,     VIRTKEY, CONTROL, NOINVERT
+    189,            ID_TESSELLATE_LESS,     VIRTKEY, CONTROL, NOINVERT
     "G",            ID_TOGGLE_ALL_BARS,     VIRTKEY, CONTROL, NOINVERT
     "M",            ID_VIEW_HELP_MOUSE,     VIRTKEY, CONTROL, NOINVERT
     "N",            ID_FILE_NEW,            VIRTKEY, CONTROL, NOINVERT
@@ -653,7 +653,7 @@ BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,108,7,21,20
     DEFPUSHBUTTON   "OK",IDOK,177,7,32,14,WS_GROUP
     CTEXT           "Serious Engine",IDC_STATIC,7,9,58,8,SS_NOPREFIX
-    LTEXT           "Copyright © 2000 CroTeam LLC. All rights reserved.",
+    LTEXT           "Copyright Â© 2000 CroTeam LLC. All rights reserved.",
                     IDC_STATIC,7,72,197,8
     CTEXT           "Serious Modeler",IDC_STATIC,7,18,60,8,SS_NOPREFIX
     LTEXT           "For licensing Serious Engine email:",IDC_STATIC,7,42,
@@ -1428,7 +1428,7 @@ BEGIN
             VALUE "FileDescription", "MODELER MFC Application\0"
             VALUE "FileVersion", "1, 0, 0, 1\0"
             VALUE "InternalName", "MODELER\0"
-            VALUE "LegalCopyright", "Copyright © 1997\0"
+            VALUE "LegalCopyright", "Copyright Â© 1997\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "MODELER.EXE\0"
             VALUE "ProductName", "MODELER Application\0"
@@ -1846,6 +1846,10 @@ BEGIN
 0x3231, 0x2038, 0x2078, 0x3231, 0x0038, 
     IDC_SIZE_IN_PIXELS, 0x403, 10, 0
 0x3532, 0x2036, 0x2078, 0x3532, 0x0036, 
+    IDC_SIZE_IN_PIXELS, 0x403, 10, 0
+0x3135, 0x2032, 0x2078, 0x3135, 0x0032, 
+    IDC_SIZE_IN_PIXELS, 0x403, 12, 0
+0x3031, 0x3432, 0x7820, 0x3120, 0x3230, 0x0034, 
     0
 END
 

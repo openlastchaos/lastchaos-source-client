@@ -21,8 +21,8 @@ properties:
   9 CTString m_strName "Name" 'N' = "",
 
 components:
-  1 model   MODEL_WATCHPLAYERS      "Models\\Editor\\WatchPlayers.mdl",
-  2 texture TEXTURE_WATCHPLAYERS    "Models\\Editor\\WatchPlayers.tex"
+  1 editor model   MODEL_WATCHPLAYERS      "Data\\Models\\Editor\\WatchPlayers.mdl",
+  2 editor texture TEXTURE_WATCHPLAYERS    "Data\\Models\\Editor\\WatchPlayers.tex"
 
 functions:
 /************************************************************

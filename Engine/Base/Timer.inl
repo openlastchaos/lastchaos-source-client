@@ -3,11 +3,15 @@
 #ifdef PRAGMA_ONCE
   #pragma once
 #endif
-
+#define TEST_GETTIME
 /* Constructor from seconds. */
 inline CTimerValue::CTimerValue(double fSeconds)
 {
-  tv_llValue = __int64(fSeconds*_pTimer->tm_llPerformanceCounterFrequency);
+#ifdef TEST_GETTIME
+	tv_llValue = __int64(fSeconds*1000);
+#else 
+	tv_llValue = __int64(fSeconds*_pTimer->tm_llPerformanceCounterFrequency);
+#endif
 }
 /* Clear timer value (set it to zero). */
 inline void CTimerValue::Clear(void)
@@ -35,6 +39,7 @@ inline BOOL CTimerValue::operator<(const CTimerValue &tvOther) const {
   return tv_llValue<tvOther.tv_llValue;
 }
 inline BOOL CTimerValue::operator>(const CTimerValue &tvOther) const {
+	
   return tv_llValue>tvOther.tv_llValue;
 }
 inline BOOL CTimerValue::operator<=(const CTimerValue &tvOther) const {
@@ -43,13 +48,24 @@ inline BOOL CTimerValue::operator<=(const CTimerValue &tvOther) const {
 inline BOOL CTimerValue::operator>=(const CTimerValue &tvOther) const {
   return tv_llValue>=tvOther.tv_llValue;
 }
+
 /* Get the timer value in seconds. - use for time spans only! */
 inline double CTimerValue::GetSeconds(void) {
-  return ((double)tv_llValue)/_pTimer->tm_llPerformanceCounterFrequency;
+#ifdef TEST_GETTIME
+	return ((double)tv_llValue)/1000 ;
+#else
+	return ((double)tv_llValue)/_pTimer->tm_llPerformanceCounterFrequency ;
+#endif 
 };
+
 /* Get the timer value in milliseconds as integral value. */
 inline __int64 CTimerValue::GetMilliseconds(void) {
-  return tv_llValue/(_pTimer->tm_llPerformanceCounterFrequency/1000);
+
+#ifdef TEST_GETTIME
+ return tv_llValue;
+#else 
+ return tv_llValue/(_pTimer->tm_llPerformanceCounterFrequency/1000) ;
+#endif
 };
 
 

@@ -25,13 +25,10 @@ template CStaticArray<PolygonsPerPatch>;
 template CDynamicArray<CAttachedModelPosition>;
 
 
-extern UBYTE aubGouraudConv[16384];
-
 // model LOD biasing control
 extern FLOAT mdl_fLODMul;
 extern FLOAT mdl_fLODAdd;
 extern INDEX mdl_iLODDisappear; // 0=never, 1=ignore bias, 2=with bias
-extern INDEX mdl_bFineQuality;  // 0=force to 8-bit, 1=optimal
 
 
 
@@ -689,7 +686,7 @@ void MappingSurface::Read_t( CTStream *pFile, BOOL bReadPolygonsPerSurface,
     if( (ms_ulRenderingFlags&SRF_NEW_TEXTURE_FORMAT) == 0)
       ms_ulRenderingFlags |= SRF_DIFFUSE|SRF_NEW_TEXTURE_FORMAT;
     if (ms_sttTranslucencyType==STT_TRANSLUCENT || ms_sttTranslucencyType==STT_ALPHAGOURAUD
-      ||ms_sttTranslucencyType==STT_ADD||ms_sttTranslucencyType==STT_MULTIPLY) {
+      ||ms_sttTranslucencyType==STT_ADD||ms_sttTranslucencyType==STT_INVMULTIPLY) {
       _bHasAlpha = TRUE;
     }
 
@@ -1415,7 +1412,7 @@ void CModelData::Read_t( CTStream *pFile) // throw char *
   for( i=0; i<md_MipCt; i++) { 
     ModelMipInfo mmiDummy; // need one dummy mipmodel info in case of mip level rejection
     // reject mip model in case its even, and not last
-    if( !mdl_bFineQuality && (i%2)==1 && i!=(md_MipCt-1)) {
+    if( (i%2)==1 && i!=(md_MipCt-1)) {
       mmiDummy.Read_t( pFile, bHasPolygonalPatches, bHasPolygonsPerSurface, bHasDiffuseColor);
       mmiDummy.Clear();
       ctMipsRejected++;
@@ -1473,7 +1470,7 @@ void CModelData::Read_t( CTStream *pFile) // throw char *
   }
   else
   {
-    ThrowF_t(TRANS("Expecting chunk containing patch data but found unrecognisable chunk ID."));
+    ThrowF_t(TRANS("Expecting chunk containing patch data but found unrecognizable chunk ID."));
   }
 
   // Read texture width and height in MEX-es
@@ -1513,33 +1510,6 @@ void CModelData::Read_t( CTStream *pFile) // throw char *
   // this model has been saved without center point
   else { // so just reset it
     md_vCenter = FLOAT3D(0,0,0);
-  }
-
-  // convert model to 8-bit if requested and needed
-  if( !mdl_bFineQuality && (md_Flags&MF_COMPRESSED_16BIT))
-  {
-    // prepare 8-bit frame vertices array
-    const INDEX ctVtx = md_VerticesCt * md_FramesCt;
-    md_FrameVertices8.New(ctVtx);
-
-    // loop thru vertices
-    for( INDEX iVtx=0; iVtx<ctVtx; iVtx++) { 
-      ModelFrameVertex16 &mfv16 = md_FrameVertices16[iVtx];
-      ModelFrameVertex8  &mfv8  = md_FrameVertices8[iVtx];
-      // convert vertex coordinate
-      mfv8.mfv_SBPoint(1) = mfv16.mfv_SWPoint(1) >>8;
-      mfv8.mfv_SBPoint(2) = mfv16.mfv_SWPoint(2) >>8;
-      mfv8.mfv_SBPoint(3) = mfv16.mfv_SWPoint(3) >>8;
-      // convert normal
-      const INDEX iHofs = mfv16.mfv_ubNormH>>1;
-      const INDEX iPofs = mfv16.mfv_ubNormP>>1;
-      mfv8.mfv_NormIndex = aubGouraudConv[iHofs*128+iPofs]; 
-    }
-
-    // done with conversion
-    md_Stretch *= 256.0f;
-    md_FrameVertices16.Clear();
-    md_Flags &= ~MF_COMPRESSED_16BIT;
   }
 
   // create compressed vector center that will be used for setting object handle
@@ -1714,25 +1684,30 @@ void ModelMipInfo::Clear()
   mmpi_MappingSurfaces.Clear();
   mmpi_aPolygonsPerPatch.Clear();
 }
+
 //--------------------------------------------------------------------------------------------
 ModelPolygon::ModelPolygon()
 {
   mp_RenderFlags = 0;
 }
+
 //--------------------------------------------------------------------------------------------
 ModelPolygon::~ModelPolygon()
 {
   mp_PolygonVertices.Clear();
 }
+
 //--------------------------------------------------------------------------------------------
 ModelMipInfo::~ModelMipInfo()
 {
   Clear();
 }
+
 //--------------------------------------------------------------------------------------------
 MappingSurface::~MappingSurface()
 {
 }
+
 //--------------------------------------------------------------------------------------------
 MappingSurface::MappingSurface()
 {
@@ -1744,6 +1719,8 @@ MappingSurface::MappingSurface()
 	ms_ulOnColor = SC_ALLWAYS_ON;
 	ms_ulOffColor = SC_ALLWAYS_OFF;
 }
+
+
 //--------------------------------------------------------------------------------------------
 /*
  * Object constructor
@@ -1756,36 +1733,42 @@ CModelObject::CModelObject()
   mo_iManualMipLevel = 0;
   mo_AutoMipModeling = TRUE;
   mo_Stretch = FLOAT3D(1,1,1);
+  mo_bSkipOcclusionTest = FALSE;
 }
+
+
 /*
  * Destructor
  */
 CModelObject::~CModelObject()
 {
-  for(INDEX iPatch=0; iPatch<MAX_TEXTUREPATCHES; iPatch++)
-  {
-    HidePatch( iPatch);
-  }
+  // remove all patches
+  for( INDEX iPatch=0; iPatch<MAX_TEXTUREPATCHES; iPatch++) HidePatch(iPatch);
+  mo_bSkipOcclusionTest = FALSE;
 
+  // remove all attachments
   RemoveAllAttachmentModels();
 }
+
+
 // copy from another object of same class
 void CModelObject::Copy(CModelObject &moOther)
 {
   CAnimObject::Copy(moOther);
+  mo_bSkipOcclusionTest = FALSE;
   
-  mo_PatchMask        = moOther.mo_PatchMask      ;
-	mo_iManualMipLevel  = moOther.mo_iManualMipLevel;
-	mo_AutoMipModeling  = moOther.mo_AutoMipModeling;
-  mo_Stretch              = moOther.mo_Stretch            ;
-  mo_ColorMask            = moOther.mo_ColorMask          ;
-  mo_iLastRenderMipLevel  = moOther.mo_iLastRenderMipLevel;
-  mo_colBlendColor        = moOther.mo_colBlendColor      ;
+  mo_PatchMask       = moOther.mo_PatchMask;
+	mo_iManualMipLevel = moOther.mo_iManualMipLevel;
+	mo_AutoMipModeling = moOther.mo_AutoMipModeling;
+  mo_Stretch             = moOther.mo_Stretch;
+  mo_ColorMask           = moOther.mo_ColorMask;
+  mo_iLastRenderMipLevel = moOther.mo_iLastRenderMipLevel;
+  mo_colBlendColor       = moOther.mo_colBlendColor;
 
-  mo_toTexture    .Copy(moOther.mo_toTexture    );
-  mo_toReflection .Copy(moOther.mo_toReflection );
-  mo_toSpecular   .Copy(moOther.mo_toSpecular   );
-  mo_toBump       .Copy(moOther.mo_toBump       );
+  mo_toTexture   .Copy(moOther.mo_toTexture);
+  mo_toReflection.Copy(moOther.mo_toReflection);
+  mo_toSpecular  .Copy(moOther.mo_toSpecular);
+  mo_toBump      .Copy(moOther.mo_toBump);
 
   FOREACHINLIST( CAttachmentModelObject, amo_lnInMain, moOther.mo_lhAttachments, itamo) {
     CAttachmentModelObject &amoOther = *itamo;
@@ -1795,6 +1778,7 @@ void CModelObject::Copy(CModelObject &moOther)
   }
 }
 
+
 // synchronize with another model (copy animations/attachments positions etc from there)
 void CModelObject::Synchronize(CModelObject &moOther)
 {
@@ -1802,10 +1786,10 @@ void CModelObject::Synchronize(CModelObject &moOther)
   CAnimObject::Synchronize(moOther);
 
   // synchronize misc parameters
-  mo_PatchMask            = moOther.mo_PatchMask          ;
-  mo_Stretch              = moOther.mo_Stretch            ;
-  mo_ColorMask            = moOther.mo_ColorMask          ;
-  mo_colBlendColor        = moOther.mo_colBlendColor      ;
+  mo_PatchMask     = moOther.mo_PatchMask;
+  mo_Stretch       = moOther.mo_Stretch;
+  mo_ColorMask     = moOther.mo_ColorMask;
+  mo_colBlendColor = moOther.mo_colBlendColor;
 
   CModelData *pmd = GetData();
   CModelData *pmdOther = moOther.GetData();
@@ -1845,6 +1829,7 @@ void CModelObject::Synchronize(CModelObject &moOther)
     }
   }
 }
+
 
 //--------------------------------------------------------------------------------------------
 //------------------------------------------ WRITE
@@ -1967,8 +1952,7 @@ INDEX CModelObject::GetMipModel( FLOAT fMipFactor)
   ASSERT( pMD != NULL);
   if( !mo_AutoMipModeling) return mo_iManualMipLevel;
   // calculate current mip model
-  INDEX i=0;
-  for( ; i<pMD->md_MipCt; i++) {
+  for( INDEX i=0; i<pMD->md_MipCt; i++) {
     if( fMipFactor < pMD->md_MipSwitchFactors[i]) return i;
   }
   return i-1;
@@ -2347,6 +2331,13 @@ CPlacement3D CModelObject::GetAttachmentPlacement(CAttachmentModelObject &amo)
   INDEX iUp = pmd->md_aampAttachedPosition[iPosition].amp_iUpVertex;
   INDEX iFrame = GetFrame();
 
+  // a bit of a dirty workaround for invalid attachments:
+  if (iCenter==iFront || iCenter==iUp || iFront==iUp) {
+    CTString strModel=GetData()->GetName();
+    iCenter = 0;
+    iFront  = 1;
+    iUp     = 2;
+  }
   UnpackVertex( iFrame, iCenter, vCenter);
   UnpackVertex( iFrame, iFront, vFront);
   UnpackVertex( iFrame, iUp, vUp);

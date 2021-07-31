@@ -1,6 +1,7 @@
 #include "stdh.h"
 
 #include <Engine/Base/Console.h>
+#include <Engine/Network/CNetwork.h>
 #include <Engine/Network/PlayerTarget.h>
 #include <Engine/Base/ListIterator.inl>
 
@@ -30,7 +31,7 @@ int qsort_CompareActions(const void *elem1, const void *elem2 )
 {
   const CActionEntry &ae1 = **(CActionEntry **)elem1;
   const CActionEntry &ae2 = **(CActionEntry **)elem2;
-  return ae1.ae_pa.pa_llCreated-ae2.ae_pa.pa_llCreated;
+  return ae1.ae_pa.pa_ulCreated-ae2.ae_pa.pa_ulCreated;
 }
 
 // add a new action to the buffer
@@ -40,7 +41,7 @@ void CActionBuffer::AddAction(const CPlayerAction &pa)
   FOREACHINLIST(CActionEntry, ae_ln, ab_lhActions, itae) {
     CActionEntry &ae = *itae;
     // if this is the one
-    if (ae.ae_pa.pa_llCreated==pa.pa_llCreated) {
+    if (ae.ae_pa.pa_ulCreated==pa.pa_ulCreated) {
       // skip adding it again
       return;
     }
@@ -65,7 +66,7 @@ void CActionBuffer::FlushUntilTime(__int64 llNewest)
     CActionEntry &ae = *itae;
 
     // if up to that time
-    if (ae.ae_pa.pa_llCreated<=llNewest) {
+    if (ae.ae_pa.pa_ulCreated<=((ULONG)llNewest)) {
       // delete it
       delete &*itae;
     }
@@ -113,7 +114,7 @@ CPlayerAction *CActionBuffer::GetLastOlderThan(__int64 llTime)
   CPlayerAction *ppa = NULL;
   FOREACHINLIST(CActionEntry, ae_ln, ab_lhActions, itae) {
     CActionEntry &ae = *itae;
-    if (ae.ae_pa.pa_llCreated>=llTime) {
+    if (ae.ae_pa.pa_ulCreated>=((ULONG)llTime)) {
       return ppa;
     }
     ppa = &ae.ae_pa;

@@ -50,8 +50,8 @@ properties:
  110 INDEX m_iCounter = 0,
 
 components:
-  1 model   MODEL_HUB     "Models\\Editor\\AnimationHub.mdl",
-  2 texture TEXTURE_HUB   "Models\\Editor\\AnimationHub.tex"
+  1 editor model   MODEL_HUB     "Data\\Models\\Editor\\AnimationHub.mdl",
+  2 editor texture TEXTURE_HUB   "Data\\Models\\Editor\\AnimationHub.tex"
 
 functions:
   const CTString &GetDescription(void) const {
@@ -135,8 +135,8 @@ procedures:
     for (INDEX i=0; i<10; i++) {
       CEntityPointer &penTarget = (&m_penTarget0)[i];
       if (penTarget!=NULL && 
-        !IsOfClass(penTarget, "ModelHolder2") &&
-        !IsOfClass(penTarget, "Light")) {
+        !IsOfClass( penTarget, &CModelHolder2_DLLClass) &&
+        !IsOfClass( penTarget, &CLight_DLLClass)) {
         WarningMessage("All targets must be ModelHolder2 or Light!");
         penTarget=NULL;
       }

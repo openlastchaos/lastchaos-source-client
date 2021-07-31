@@ -21,11 +21,16 @@ public:
 	BOOL ci_bReliableComplete;								// does the reliable input buffer contain a complete reliable message?
 
   CClientInterface *ci_pciOther;			// other-side client - for local clients
-	
+//0105	
+  SOCKET ci_socket;
+
 	// interface:
   CClientInterface(void);
   ~CClientInterface(void);
   void Clear(void);
+
+  // Get the size of all packets in the output buffers, including headers
+  ULONG GetPendingDataSize();
 
 	// sets the client to be local and optionally connects to another local client
   void SetLocal(CClientInterface *ci_pciOther);
@@ -33,6 +38,7 @@ public:
   // send a message through the interface
   void Send(const void *pvSend, SLONG slSize,BOOL bReliable);
   void SendTo(const void *pvSend, SLONG slSize,const CAddress adrAdress,BOOL bReliable);
+  void SendNew(const void *pvSend, SLONG slSize);
   // receive a message from the interface
   BOOL Receive(void *pvReceive, SLONG &slSize,BOOL bReliable);
   BOOL ReceiveFrom(void *pvReceive, SLONG &slSize, CAddress *adrAdress,BOOL bReliable);

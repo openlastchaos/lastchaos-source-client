@@ -8,7 +8,7 @@
 #include <Engine/Brushes/Brush.h>
 #include <Engine/Templates/DynamicArray.cpp>
 #include <Engine/Templates/StaticArray.cpp>
-#include <Engine/Network/Network.h>
+#include <Engine/Network/CNetwork.h>
 #include <Engine/Network/SessionState.h>
 
 class CClipTest {
@@ -237,8 +237,7 @@ BOOL CClipTest::CanChange(CEntity *pen, INDEX iNewCollisionBox)
   FOREACHINLIST(CBrushSector, bsc_lnInActiveSectors, ct_lhActiveSectors, itbsc) {
     // for non-zoning brush entities in the sector
     {FOREACHDSTOFSRC(itbsc->bsc_rsEntities, CEntity, en_rdSectors, pen)
-      if (pen->en_RenderType!=CEntity::RT_BRUSH&&
-          (_pNetwork->ga_ulDemoMinorVersion<=4 || pen->en_RenderType!=CEntity::RT_FIELDBRUSH)) {
+      if (pen->en_RenderType!=CEntity::RT_BRUSH&&pen->en_RenderType!=CEntity::RT_FIELDBRUSH) {
         break;  // brushes are sorted first in list
       }
 
@@ -259,8 +258,7 @@ BOOL CClipTest::CanChange(CEntity *pen, INDEX iNewCollisionBox)
 
     // if the sector's brush doesn't have collision
     CEntity *penSectorBrush = itbsc->bsc_pbmBrushMip->bm_pbrBrush->br_penEntity;
-    if (penSectorBrush->en_ulCollisionFlags==0 || 
-      (_pNetwork->ga_ulDemoMinorVersion>2 && penSectorBrush->en_RenderType!=CEntity::RT_BRUSH) ) {
+    if (penSectorBrush->en_ulCollisionFlags==0 || penSectorBrush->en_RenderType!=CEntity::RT_BRUSH ) {
       // skip it
       continue;
     }

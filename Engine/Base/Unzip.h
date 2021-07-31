@@ -18,6 +18,8 @@ SLONG UNZIPGetSize(INDEX iHandle);
 ULONG UNZIPGetCRC(INDEX iHandle);
 // read a block from zip file
 void UNZIPReadBlock_t(INDEX iHandle, UBYTE *pub, SLONG slStart, SLONG slLen);
+// read ahead a block from zip file
+void UNZIPReadAheadBlock_t(INDEX iHandle, SLONG slStart, SLONG slLen);
 // close a zip file entry
 void UNZIPClose(INDEX iHandle);
 // get info on a zip file entry
@@ -32,6 +34,16 @@ const CTFileName &UNZIPGetFileAtIndex(INDEX i);
 INDEX UNZIPGetFileIndex(const CTFileName &fnm);
 // check if a file is from a mod's zip
 BOOL UNZIPIsFileAtIndexMod(INDEX i);
+// get crc on a zip file entry, by index
+ULONG UNZIPGetCRCByIndex(INDEX iFile);
+
+// adjust parameters for zip streaming caching
+ENGINE_API SLONG UNZIPGetSectorSize(void);
+ENGINE_API void UNZIPSetSectorSize(SLONG slSize);
+ENGINE_API INDEX UNZIPGetBufferSectors(void);
+ENGINE_API void UNZIPSetBufferSectors(INDEX iSectors);
+ENGINE_API INDEX UNZIPGetPrefetchSectors(void);
+ENGINE_API void UNZIPSetPrefetchSectors(INDEX iSectors);
 
 
 #endif  /* include-once check. */

@@ -39,8 +39,8 @@ properties:
   }
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\NavigationMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\NavigationMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\NavigationMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\NavigationMarker.tex"
 
 functions:
   void CNavigationMarker(void)
@@ -53,9 +53,9 @@ functions:
   }
 
   /* Read from stream. */
-  void Read_t( CTStream *istr) // throw char *
+  void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CEntity::Read_t(istr);
+    CEntity::Read_t(istr,bNetwork);
     m_ppnNode = NULL;
   }
   
@@ -142,7 +142,7 @@ procedures:
       }
 
       // if not valid class
-      if (!IsOfClass(penTarget, "NavigationMarker")) {
+      if( !IsOfClass( penTarget, &CNavigationMarker_DLLClass)) {
         // clear it
         penTarget = NULL;
         continue;

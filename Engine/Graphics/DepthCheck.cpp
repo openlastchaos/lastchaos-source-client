@@ -12,9 +12,8 @@
 
 
 extern INDEX gap_iOptimizeDepthReads;
-#ifdef SE1_D3D
+extern INDEX gap_bUseOcclusionCulling;
 extern COLOR UnpackColor_D3D( UBYTE *pd3dColor, D3DFORMAT d3dFormat, SLONG &slColorSize);
-#endif // SE1_D3D
 
 static INDEX _iCheckIteration = 0;
 static CTimerValue _tvLast[8];  // 8 is max mirror recursion
@@ -31,7 +30,7 @@ struct DepthInfo {
   BOOL  di_bVisible;          // whether the point was visible
 };
 CStaticStackArray<DepthInfo> _adiDelayed;  // active delayed points
-// don't ask, these are  for D3D
+// don't ask, these are for D3D
 CStaticStackArray<CTVERTEX> _avtxDelayed;  
 CStaticStackArray<COLOR>    _acolDelayed;  
 
@@ -40,13 +39,57 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
                                          DepthInfo *pdi, const INDEX ctCount)
 {
   const GfxAPIType eAPI = _pGfx->gl_eCurrentAPI;
-#ifdef SE1_D3D
-  ASSERT(eAPI == GAT_OGL || eAPI == GAT_D3D || eAPI == GAT_NONE);
-#else // SE1_D3D
-  ASSERT(eAPI == GAT_OGL || eAPI == GAT_NONE);
-#endif // SE1_D3D
+  ASSERT( eAPI==GAT_OGL || eAPI==GAT_D3D || eAPI==GAT_NONE);
   ASSERT( pdp!=NULL && ctCount>0);
   const CRaster *pra = pdp->dp_Raster;
+
+  // by default, see whether we have occlusion testing in disposal
+  if( !_pGfx->HasOcclusionCulling()) gap_bUseOcclusionCulling = gap_bUseOcclusionCulling & 1;
+
+  // fast check via occlusion testing?
+  if( gap_bUseOcclusionCulling>=10)
+  {
+    // prepare rendering states
+    gfxEnableDepthTest();
+    gfxDisableDepthWrite();
+    gfxDisableAlphaTest();
+    gfxDisableTexture();
+    gfxEnableBlend();
+    gfxBlendFunc( GFX_SRC_ALPHA, GFX_INV_SRC_ALPHA);
+    gfxCullFace(GFX_NONE);
+
+    // for each stored point
+    for( INDEX idi=0; idi<ctCount; idi++) {
+      DepthInfo &di = pdi[idi];
+      // skip if not in required mirror level or was already checked in this iteration
+      if( iMirrorLevel!=di.di_iMirrorLevel || _iCheckIteration!=di.di_iSwapLastRequest) continue;
+      // readout last occlusion query result
+      SLONG slVisiblePixels = 0;
+      gfxPullOcclusionQuery( di.di_iID, slVisiblePixels);  
+      di.di_bVisible = (slVisiblePixels>0);
+
+      // setup new occlusion test
+      const BOOL bInTest = gfxBeginOcclusionTest( di.di_iID);
+      if( !bInTest) continue; // this should not happen!
+
+      // render tiny triangle
+      const FLOAT fI = di.di_pixI - pdp->dp_MinI; // convert raster loc to drawport loc
+      const FLOAT fJ = di.di_pixJ - pdp->dp_MinJ;
+      const FLOAT afTriVtxs[3][3] = {
+        { fI,   fJ-2, di.di_fOoK },
+        { fI-2, fJ+2, di.di_fOoK },
+        { fI+2, fJ,   di.di_fOoK } };
+      #define FAINTCOLOR (0x08808080) // something that won't get into eyes (just to avoid switching the color buffer on/off)
+      const ULONG aulTriCols[3] = { FAINTCOLOR, FAINTCOLOR, FAINTCOLOR };
+      const UWORD auwTriIdxs[3] = { 0, 1, 2 };
+      gfxSetVertexArray( (GFXVertex*)&afTriVtxs[0], 3);
+      gfxSetColorArray(  (GFXColor*)&aulTriCols[0]);
+      gfxDrawElements( 3, &auwTriIdxs[0]);
+      gfxEndOcclusionTest();
+    }
+    // done
+    return;
+  }
 
   // OpenGL
   if( eAPI==GAT_OGL)
@@ -70,7 +113,6 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
   }
 
   // Direct3D
-#ifdef SE1_D3D
   if( eAPI==GAT_D3D)
   {
     _sfStats.StartTimer(CStatForm::STI_GFXAPI);
@@ -86,9 +128,9 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
     D3DLOCKED_RECT rectLocked;
     D3DSURFACE_DESC surfDesc;
     LPDIRECT3DSURFACE8 pBackBuffer;
-    // fetch back buffer (different for full screen and windowed mode)
+    // fetch back buffer (different for full-screen and windowed mode)
     const BOOL bFullScreen = _pGfx->gl_ulFlags & GLF_FULLSCREEN;
-    if( bFullScreen) {
+    if(bFullScreen) {
       hr = _pGfx->gl_pd3dDevice->GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
     } else {
       hr = pra->ra_pvpViewPort->vp_pSwapChain->GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
@@ -127,7 +169,9 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
     gfxDisableBlend();
     gfxDisableAlphaTest();
     gfxDisableTexture();
+    gfxEnableColorArray();
     _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
     // prepare array and shader
     _avtxDelayed.Push(ctCount*3);
     d3dSetVertexShader(D3DFVF_CTVERTEX);
@@ -150,9 +194,12 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
       vtx1.fX=pixI-2; vtx1.fY=pixJ+2; vtx1.fZ=di.di_fOoK; vtx1.ulColor=d3dCol; vtx1.fU=vtx0.fV=0;
       vtx2.fX=pixI+2; vtx2.fY=pixJ;   vtx2.fZ=di.di_fOoK; vtx2.ulColor=d3dCol; vtx2.fU=vtx0.fV=0;
     }
-    // draw a bunch
-    hr = _pGfx->gl_pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, ctVertex/3, &_avtxDelayed[0], sizeof(CTVERTEX));
-    D3D_CHECKERROR(hr);
+    const INDEX ctPrimitives = ctVertex/3;
+    if(ctPrimitives>0) {
+      // draw a bunch
+      hr = _pGfx->gl_pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, ctPrimitives, &_avtxDelayed[0], sizeof(CTVERTEX));
+      D3D_CHECKERROR(hr);
+    }
 
     // readout colors again and compare to old ones
     for( idi=0; idi<ctCount; idi++) {
@@ -163,7 +210,9 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
       // fetch pixel
       const RECT rectToLock = { di.di_pixI, di.di_pixJ, di.di_pixI+1, di.di_pixJ+1 };
       hr = pBackBuffer->LockRect( &rectLocked, &rectToLock, D3DLOCK_READONLY);
-      if( hr!=D3D_OK) continue; // skip if lock didn't make it
+//안태훈 수정 시작	//(Open beta)(2005-01-04)
+      if( hr!=D3D_OK || rectLocked.pBits == NULL) continue; // skip if lock didn't make it
+//안태훈 수정 끝	//(Open beta)(2005-01-04)
       // read new color
       const COLOR colNew = UnpackColor_D3D( (UBYTE*)rectLocked.pBits, d3dfBack, slColSize) | CT_OPAQUE;
       pBackBuffer->UnlockRect();
@@ -177,7 +226,6 @@ static void UpdateDepthPointsVisibility( const CDrawPort *pdp, const INDEX iMirr
     _sfStats.StopTimer(CStatForm::STI_GFXAPI);
     return;
   }
-#endif // SE1_D3D
 }
 
 
@@ -188,47 +236,41 @@ extern BOOL CheckDepthPoint( const CDrawPort *pdp, PIX pixI, PIX pixJ, FLOAT fOo
   // no raster?
   const CRaster *pra = pdp->dp_Raster;
   if( pra==NULL) return FALSE;
-  // almoust out of raster?
+  // almost out of raster?
   pixI += pdp->dp_MinI;
   pixJ += pdp->dp_MinJ;
   if( pixI<1 || pixJ<1 || pixI>pra->ra_Width-2 || pixJ>pra->ra_Height-2) return FALSE;
 
-  // if shouldn't delay
-  if( gap_iOptimizeDepthReads==0) {
-    // just check immediately
-    DepthInfo di = { iID, pixI, pixJ, fOoK, _iCheckIteration, iMirrorLevel, FALSE };
-    UpdateDepthPointsVisibility( pdp, iMirrorLevel, &di, 1);
-    return di.di_bVisible;
-  }
-
   // for each stored point
+  DepthInfo *pdi = NULL;
   for( INDEX idi=0; idi<_adiDelayed.Count(); idi++) {
-    DepthInfo &di = _adiDelayed[idi];
-    // if same id
-    if( di.di_iID == iID) {
-      // remember parameters
-      di.di_pixI = pixI;
-      di.di_pixJ = pixJ;
-      di.di_fOoK = fOoK;
-      di.di_iSwapLastRequest = _iCheckIteration;
-      // return visibility
-      return di.di_bVisible;
-    }
+    // skip if different id
+    if( _adiDelayed[idi].di_iID != iID) continue;
+    // same id - remember new parameters
+    pdi = &_adiDelayed[idi];
+    pdi->di_pixI = pixI;
+    pdi->di_pixJ = pixJ;
+    pdi->di_fOoK = fOoK;
+    pdi->di_iSwapLastRequest = _iCheckIteration;
+    break;
   }
-  // if not found...
+  // if not found
+  if( pdi==NULL) {
+    // create new one and remember parameters
+    pdi = &_adiDelayed.Push();
+    pdi->di_iID  = iID;
+    pdi->di_pixI = pixI;
+    pdi->di_pixJ = pixJ;
+    pdi->di_fOoK = fOoK;
+    pdi->di_iSwapLastRequest = _iCheckIteration;
+    pdi->di_iMirrorLevel = iMirrorLevel;
+    pdi->di_bVisible = FALSE; // not visible by default
+  }
 
-  // create new one
-  DepthInfo &di = _adiDelayed.Push();
-  // remember parameters
-  di.di_iID  = iID;
-  di.di_pixI = pixI;
-  di.di_pixJ = pixJ;
-  di.di_fOoK = fOoK;
-  di.di_iSwapLastRequest = _iCheckIteration;
-  di.di_iMirrorLevel = iMirrorLevel;
-  di.di_bVisible = FALSE;
-  // not visible by default
-  return FALSE;
+  // check immediately if allowed
+  ASSERT( pdi!=NULL);
+  if( gap_iOptimizeDepthReads==0) UpdateDepthPointsVisibility( pdp, iMirrorLevel, pdi, 1);
+  return pdi->di_bVisible;
 }
 
 
@@ -256,7 +298,9 @@ extern void CheckDelayedDepthPoints( const CDrawPort *pdp, INDEX iMirrorLevel/*=
   while( iPoint<ctPoints) {
     DepthInfo &di = _adiDelayed[iPoint];
     // if the point is not active any more
-    if( iMirrorLevel==di.di_iMirrorLevel && di.di_iSwapLastRequest<_iCheckIteration-KEEP_BEHIND) {
+    if( iMirrorLevel==di.di_iMirrorLevel && di.di_iSwapLastRequest<(_iCheckIteration-KEEP_BEHIND)) {
+      // free occlusion query
+      gfxFreeOcclusionQuery( di.di_iID);
       // delete it by moving the last one on its place
       di = _adiDelayed[ctPoints-1];
       ctPoints--;

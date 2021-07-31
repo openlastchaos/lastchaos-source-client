@@ -1,3 +1,7 @@
+/*
+Copyright (C) 2001-2002 Croteam, Ltd.
+See COPYING (GNU Library General Public License 2) for license
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -391,6 +395,7 @@ int ExportMesh(LWXPanelID pan)
 {
   // is mesh face forward
   int iFaceForward = *(int*)_xpanf->formGet( pan, ID_FACEFORWARD);
+  int ctFullSurfs = 0; // number of surfaces containing some polygons
 
   // !!!! make it work with a selected object, not the first one in scene
   ReloadGlobalObjects();
@@ -547,18 +552,9 @@ int ExportMesh(LWXPanelID pan)
 
     // count the surfaces
     _ctSurfs = 0;
-    while(_asurSurfaces[_ctSurfs]!=NULL) {
-      _ctSurfs++;
-    }
 
-    // write the surfaces header
-    fprintf(_f, "SURFACES %d\n", _ctSurfs);
-    fprintf(_f, "{\n");
-    // for each surface
-    {for(int iSurf=0; iSurf<_ctSurfs; iSurf++) {
-      fprintf(_f, "  {\n");
-      const char *strSurf = _srf->name(_asurSurfaces[iSurf]);
-      fprintf(_f, "    NAME \"%s\";\n", strSurf);
+    while(_asurSurfaces[_ctSurfs]!=NULL) {
+      const char *strSurf = _srf->name(_asurSurfaces[_ctSurfs]);
       // count the polygons
       int iSurfPols = 0;
       {for(int i=0; i<_ctPolIDs; i++) {
@@ -566,6 +562,35 @@ int ExportMesh(LWXPanelID pan)
           iSurfPols++;
         }
       }}
+      // if there are no polygons in this surface, don't export it
+      if (iSurfPols != 0) {
+        ctFullSurfs++;
+      }
+
+      _ctSurfs++;
+    }
+
+    // write the surfaces header
+    fprintf(_f, "SURFACES %d\n", ctFullSurfs);
+    fprintf(_f, "{\n");
+    // for each surface
+    {for(int iSurf=0; iSurf<_ctSurfs; iSurf++) {
+      const char *strSurf = _srf->name(_asurSurfaces[iSurf]);
+      // count the polygons
+      int iSurfPols = 0;
+      {for(int i=0; i<_ctPolIDs; i++) {
+        if (strcmp(_pmesh->polTag(_pmesh, _aidPolIDs[i], LWPTAG_SURF), strSurf)==0) {
+          iSurfPols++;
+        }
+      }}
+      // if there are no polygons in this surface, don't export it
+      if (iSurfPols == 0) {
+        continue;
+      }
+
+      fprintf(_f, "  {\n");
+      fprintf(_f, "    NAME \"%s\";\n", strSurf);
+            
       // write the polygon set header
       fprintf(_f, "    TRIANGLE_SET %d\n", iSurfPols);
       fprintf(_f, "    {\n");

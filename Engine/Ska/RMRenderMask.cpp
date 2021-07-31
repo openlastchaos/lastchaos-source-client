@@ -8,9 +8,9 @@
 #include <Engine/Models/Model_internal.h>
 #include <Engine/Models/RenderModel_internal.h>
 
-// vertex array for clipped polygons
-#define MAX_CLIPPEDVERTICES 32
+
 // double buffer for clipping
+#define MAX_CLIPPEDVERTICES 64  // vertex array for clipped polygons
 static TransformedVertexData atvdClipped1[MAX_CLIPPEDVERTICES];
 static TransformedVertexData atvdClipped2[MAX_CLIPPEDVERTICES];
 static TransformedVertexData *ptvdSrc = atvdClipped1;
@@ -21,29 +21,27 @@ static INDEX ctvxSrc, ctvxDst;
 
 extern void InternalShader_Mask(void)
 {
-  // need arrays and texture
-  INDEX ctIdx = shaGetIndexCount();
-  INDEX ctVtx = shaGetVertexCount();
+  // need arrays, texture and view matrix
+  const INDEX ctIdx = shaGetIndexCount();
+  const INDEX ctVtx = shaGetVertexCount();
   if( ctIdx==0 || ctVtx==0) return;
-  INDEX *pidx = shaGetIndexArray();
-  GFXVertex4  *pvtx = shaGetVertexArray();
+  GFXVertex   *pvtx = shaGetVertexArray();
   GFXTexCoord *ptex = shaGetUVMap(0);
   CTextureObject *pto = shaGetTexture(0);
   ASSERT( (ctIdx%3) == 0); // must have triangles?
 
-  // prepare texture
+  // prepare texture 
   ULONG *pulTexFrame = NULL;
   PIX pixMipWidth=0, pixMipHeight=0;
-
   if( pto!=NULL && ptex!=NULL) {
     CTextureData *ptd = (CTextureData*)pto->GetData();
     if( ptd!=NULL && ptd->td_ptegEffect==NULL) {
+      // reload texture and keep in memory
+      ptd->Force(TEX_STATIC|TEX_CONSTANT);
       // fetch some texture params
       pulTexFrame  = ptd->td_pulFrames + (pto->GetFrame()*ptd->td_slFrameSize)/BYTES_PER_TEXEL;
       pixMipWidth  = ptd->GetPixWidth();
       pixMipHeight = ptd->GetPixHeight();
-      // reload texture and keep in memory
-      ptd->Force(TEX_STATIC);
     }
   }
   // initialize texture for usage thru render triangle routine
@@ -80,16 +78,20 @@ extern void InternalShader_Mask(void)
     fDepthBufferFactor   = 1.0f;
   }
 
+  // fetch model to view(=light) space transformation matrix
+  ASSERT(shaGetObjToViewStrMatrix()!=NULL);
+  Matrix12 &mView = *shaGetObjToViewStrMatrix();
+
   // copy view space vertices, project 'em to screen space and mark clipping
-  CStaticStackArray<TransformedVertexData> atvd;
-  INDEX iVtx=0;
-  for(; iVtx<ctVtx; iVtx++)
+  TransformedVertexData *patvd = (TransformedVertexData*)AllocMemory( ctVtx*sizeof(TransformedVertexData));
+  for( INDEX iVtx=0; iVtx<ctVtx; iVtx++)
   {
-    // copy viewspace and texture coords
-    TransformedVertexData &tvd = atvd.Push();
-    tvd.tvd_fX = pvtx[iVtx].x;
-    tvd.tvd_fY = pvtx[iVtx].y;
-    tvd.tvd_fZ = pvtx[iVtx].z;
+    // fetch model vertex and transform it to view space (infact, light space)
+    TransformedVertexData &tvd = patvd[iVtx];
+    GFXVertex &vtx = pvtx[iVtx];
+    tvd.tvd_fX = mView[0] * vtx.x + mView[1] * vtx.y + mView[ 2] * vtx.z + mView[ 3];
+    tvd.tvd_fY = mView[4] * vtx.x + mView[5] * vtx.y + mView[ 6] * vtx.z + mView[ 7];
+    tvd.tvd_fZ = mView[8] * vtx.x + mView[9] * vtx.y + mView[10] * vtx.z + mView[11];
     tvd.tvd_bClipped = FALSE;   // initially, vertex is not clipped
 
     // prepare screen coordinates
@@ -119,14 +121,17 @@ extern void InternalShader_Mask(void)
     }
   }
 
+  // get index array (so we can fetch triangles)
+  const UWORD *puwIdx = shaGetIndexArray();
+
   // lets clip and render - triangle by triangle
   for( INDEX iIdx=0; iIdx<ctIdx; iIdx+=3)
   {
     // get transformed triangle
     TransformedVertexData tvd[3];
-    iVtx = pidx[iIdx+0];  tvd[0] = atvd[iVtx];
-    iVtx = pidx[iIdx+1];  tvd[1] = atvd[iVtx];
-    iVtx = pidx[iIdx+2];  tvd[2] = atvd[iVtx];
+    iVtx = puwIdx[iIdx+0];  tvd[0] = patvd[iVtx];
+    iVtx = puwIdx[iIdx+1];  tvd[1] = patvd[iVtx];
+    iVtx = puwIdx[iIdx+2];  tvd[2] = patvd[iVtx];
 
     // clipped?
     if( tvd[0].tvd_bClipped || tvd[1].tvd_bClipped || tvd[2].tvd_bClipped)
@@ -373,14 +378,26 @@ extern void InternalShader_Mask(void)
                          &tvd[0].tvd_pv2, &tvd[1].tvd_pv2, &tvd[2].tvd_pv2, TRUE);
     }
   }
+
+  // free temporary memory buffer for transformed vertices
+  FreeMemory(patvd);
 }
 
 
-extern void InternalShaderDesc_Mask(ShaderDesc &shDesc)
+//안태훈 수정 시작	//(For Performance)(0.1)
+extern void InternalShaderDesc_Mask(ShaderDesc *&pshDesc)
 {
-  shDesc.sd_astrTextureNames.New(1);
-  shDesc.sd_astrTexCoordNames.New(1);
-  shDesc.sd_astrTextureNames[0]  = "Mask texture";
-  shDesc.sd_astrTexCoordNames[0] = "Mask uvmap";
-  shDesc.sd_strShaderInfo = "Mask shader for shadowmaps";
+	static bool bInit = false;
+	static ShaderDesc shDescMe;
+	if(!bInit)
+	{
+		bInit = true;
+		shDescMe.sd_astrTextureNames.New(1);
+		shDescMe.sd_astrTexCoordNames.New(1);
+		shDescMe.sd_astrTextureNames[0]  = "Mask texture";
+		shDescMe.sd_astrTexCoordNames[0] = "Mask uvmap";
+		shDescMe.sd_strShaderInfo = "Mask shader for shadowmaps";
+	}
+	pshDesc = &shDescMe;
+//안태훈 수정 끝	//(For Performance)(0.1)
 }

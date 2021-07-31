@@ -7,11 +7,15 @@
   #endif
 #endif
 
+//안태훈 수정 시작	//(Add & Modify SSSE Effect)(0.1)
+#pragma warning(disable : 4786)
+//안태훈 수정 끝	//(Add & Modify SSSE Effect)(0.1)
+
 #include <stdlib.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <stddef.h>
 #include <time.h>
 #include <math.h>
@@ -30,6 +34,8 @@
 #include <Engine/Base/Base.h>
 #include <Engine/Base/Types.h>
 
+#include <Engine/Base/CTString.h>
+#include <Engine/Base/CTWString.h>
 #include <Engine/Base/Input.h>
 #include <Engine/Base/KeyNames.h>
 #include <Engine/Base/Updateable.h>
@@ -76,28 +82,27 @@
 #include <Engine/Math/Quaternion.h>
 #include <Engine/Math/Projection.h>
 #include <Engine/Math/Projection_DOUBLE.h>
+//안태훈 수정 시작	//(For Performance)(0.1)
+#include <Engine/Math/AdditionalFunction.h>
+//안태훈 수정 끝	//(For Performance)(0.1)
 
-#include <Engine/Network/Network.h>
+#include <Engine/Network/CNetwork.h>
 #include <Engine/Network/Server.h>
-#include <Engine/Network/NetworkMessage.h>
+//#include <Engine/Network/NetworkMessage.h>
 #include <Engine/Network/PlayerSource.h>
-#include <Engine/Network/PlayerBuffer.h>
 #include <Engine/Network/PlayerTarget.h>
 #include <Engine/Network/SessionState.h>
 #include <Engine/Network/NetworkProfile.h>
+#include <Engine/Network/Compression.h>
 
 #include <Engine/Brushes/Brush.h>
 #include <Engine/Brushes/BrushTransformed.h>
 #include <Engine/Brushes/BrushArchive.h>
 
 
-#pragma message(">> Uncomment include to terrain.h")
-//#include <Engine/Terrain/Terrain.h>
-
 #include <Engine/World/World.h>
 #include <Engine/World/WorldEditingProfile.h>
 #include <Engine/World/WorldRayCasting.h>
-#include <Engine/World/PhysicsProfile.h>
 #include <Engine/World/WorldSettings.h>
 #include <Engine/World/WorldCollision.h>
 
@@ -119,7 +124,6 @@
 
 #include <Engine/Sound/SoundObject.h>
 #include <Engine/Sound/SoundLibrary.h>
-#include <Engine/Sound/SoundListener.h>
 
 #include <Engine/Graphics/Texture.h>
 #include <Engine/Graphics/Color.h>
@@ -152,6 +156,7 @@
 
 
 // some global stuff
+//ENGINE_API void SE_InitEngine( CTString strGameID, BOOL bTcp = FALSE);  // by seo
 ENGINE_API void SE_InitEngine( CTString strGameID);
 ENGINE_API void SE_EndEngine(void);
 ENGINE_API void SE_LoadDefaultFonts(void);
@@ -163,11 +168,69 @@ extern ENGINE_API ULONG _ulEngineBuildMajor;
 extern ENGINE_API ULONG _ulEngineBuildMinor;
 
 extern ENGINE_API BOOL _bDedicatedServer;
-extern ENGINE_API BOOL _bWorldEditorApp; // is this world edtior app
+extern ENGINE_API BOOL _bWorldEditorApp;			// is this world edtior app
+extern ENGINE_API BOOL _bUseBloomInWorldEditor;		// 에디터에 Bloom 효과 On/Off를 위해 추가	:Su-won
+extern ENGINE_API BOOL _bTranslucentModel;			// 에디터에 모델을 반투명으로 나타내기 위해 추가	:Su-won
+extern ENGINE_API BOOL _bInvisibleOff;				// 에디터에 Invisible된 폴리곤을 나타내기 위해 추가	:Su-won
+extern ENGINE_API BOOL _bShowPortalPolygon;			// 에디터에서 Portal속성으로 되어있는 폴리곤을 화면에 나타낼지 여부 :Su-won
+extern ENGINE_API BOOL _bAttributemap_DepthTest;	//에디터에서 Attribute 맵을 그릴 때 DepthTest 여부 설정 :Su-won
+
+//extern ENGINE_API BOOL _bUseSocket;
+extern ENGINE_API BOOL _bSkaStudioApp;				// is this ska studio app
+extern ENGINE_API BOOL _bInTestGame;				// Is this test game in world editor					// yjpark
+extern ENGINE_API BOOL _bShowPolygonAttribute;		// If attributes of polygons are shown in world editor	// yjpark
+extern ENGINE_API BOOL _bLoginProcess;
 extern ENGINE_API CTString _strLogFile;
 
+// <-- ErrorLog.txt에 디스플레이 정보를 기록하기 위한 부분
+extern ENGINE_API CTString _strDisplayDriver;
+extern ENGINE_API CTString _strDisplayDriverVersion;
+extern ENGINE_API CTString _strSoundDriver;
+extern ENGINE_API CTString _strTotalMemory;
+// -->
+
+// main window canvas									// yjpark |<--
+extern ENGINE_API BOOL		_bWindowChanging;
+extern ENGINE_API CDrawPort	*_pdpMain;
+extern ENGINE_API CDrawPort	*_pdpNormalMain;
+extern ENGINE_API CDrawPort	*_pdpWideScreenMain;
+extern ENGINE_API CViewPort	*_pvpViewPortMain;
+extern ENGINE_API HINSTANCE	_hInstanceMain;
+extern ENGINE_API INDEX		sam_bFullScreenActive;
+extern ENGINE_API INDEX		sam_iScreenSizeI;
+extern ENGINE_API INDEX		sam_iScreenSizeJ;
+extern ENGINE_API INDEX		sam_iDisplayDepth;
+extern ENGINE_API INDEX		sam_iDisplayAdapter;
+extern ENGINE_API INDEX		sam_iGfxAPI;
+extern ENGINE_API INDEX		sam_bWideScreen;
+extern ENGINE_API INDEX		cmd_iWindowLeft;
+extern ENGINE_API INDEX		cmd_iWindowTop;	 			// yjpark     -->|
+
 // temporary vars for adjustments
-ENGINE_API extern FLOAT tmp_af[10];
+ENGINE_API extern FLOAT tmp_af[20];
 ENGINE_API extern INDEX tmp_ai[10];
 ENGINE_API extern INDEX tmp_i;
 ENGINE_API extern INDEX tmp_fAdd;
+
+//안태훈 수정 시작	//(Add Sun Moon Entity and etc)(0.2)
+ENGINE_API extern BOOL g_bBadWeather;
+ENGINE_API extern COLOR g_colWeather;
+//안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.2)
+
+// 일본 자동 로그인 060209 wooss 
+ENGINE_API BOOL g_bAutoLogin;
+ENGINE_API CTString g_nmID ;
+ENGINE_API CTString g_nmPW ;
+ENGINE_API CTString g_nmCID ;
+ENGINE_API CTString g_nmVER ;
+
+//일본 헬멧 관련 추가 070313_ttos
+ENGINE_API BOOL g_bHead_change;
+// wooss 070228 ---------------------------->>
+// kw : WSS_EVENT_LOD
+// 이벤트 플래그 변수
+ENGINE_API std::map<int,int> g_mapEvent;
+// -----------------------------------------<<
+	
+//070308_ttos : 브라질 나스 표기 번환
+ENGINE_API BOOL g_bNasTrans;	

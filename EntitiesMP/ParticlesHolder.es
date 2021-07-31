@@ -3,6 +3,11 @@
 #include "StdH.h"
 %}
 
+event EParticlesActivate {
+};
+event EParticlesDeactivate {
+};
+
 enum ParticlesHolderType {
   1 PHT_SPIRAL        "Spiral",
   2 PHT_EMANATE       "Emanate",
@@ -20,9 +25,10 @@ enum ParticlesHolderType {
   14 PHT_WATERFALLFOAM "Waterfall foam",
   15 PHT_CHIMNEYSMOKE "Chimney smoke",
   16 PHT_WATERFALL    "Waterfall",
-  17 PHT_TWISTER      "Twister",
+//  17 PHT_TWISTER      "Twister",
   18 PHT_ROCKETMOTOR  "Rocket motor",
   19 PHT_COLLECT_ENERGY "Collect energy",
+  20 PHT_COLLECT_ENERGYNOCLOUD "Coll. eng. no cloud",  
 };
 
 class CParticlesHolder : CMovableModelEntity {
@@ -48,16 +54,16 @@ properties:
  31 FLOAT m_fParam1           "Param1" 'P' = 1.0f,
  32 FLOAT m_fParam2           "Param2" = 1.0f,
  33 FLOAT m_fParam3           "Param3" = 1.0f,
- 34 BOOL m_bActive            "Active" 'A' = TRUE, // is particles are active
- 35 FLOAT m_fActivateTime = 0.0f,
- 36 FLOAT m_fDeactivateTime = -10000.0f,
+ 34 BOOL m_bActive            "Active" 'A' = TRUE features(EPROPF_NETSEND), // is particles are active
+ 35 FLOAT m_fActivateTime = 0.0f features(EPROPF_NETSEND),
+ 36 FLOAT m_fDeactivateTime = -10000.0f features(EPROPF_NETSEND),
  37 FLOAT m_fMipFactorDisappear "Disappear mip factor" = 8.0f,
-
+ 38 COLOR m_cColor				"Color"	= 0xFFFFFFFF,
 
 components:
 
-  1 model   MODEL_TELEPORT     "Models\\Editor\\Teleport.mdl",
-  2 texture TEXTURE_TELEPORT   "Models\\Editor\\BoundingBox.tex",
+  1 model   MODEL_TELEPORT     "Data\\Models\\Editor\\Teleport.mdl",
+  2 editor texture TEXTURE_TELEPORT   "Data\\Models\\Editor\\BoundingBox.tex",
 
 
 functions:
@@ -72,10 +78,10 @@ functions:
     switch (m_phtType)
     {
       case PHT_SPIRAL     :
-        Particles_Spiral(this, m_fStretchAll, m_fStretchAll/2, m_ptTexture, m_ctCount);
+        Particles_Spiral(this, m_fStretchAll, m_fStretchAll/2, m_ptTexture, m_ctCount, m_fParam2);
         break;
       case PHT_EMANATE    :
-        Particles_Emanate(this, m_fStretchAll, m_fStretchAll/2, m_ptTexture, m_ctCount, m_fMipFactorDisappear);
+        Particles_Emanate(this, m_fStretchAll, m_fStretchAll/2, m_ptTexture, m_ctCount, m_fMipFactorDisappear, m_cColor, m_fParam1, m_fParam2, m_fParam3);
         break;
       case PHT_STARDUST   :
         Particles_Stardust(this, m_fStretchAll, m_fStretchAll/2, m_ptTexture, m_ctCount);
@@ -124,15 +130,20 @@ functions:
         Particles_RocketMotorBurning(this, m_ctCount,
           FLOAT3D(m_fStretchX,m_fStretchY,m_fStretchZ), m_fSize, m_ctCount);
         break;
+		/*
       case PHT_COLLECT_ENERGY:
-        Particles_CollectEnergy(this, m_fActivateTime, m_fActivateTime+2.0f);
+        Particles_CollectEnergy(this, m_fActivateTime, m_fActivateTime+2.0f, TRUE);
         break;
-      case PHT_TWISTER:
-        Particles_Twister(this, 1.0f, 0.0f, 1e6, 1.0f);
+      case PHT_COLLECT_ENERGYNOCLOUD:
+        Particles_CollectEnergy(this, m_fActivateTime, m_fActivateTime+2.0f, FALSE);
         break;
+		*/
+//      case PHT_TWISTER:
+//        Particles_Twister(this, 1.0f, 0.0f, 1e6, 1.0f);
+//        break;
       case PHT_WATERFALL:
         Particles_Waterfall(this, m_ctCount, m_fStretchAll, m_fStretchX, m_fStretchY, m_fStretchZ,
-          m_fSize, m_fMipFactorDisappear, m_fParam1);
+          m_fSize, m_fMipFactorDisappear, m_fParam1, m_fParam2, m_cColor);
         break;
     }
   }
@@ -215,7 +226,14 @@ procedures:
           resume;
         }
         on (EDeactivate) :
-        { 
+        {
+          if (_pNetwork->IsServer()) {
+            SendEvent(EParticlesDeactivate(),TRUE);
+          }
+          resume;
+        }
+        on (EParticlesDeactivate) : 
+        {
           m_fDeactivateTime = _pTimer->CurrentTick();
           jump Inactive(); 
         }
@@ -231,6 +249,13 @@ procedures:
       on (EBegin) : { resume; }
       on (EActivate) :
       { 
+        if (_pNetwork->IsServer()) {
+          SendEvent(EParticlesActivate(),TRUE);
+        }
+        resume;
+      }
+      on (EParticlesActivate) : 
+      {
         m_fActivateTime = _pTimer->CurrentTick();
         m_fDeactivateTime = _pTimer->CurrentTick()+10000.0f;
         jump Active(); 
@@ -243,6 +268,7 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     // set appearance
     StretchModel();

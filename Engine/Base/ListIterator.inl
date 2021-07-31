@@ -39,7 +39,7 @@ public:
   /* check if finished */
   BOOL IsPastEnd(void) {
     return li_CurrentNode->IsTailMarker();
-  };
+  };  
   /* Insert a node after current one. */
   inline void InsertAfterCurrent(CListNode &lnNew) {
     li_CurrentNode->IterationInsertAfter(lnNew);
@@ -66,18 +66,26 @@ public:
 
 // make 'for' construct for walking a list
 #define FOREACHINLIST(baseclass, member, head, iter) \
-  for ( LISTITER(baseclass, member) iter(head); !iter.IsPastEnd(); iter.MoveToNext() )
-
-// make 'for' construct for walking a list, keeping the iterator for later use
-#define FOREACHINLISTKEEP(baseclass, member, head, iter) \
   LISTITER(baseclass, member) iter(head); \
-  for (; !iter.IsPastEnd(); iter.MoveToNext() )
+  for ( ; !iter.IsPastEnd(); iter.MoveToNext() )
+
+// make 'for' construct for walking a list reversely
+#define FOREACHINLIST_R(baseclass, member, head, iter) \
+  for ( LISTITER(baseclass, member) iter(head.IterationTail()); \
+   !iter->member.IsHeadMarker(); iter.MoveToPrev() )
 
 // make 'for' construct for deleting a list
 #define FORDELETELIST(baseclass, member, head, iter)		  \
    for ( LISTITER(baseclass, member) iter(head), iter##next;	  \
    iter##next=iter, iter##next.IsPastEnd() || (iter##next.MoveToNext(),1), !iter.IsPastEnd(); \
      iter = iter##next)
+
+// make 'for' construct for deleting a list reversly
+#define FORDELETELIST_R(baseclass, member, head, iter)		  \
+   for ( LISTITER(baseclass, member) iter(head.IterationTail()), iter##prev;	  \
+   iter##prev=iter, iter##prev->member.IsHeadMarker() || (iter##prev.MoveToPrev(),1), !iter->member.IsHeadMarker(); \
+     iter = iter##prev)
+
 
 // get the pointer to the first element in the list
 #define LIST_HEAD(listhead, baseclass, member) \

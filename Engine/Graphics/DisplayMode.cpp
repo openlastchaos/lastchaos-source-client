@@ -19,7 +19,7 @@ CDisplayMode::CDisplayMode(void)
 CTString CDisplayMode::DepthString(void) const
 {
   switch (dm_ddDepth) {
-  case DD_NODEPTH: return "none"; break;
+  case DD_NONE:    return "none"; break;
   case DD_16BIT:   return "16"; break;
   case DD_32BIT:   return "32"; break;
   case DD_DEFAULT: return TRANS("desktop"); break;
@@ -33,6 +33,14 @@ BOOL CDisplayMode::IsDualHead(void)
 {
   // if size is 8:3 it is dual head
   return dm_pixSizeI*3==dm_pixSizeJ*8;
+}
+
+
+// check if mode is triplehead
+BOOL CDisplayMode::IsTripleHead(void)
+{
+  // if size is 12:3 it is triple head
+  return dm_pixSizeI*3==dm_pixSizeJ*12;
 }
 
 

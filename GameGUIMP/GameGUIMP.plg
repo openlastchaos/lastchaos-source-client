@@ -1,0 +1,85 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: GameGUIMP - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating command line "rc.exe /l 0x409 /fo"Release/GameGUI.res" /d "NDEBUG" /d "_AFXDLL" "E:\USA\GameGUIMP\GameGUI.rc"" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP118.tmp" with contents
+[
+/nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GAMEGUI_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/GameGUIMP.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\USA\GameGUIMP\ConsoleSymbolsCombo.cpp"
+"E:\USA\GameGUIMP\DlgAudioQuality.cpp"
+"E:\USA\GameGUIMP\DlgConsole.cpp"
+"E:\USA\GameGUIMP\DlgPlayerAppearance.cpp"
+"E:\USA\GameGUIMP\DlgVideoQuality.cpp"
+"E:\USA\GameGUIMP\EditConsole.cpp"
+"E:\USA\GameGUIMP\GameGUI.cpp"
+"E:\USA\GameGUIMP\LocalPlayersList.cpp"
+"E:\USA\GameGUIMP\PressKeyEditControl.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP118.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP119.tmp" with contents
+[
+/nologo /G5 /MD /W3 /GX /Zi /Ox /Ot /Og /Oi /Oy- /I "..\\" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GAMEGUI_EXPORTS" /D "_WINDLL" /D "_AFXDLL" /Fp"Release/GameGUIMP.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"E:\USA\GameGUIMP\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP119.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP11A.tmp" with contents
+[
+/nologo /dll /profile /map:"Release/GameGUIMP.map" /debug /machine:I386 /out:"Release/GameGUIMP.dll" /implib:"Release/GameGUIMP.lib" 
+.\Release\ConsoleSymbolsCombo.obj
+.\Release\DlgAudioQuality.obj
+.\Release\DlgConsole.obj
+.\Release\DlgPlayerAppearance.obj
+.\Release\DlgVideoQuality.obj
+.\Release\EditConsole.obj
+.\Release\GameGUI.obj
+.\Release\LocalPlayersList.obj
+.\Release\PressKeyEditControl.obj
+.\Release\StdAfx.obj
+.\Release\GameGUI.res
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP11A.tmp"
+warning: unresolved Environment Variable  "$(a60911_dir)"
+warning: unresolved Environment Variable  "$(a60911_dir)"
+warning: unresolved Environment Variable  "$(a60911_dir)"
+warning: unresolved Environment Variable  "$(a60911_dir)"
+warning: unresolved Environment Variable  "$(a60911_dir)"
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP11B.bat" with contents
+[
+@echo off
+copy Release\GameGUIMP.dll \Bin >nul
+copy Release\GameGUIMP.map \Bin >nul
+copy Release\GameGUIMP.lib \Bin >nul
+copy Release\GameGUIMP.pdb \Bin >nul
+]
+Creating command line "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP11B.bat"
+Compiling resources...
+Compiling...
+StdAfx.cpp
+Compiling...
+ConsoleSymbolsCombo.cpp
+DlgAudioQuality.cpp
+DlgConsole.cpp
+DlgPlayerAppearance.cpp
+DlgVideoQuality.cpp
+EditConsole.cpp
+GameGUI.cpp
+LocalPlayersList.cpp
+PressKeyEditControl.cpp
+Generating Code...
+Linking...
+   Creating library Release/GameGUIMP.lib and object Release/GameGUIMP.exp
+<h3>Output Window</h3>
+Copying GameGUIMP binaries to \Bin
+
+
+
+<h3>Results</h3>
+GameGUIMP.dll - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>

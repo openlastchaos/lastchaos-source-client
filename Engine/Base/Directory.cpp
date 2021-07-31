@@ -24,7 +24,7 @@ int qsort_CompareCTFileName(const void *elem1, const void *elem2 )
 extern BOOL FileMatchesList(CDynamicStackArray<CTFileName> &afnm, const CTFileName &fnm);
 
 void FillDirList_internal(const CTFileName &fnmBasePath,
-  CDynamicStackArray<CTFileName> &afnm, const CTFileName &fnmDir, const CTString &strPattern, BOOL bRecursive,
+  CDynamicStackArray<CTFileName> &afnm, const CTFileName &fnmDir, const CTString &strPattern, const ULONG ulFlags,
   CDynamicStackArray<CTFileName> *pafnmInclude, CDynamicStackArray<CTFileName> *pafnmExclude)
 {
   // add the directory to list of directories to search
@@ -69,14 +69,18 @@ void FillDirList_internal(const CTFileName &fnmBasePath,
       // if it is a directory
       if (c_file.attrib&_A_SUBDIR) {
         // if recursive reading
-        if (bRecursive) {
+        if (ulFlags&DLI_RECURSIVE) {
           // add it to the list of directories to search
           CDirToRead *pdrNew = new CDirToRead;
           pdrNew->dr_strDir = fnm+"\\";
           lhDirs.AddTail(pdrNew->dr_lnNode);
         }
+        if (ulFlags&DLI_ONLYDIRS) {
+          // add that subdir
+          afnm.Push() = fnm + "\\";
+        }
       // if it matches the pattern
-      } else if (strPattern=="" || fnm.Matches(strPattern)) {
+      } else if (strPattern=="" || fnm.Matches(strPattern) && !(ulFlags&DLI_ONLYDIRS)) {
         // add that file
         afnm.Push() = fnm;
       }
@@ -90,61 +94,66 @@ ENGINE_API void MakeDirList(
   CDynamicStackArray<CTFileName> &afnmDir, const CTFileName &fnmDir, const CTString &strPattern, ULONG ulFlags)
 {
   afnmDir.PopAll();
-  BOOL bRecursive = ulFlags&DLI_RECURSIVE;
-  BOOL bSearchCD  = ulFlags&DLI_SEARCHCD;
+  BOOL bRecursive  = ulFlags&DLI_RECURSIVE;
+  BOOL bSearchCD   = ulFlags&DLI_SEARCHCD;
+  BOOL bSearchZips = !(ulFlags&DLI_NOZIPS);
+  BOOL bOnlyDirs   = ulFlags&DLI_ONLYDIRS;
 
   // make one temporary array
   CDynamicStackArray<CTFileName> afnm;
 
   if (_fnmMod!="") {
-    FillDirList_internal(_fnmApplicationPath, afnm, fnmDir, strPattern, bRecursive,
+    FillDirList_internal(_fnmApplicationPath, afnm, fnmDir, strPattern, ulFlags,
       &_afnmBaseBrowseInc, &_afnmBaseBrowseExc);
     if (bSearchCD) {
-      FillDirList_internal(_fnmCDPath, afnm, fnmDir, strPattern, bRecursive,
+      FillDirList_internal(_fnmCDPath, afnm, fnmDir, strPattern, ulFlags,
       &_afnmBaseBrowseInc, &_afnmBaseBrowseExc);
     }
-    FillDirList_internal(_fnmApplicationPath+_fnmMod, afnm, fnmDir, strPattern, bRecursive, NULL, NULL);
+    FillDirList_internal(_fnmApplicationPath+_fnmMod, afnm, fnmDir, strPattern, ulFlags, NULL, NULL);
   } else {
-    FillDirList_internal(_fnmApplicationPath, afnm, fnmDir, strPattern, bRecursive, NULL, NULL);
+    FillDirList_internal(_fnmApplicationPath, afnm, fnmDir, strPattern, ulFlags, NULL, NULL);
     if (bSearchCD) {
-      FillDirList_internal(_fnmCDPath, afnm, fnmDir, strPattern, bRecursive, NULL, NULL);
+      FillDirList_internal(_fnmCDPath, afnm, fnmDir, strPattern, ulFlags, NULL, NULL);
     }
   }
 
-  // for each file in zip archives
-  CTString strDirPattern = fnmDir;
-  INDEX ctFilesInZips = UNZIPGetFileCount();
-  for(INDEX iFileInZip=0; iFileInZip<ctFilesInZips; iFileInZip++) {
-    const CTFileName &fnm = UNZIPGetFileAtIndex(iFileInZip);
+  // if searching in zips
+  if(bSearchZips && !bOnlyDirs) {
+    // for each file in zip archives
+    CTString strDirPattern = fnmDir;
+    INDEX ctFilesInZips = UNZIPGetFileCount();
+    for(INDEX iFileInZip=0; iFileInZip<ctFilesInZips; iFileInZip++) {
+      const CTFileName &fnm = UNZIPGetFileAtIndex(iFileInZip);
 
-    // if not in this dir, skip it
-    if (bRecursive) {
-      if (!fnm.HasPrefix(strDirPattern)) {
-        continue;
+      // if not in this dir, skip it
+      if (bRecursive) {
+        if (!fnm.HasPrefix(strDirPattern)) {
+          continue;
+        }
+      } else {
+        if (fnm.FileDir()!=fnmDir) {
+          continue;
+        }
       }
-    } else {
-      if (fnm.FileDir()!=fnmDir) {
-        continue;
-      }
-    }
 
-    // if doesn't match pattern
-    if (strPattern!="" && !fnm.Matches(strPattern)) {
-      // skip it
-      continue;
-    }
-
-    // if mod is active, and the file is not in mod
-    if (_fnmMod!="" && !UNZIPIsFileAtIndexMod(iFileInZip)) {
-      // if it doesn't match base browse path
-      if ( !FileMatchesList(_afnmBaseBrowseInc, fnm) || FileMatchesList(_afnmBaseBrowseExc, fnm) ) {
+      // if doesn't match pattern
+      if (strPattern!="" && !fnm.Matches(strPattern)) {
         // skip it
         continue;
       }
-    }
 
-    // add that file
-    afnm.Push() = fnm;
+      // if mod is active, and the file is not in mod
+      if (_fnmMod!="" && !UNZIPIsFileAtIndexMod(iFileInZip)) {
+        // if it doesn't match base browse path
+        if ( !FileMatchesList(_afnmBaseBrowseInc, fnm) || FileMatchesList(_afnmBaseBrowseExc, fnm) ) {
+          // skip it
+          continue;
+        }
+      }
+
+      // add that file
+      afnm.Push() = fnm;
+    }
   }
 
   // if no files

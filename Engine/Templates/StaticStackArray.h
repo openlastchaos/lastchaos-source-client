@@ -32,10 +32,14 @@ public:
   /* Add new object(s) on top of stack. */
   inline Type &Push(void);
   inline Type *Push(INDEX ct);
+  inline void Add(const Type&);
   /* Remove one object from top of stack and return it. */
   inline Type &Pop(void);
   /* Remove objects with higher than the given index from stack, but keep stack space. */
   inline void PopUntil(INDEX iNewTop);
+//안태훈 수정 시작	//(5th Closed beta)(0.2)
+  inline void SwapAndPop(INDEX swapIndex);	//스택 중간과 top을 바꾼 후 top을 pop한다.
+//안태훈 수정 끝	//(5th Closed beta)(0.2)
   /* Remove all objects from stack, but keep stack space. */
   inline void PopAll(void);
 

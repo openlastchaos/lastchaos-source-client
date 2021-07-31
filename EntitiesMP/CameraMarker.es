@@ -28,11 +28,12 @@ properties:
  13 FLOAT m_fRatioY "View pos ratio Y" 'Y' = 0.5f,
  14 FLOAT m_fRatioZ "View pos ratio Z" 'Z' = 0.5f,
 
+ 20 BOOL m_bTargetCaller "_SC Target player" = FALSE,
 
 components:
 
-  1 model   MODEL_MARKER     "Models\\Editor\\CameraMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\CameraMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\CameraMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\CameraMarker.tex"
 
 
 functions:
@@ -75,7 +76,7 @@ procedures:
     SetModel(MODEL_MARKER);
     SetModelMainTexture(TEXTURE_MARKER);
 
-    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, "Camera Marker")) {
+    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CCameraMarker_DLLClass)) {
       WarningMessage( "Entity '%s' is not of Camera Marker class!", m_penTarget);
       m_penTarget = NULL;
     }

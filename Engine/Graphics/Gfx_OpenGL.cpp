@@ -15,32 +15,22 @@
 #include <Engine/Base/ListIterator.inl>
 
 
-extern INDEX ogl_iTBufferEffect;
-extern INDEX ogl_iTBufferSamples;
-
-
 // fog/haze textures
 extern ULONG _fog_ulTexture;
 extern ULONG _haze_ulTexture;
 
-// change control
+// vertices in GPU
 extern INDEX GFX_ctVertices;
 
+// occlusion queries
+extern UINT *_puiOcclusionQueryIDs;
 
-// attributes for t-buffer
-int aiAttribList[] = {
-  WGL_DRAW_TO_WINDOW_EXT, TRUE,
-  WGL_SUPPORT_OPENGL_EXT, TRUE,
-  WGL_DOUBLE_BUFFER_EXT, TRUE,
-	WGL_PIXEL_TYPE_EXT, WGL_TYPE_RGBA_EXT,
-  WGL_COLOR_BITS_EXT, 16,
-  WGL_DEPTH_BITS_EXT, 16,
-	WGL_SAMPLE_BUFFERS_3DFX, 1,
-  WGL_SAMPLES_3DFX, 4,
-	0, 0
-};
-int *piAttribList = aiAttribList;
+// system gamma table
+extern UWORD _auwSystemGammaTable[256*3];
 
+
+// 3Dfx standalone driver
+static BOOL _b3DfxDriver = FALSE;
 
 // engine's internal opengl state variables
 extern BOOL GFX_bDepthTest;
@@ -48,6 +38,7 @@ extern BOOL GFX_bDepthWrite;
 extern BOOL GFX_bAlphaTest;
 extern BOOL GFX_bBlending;
 extern BOOL GFX_bDithering;
+extern BOOL GFX_bLighting;
 extern BOOL GFX_bClipping;
 extern BOOL GFX_bClipPlane;
 extern BOOL GFX_bColorArray;
@@ -61,8 +52,11 @@ extern GfxBlend GFX_eBlendDst;
 extern GfxComp  GFX_eDepthFunc;
 extern GfxFace  GFX_eCullFace;
 extern INDEX GFX_iTexModulation[GFX_MAXTEXUNITS];
-extern BOOL  glbUsingVARs = FALSE;   // vertex_array_range
+extern BOOL  GFX_abLights[GFX_MAXLIGHTS];
+extern ULONG GFX_ulCurrentColorMask;
 
+extern BOOL  GFX_bUseVertexProgram;
+extern BOOL  GFX_bUsePixelProgram;
 
 // define gl function pointers
 #define DLLFUNCTION(dll, output, name, inputs, params, required) \
@@ -87,19 +81,25 @@ BOOL  (__stdcall *pwglGetPixelFormatAttribivARB)(HDC hdc, int iPixelFormat, int 
 void  (__stdcall *pglTBufferMask3DFX)(GLuint mask);
 
 // NV occlusion query
-void (__stdcall *pglGenOcclusionQueriesNV)( GLsizei n, GLuint *ids);
-void (__stdcall *pglDeleteOcclusionQueriesNV)( GLsizei n, const GLuint *ids);
-void (__stdcall *pglBeginOcclusionQueryNV)( GLuint id);
+void (__stdcall *pglGenOcclusionQueriesNV)(GLsizei n, GLuint *ids);
+void (__stdcall *pglDeleteOcclusionQueriesNV)(GLsizei n, const GLuint *ids);
+void (__stdcall *pglBeginOcclusionQueryNV)(GLuint id);
 void (__stdcall *pglEndOcclusionQueryNV)(void);
-void (__stdcall *pglGetOcclusionQueryivNV)( GLuint id, GLenum pname, GLint *params);
-void (__stdcall *pglGetOcclusionQueryuivNV)( GLuint id, GLenum pname, GLuint *params);
-GLboolean (__stdcall *pglIsOcclusionQueryNV)( GLuint id);
+void (__stdcall *pglGetOcclusionQueryivNV)(GLuint id, GLenum pname, GLint *params);
+void (__stdcall *pglGetOcclusionQueryuivNV)(GLuint id, GLenum pname, GLuint *params);
+GLboolean (__stdcall *pglIsOcclusionQueryNV)(GLuint id);
 
 // ATI GL_ATI_pn_triangles
 void (__stdcall *pglPNTrianglesiATI)( GLenum pname, GLint param);
 void (__stdcall *pglPNTrianglesfATI)( GLenum pname, GLfloat param);
 
+// some ARB texture compression functions
+void (__stdcall *pglCompressedTexImageARB)(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data); 
+void (__stdcall *pglGetCompressedTexImageARB)(GLenum target, GLint lod, GLvoid *img);
+ 
 
+
+// check windows error
 void WIN_CheckError(BOOL bRes, const char *strDescription)
 {
   if( bRes) return;
@@ -137,142 +137,42 @@ static void OGL_ClearFunctionPointers(void)
 
 
 
-
-#define BACKOFF pwglMakeCurrent( NULL, NULL); \
-	              pwglDeleteContext( hglrc); \
-	              ReleaseDC( dummyhwnd, hdc); \
-	              DestroyWindow( dummyhwnd); \
-            	  UnregisterClassA( classname, hInstance);
-
-
-
-// helper for choosing t-buffer's pixel format
-static BOOL _TBCapability = FALSE;
-static INDEX ChoosePixelFormatTB( HDC hdc, const PIXELFORMATDESCRIPTOR *ppfd,
-                                  PIX pixResWidth, PIX pixResHeight)
+// HELPER: find closest pixels format
+static INDEX FindPixelFormat_OGL( HDC hdc, PIXELFORMATDESCRIPTOR &pfd, INDEX iDepthBits)
 {
-  _TBCapability = FALSE;
-	char *extensions = NULL;
-	char *wglextensions = NULL;
-	HGLRC hglrc; 
-	HWND dummyhwnd;
-	WNDCLASSA cls;
-  HINSTANCE hInstance = GetModuleHandle(NULL);
-	LPCSTR classname = "dummyOGLwin";
-	cls.style = CS_OWNDC;
-	cls.lpfnWndProc = DefWindowProc;
-	cls.cbClsExtra = 0;
-	cls.cbWndExtra = 0;
-	cls.hInstance = hInstance;
-	cls.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	cls.hCursor = LoadCursor(NULL, IDC_WAIT);
-	cls.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-	cls.lpszMenuName = NULL;
-	cls.lpszClassName = classname;
-  // didn't manage to register class?
-	if( !RegisterClassA(&cls))	return 0;
-
-	// create window fullscreen 
-  //CPrintF( "  Dummy window: %d x %d\n", pixResWidth, pixResHeight);
-	dummyhwnd = CreateWindowExA( WS_EX_TOPMOST, classname, "Dummy OGL window",
-                              WS_POPUP|WS_VISIBLE, 0, 0, pixResWidth, pixResHeight,
-                              NULL, NULL, hInstance, NULL);
-  // didn't make it?
-  if( dummyhwnd == NULL) {
-	  UnregisterClassA( classname, hInstance);
-    return 0;
+  // if depth bits aren't explicit
+  if( iDepthBits==0) {
+    // match the color depth and try again
+    iDepthBits = pfd.cColorBits;
   }
-  //CPrintF( "  Dummy passed...\n");
-	hdc = GetDC(dummyhwnd);
-  // try to choose pixel format
-	int iPixelFormat = pwglChoosePixelFormat( hdc, ppfd);
-	if( !iPixelFormat) {
-    ReleaseDC( dummyhwnd, hdc);
-    DestroyWindow(dummyhwnd);
-	  UnregisterClassA( classname, hInstance);
-	  return 0;
-	}
-  //CPrintF( "  Choose pixel format passed...\n");
-  // try to set pixel format
-	if( !pwglSetPixelFormat( hdc, iPixelFormat, ppfd)) {
-    ReleaseDC( dummyhwnd, hdc);
-    DestroyWindow(dummyhwnd);
-	  UnregisterClassA( classname, hInstance);
-	  return 0;
-	}
-  //CPrintF( "  Set pixel format passed...\n");
 
-	// create context using the default accelerated pixelformat that was passed
-	hglrc = pwglCreateContext(hdc);
-	pwglMakeCurrent( hdc, hglrc);
-	// update the value list with information passed from the ppfd.
-	aiAttribList[ 9] =  ppfd->cColorBits;
-	aiAttribList[11] =  ppfd->cDepthBits;
-	aiAttribList[15] = _pGfx->go_ctSampleBuffers;
+  // tries' tables
+  const  INDEX ctTries = 4;
+  static INDEX ai16BitsTable[] = { 16,0, 32,0, 24,0, 24,8 };
+  static INDEX ai24BitsTable[] = { 24,0, 24,8, 32,0, 16,0 };
+  static INDEX ai32BitsTable[] = { 32,0, 24,0, 24,8, 16,0 };
 
-	// get the extension list.
-	extensions = (char*)pglGetString(GL_EXTENSIONS);
-	// get the wgl extension list.
-	if( strstr((const char*)extensions, "WGL_EXT_extensions_string ") != NULL)
-  { // windows extension string supported
-    pwglGetExtensionsStringARB = (char* (__stdcall*)(HDC))pwglGetProcAddress( "wglGetExtensionsStringARB");
-    if( pwglGetExtensionsStringARB == NULL) {
-      BACKOFF
-      return 0;
-    }
-    //CPrintF( "  WGL extension string passed...\n");
-		// get WGL extension string
-		wglextensions = (char*)pwglGetExtensionsStringARB(hdc);
- 	}
-  else {
-    BACKOFF
-    return 0;
-	}
+  // find corresponding table based on depth bits
+                   INDEX *piDepthTable = &ai32BitsTable[0];
+       if( iDepthBits<21) piDepthTable = &ai16BitsTable[0];
+  else if( iDepthBits<28) piDepthTable = &ai24BitsTable[0];
 
- 	// check for the pixel format and multisample extension strings
- 	if( (strstr((const char*)wglextensions, "WGL_ARB_pixel_format ") != NULL) && 
-      (strstr((const char*)extensions,    "GL_3DFX_multisample ")  != NULL)) {
-    // 3dfx extensions present
-    _TBCapability = TRUE;
-    pwglChoosePixelFormatARB      = (BOOL (__stdcall*)(HDC,const int*,const FLOAT*,UINT,int*,UINT*))pwglGetProcAddress( "wglChoosePixelFormatARB");
-    pwglGetPixelFormatAttribivARB = (BOOL (__stdcall*)(HDC,int,int,UINT,int*,int*)                 )pwglGetProcAddress( "wglGetPixelFormatAttribivARB");
-		pglTBufferMask3DFX = (void (__stdcall*)(GLuint))pwglGetProcAddress("glTBufferMask3DFX");
-    if( pwglChoosePixelFormatARB==NULL && pglTBufferMask3DFX==NULL) {
-      BACKOFF
-      return 0;
-		}
-    //CPrintF( "  WGL choose pixel format present...\n");
-    int iAttribListNum = {WGL_NUMBER_PIXEL_FORMATS_EXT};
-  	int iMaxFormats    = 1; // default number to return
-		if( pwglGetPixelFormatAttribivARB!=NULL) {
-			// get total number of formats supported.
-			pwglGetPixelFormatAttribivARB( hdc, NULL, NULL, 1, &iAttribListNum, &iMaxFormats);
-      //CPrintF( "Max formats: %d\n", iMaxFormats);
-		}
-    UINT uiNumFormats;
-	  int *piFormats = (int*)AllocMemory( sizeof(UINT) *iMaxFormats);
-    // try to get all formats that fit the pixel format criteria
-    if( !pwglChoosePixelFormatARB( hdc, piAttribList, NULL, iMaxFormats, piFormats, &uiNumFormats)) {
-      FreeMemory(piFormats);
-      BACKOFF
-      return 0;
-    }
-    //CPrintF( "  WGL choose pixel format passed...\n");
-		// return the first match for now
-    iPixelFormat = 0;
-    if( uiNumFormats>0) {
-      iPixelFormat = piFormats[0];
-      //CPrintF( "Num formats: %d\n", uiNumFormats);
-      //CPrintF( "First format: %d\n", iPixelFormat);
-    }
-    FreeMemory(piFormats);
+  // loop thru table
+  for( INDEX i=0; i<ctTries; i++)
+  { // let MS find the closest format
+    pfd.cDepthBits   = piDepthTable[i*2+0];
+    pfd.cStencilBits = piDepthTable[i*2+1];
+    const INDEX iFoundFormat = pwglChoosePixelFormat( hdc, &pfd);
+    if( iFoundFormat==0) continue; // skip to next if not found
+    // see what we've found
+    PIXELFORMATDESCRIPTOR pfdOut;
+    if( !pwglDescribePixelFormat( hdc, iFoundFormat, sizeof(pfdOut), &pfdOut)) return 0;
+    if( pfdOut.cDepthBits==pfd.cDepthBits) return iFoundFormat; // found if depths match!
   }
-	else
-  {	// wglChoosePixelFormatARB extension does not exist :(
-		iPixelFormat = 0;
-	}
-  BACKOFF
-  return iPixelFormat;
+
+  // nothing found :(
+  ASSERT( "FindPixelFormat_OGL: Not found?!" );
+  return 0;
 }
 
 
@@ -291,47 +191,16 @@ BOOL CGfxLibrary::SetupPixelFormat_OGL( HDC hdc, BOOL bReport/*=FALSE*/)
   pfd.dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
   pfd.iPixelType = PFD_TYPE_RGBA;
 
-  // clamp depth/stencil values
+  // clamp depth values
   extern INDEX gap_iDepthBits;
-  extern INDEX gap_iStencilBits;
-       if( gap_iDepthBits <12) gap_iDepthBits   = 0;
-  else if( gap_iDepthBits <22) gap_iDepthBits   = 16;
-  else if( gap_iDepthBits <28) gap_iDepthBits   = 24;
-  else                         gap_iDepthBits   = 32;
-       if( gap_iStencilBits<3) gap_iStencilBits = 0;
-  else if( gap_iStencilBits<7) gap_iStencilBits = 4;
-  else                         gap_iStencilBits = 8;
+       if( gap_iDepthBits<12) gap_iDepthBits = 0;
+  else if( gap_iDepthBits<21) gap_iDepthBits = 16;
+  else if( gap_iDepthBits<28) gap_iDepthBits = 24;
+  else                        gap_iDepthBits = 32;
 
-  // set color/depth buffer values
-  pfd.cColorBits   = (dd!=DD_16BIT) ? 32 : 16;
-  pfd.cDepthBits   = gap_iDepthBits;
-  pfd.cStencilBits = gap_iStencilBits;
-
-  // must be required and works only in full screen via GDI functions
-  ogl_iTBufferEffect = Clamp( ogl_iTBufferEffect, 0L, 2L);
-  if( ogl_iTBufferEffect>0 && pixResWidth>0 && pixResHeight>0)
-  { // lets T-buffer ... :)
-    //CPrintF( "TBuffer init...\n");
-    ogl_iTBufferSamples = (1L) << FastLog2(ogl_iTBufferSamples);
-    if( ogl_iTBufferSamples<2) ogl_iTBufferSamples = 4;
-    go_ctSampleBuffers = ogl_iTBufferSamples;
-    go_iCurrentWriteBuffer = 0;
-    iPixelFormat = ChoosePixelFormatTB( hdc, &pfd, pixResWidth, pixResHeight);
-	  // need to reset the desktop resolution because CPFTB() resets it
-    BOOL bSuccess = CDS_SetMode( pixResWidth, pixResHeight, dd);
-    if( !bSuccess) iPixelFormat = 0;
-    // check T-buffer support
-    if( _TBCapability) pglGetIntegerv( GL_SAMPLES_3DFX, (GLint*)&go_ctSampleBuffers);
-    if( !iPixelFormat) { ogl_iTBufferEffect=0; CPrintF( TRANS("TBuffer initialization failed.\n")); }
-    else CPrintF( TRANS("TBuffer initialization passed (%d buffers in use).\n"), go_ctSampleBuffers);
-  }
-
-  // if T-buffer didn't make it, let's try thru regular path
-  if( !iPixelFormat) {
-    go_ctSampleBuffers = 0;
-    go_iCurrentWriteBuffer = 0;
-    iPixelFormat = pwglChoosePixelFormat( hdc, &pfd);
-  }
+  // find closest pixel format
+  pfd.cColorBits = (dd!=DD_16BIT) ? 32 : 16;
+  iPixelFormat = FindPixelFormat_OGL( hdc, pfd, gap_iDepthBits);
 
   if( !iPixelFormat) {
     WIN_CHECKERROR( 0, "ChoosePixelFormat");
@@ -387,8 +256,10 @@ BOOL CGfxLibrary::SetupPixelFormat_OGL( HDC hdc, BOOL bReport/*=FALSE*/)
   CPrintF( TRANS("  Color bits: %d (%d:%d:%d:%d)\n"), pfd.cColorBits, 
            pfd.cRedBits, pfd.cGreenBits, pfd.cBlueBits, pfd.cAlphaBits);
   CPrintF( TRANS("  Depth bits: %d (%d for stencil)\n"), pfd.cDepthBits, pfd.cStencilBits);
-  gl_iCurrentDepth = pfd.cDepthBits; // keep depth bits
-  
+  gl_ctDepthBits = pfd.cDepthBits; // keep depth bits
+  if( pfd.cStencilBits>0) gl_ulFlags |= GLF_STENCILBUFFER; // and stencil buffer presence
+  else gl_ulFlags &= ~GLF_STENCILBUFFER;
+
   // all done
   CPrintF( "\n");
   return TRUE;
@@ -470,14 +341,15 @@ void CGfxLibrary::InitContext_OGL(void)
   GFX_fLastL = GFX_fLastR = GFX_fLastT = GFX_fLastB = GFX_fLastN = GFX_fLastF = 0;
   GFX_bViewMatrix = TRUE;
 
-  glbUsingVARs  = FALSE;
   GFX_bTruform  = FALSE;
   GFX_bClipping = TRUE;
+  GFX_ulCurrentColorMask = 12345678; // force next call to this function to be efficient
   pglEnable(  GL_TEXTURE_2D);     GFX_abTexture[0] = TRUE;
   pglEnable(  GL_DITHER);         GFX_bDithering   = TRUE;
   pglDisable( GL_BLEND);          GFX_bBlending    = FALSE;
   pglDisable( GL_DEPTH_TEST);     GFX_bDepthTest   = FALSE;
   pglDisable( GL_ALPHA_TEST);     GFX_bAlphaTest   = FALSE;
+  pglDisable( GL_LIGHTING);       GFX_bLighting    = FALSE;
   pglDisable( GL_CLIP_PLANE0);    GFX_bClipPlane   = FALSE;
   pglDisable( GL_CULL_FACE);      GFX_eCullFace    = GFX_NONE;
   pglFrontFace( GL_CCW);          GFX_bFrontFace   = TRUE;
@@ -486,6 +358,15 @@ void CGfxLibrary::InitContext_OGL(void)
   pglBlendFunc( GL_ONE, GL_ONE);  GFX_eBlendSrc = GFX_eBlendDst = GFX_ONE;
   pglDepthRange( 0.0f, 1.0f);     GFX_fMinDepthRange = 0.0f;
                                   GFX_fMaxDepthRange = 1.0f;
+
+  // set global ambient to black and disable all lights
+  const FLOAT afAmbient[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+  pglLightModelfv( GL_LIGHT_MODEL_AMBIENT, &afAmbient[0]);
+  for( INDEX iLight=0; iLight<GFX_MAXLIGHTS; iLight++) {
+    GFX_abLights[iLight] = FALSE;
+    pglDisable( (GLenum)(GL_LIGHT0+iLight));
+  }
+
   // (re)set some OpenGL defaults
   gfxPolygonMode( GFX_FILL);
   pglShadeModel( GL_SMOOTH);
@@ -533,6 +414,18 @@ void CGfxLibrary::InitContext_OGL(void)
     go_strWinExtensions = (char*)pwglGetExtensionsStringARB(tdc.hdc);
   }
 
+  // if full screen and gamma adjustment is supported
+  // (3Dfx OpenGL doesn't support gamma adjustment - the way we would like it:)
+  gl_ulFlags &= ~GLF_ADJUSTABLEGAMMA;
+  if( !_b3DfxDriver && (gl_ulFlags&GLF_FULLSCREEN)) {
+    // store system gamma table
+    const HDC hdc = GetDC(NULL);
+    const BOOL bHasGamma = GetDeviceGammaRamp( hdc, &_auwSystemGammaTable[0]);
+    if( bHasGamma) gl_ulFlags |= GLF_ADJUSTABLEGAMMA;
+    else CPrintF( TRANS("\nWARNING: Gamma, brightness and contrast are not adjustable.\n\n"));
+    ReleaseDC( NULL, hdc);
+  }
+
   // multitexture is supported only thru GL_EXT_texture_env_combine extension
   gl_ctTextureUnits = 1;
   gl_ctRealTextureUnits = 1;
@@ -546,17 +439,27 @@ void CGfxLibrary::InitContext_OGL(void)
       pglActiveTextureARB       = (void (__stdcall*)(GLenum))pwglGetProcAddress( "glActiveTextureARB");
       pglClientActiveTextureARB = (void (__stdcall*)(GLenum))pwglGetProcAddress( "glClientActiveTextureARB");
       ASSERT( pglActiveTextureARB!=NULL && pglClientActiveTextureARB!=NULL);
-      gl_ctTextureUnits = Min( GFX_MAXTEXUNITS, gl_ctRealTextureUnits);
+      gl_ctTextureUnits = Min( GFX_USETEXUNITS, gl_ctRealTextureUnits);
     } else {
       CPrintF( TRANS("  GL_TEXTURE_ENV_COMBINE extension missing - multi-texturing cannot be used.\n"));
     }
   }
 
   // find all supported texture compression extensions
-  TestExtension_OGL( GLF_EXTC_ARB,    "GL_ARB_texture_compression");
   TestExtension_OGL( GLF_EXTC_S3TC,   "GL_EXT_texture_compression_s3tc");
   TestExtension_OGL( GLF_EXTC_FXT1,   "GL_3DFX_texture_compression_FXT1");
   TestExtension_OGL( GLF_EXTC_LEGACY, "GL_S3_s3tc");
+
+  // (need some functions from ARB compression (if available)
+  pglCompressedTexImageARB    = NULL;
+  pglGetCompressedTexImageARB = NULL;
+  if( HasExtension( go_strExtensions, "GL_ARB_texture_compression")) {
+    AddExtension_OGL( GLF_EXTC_ARB, "GL_ARB_texture_compression");
+    pglCompressedTexImageARB    = (void (__stdcall*)(GLenum,GLint,GLenum,GLsizei,GLsizei,GLint,GLsizei,const GLvoid*))pwglGetProcAddress( "glCompressedTexImage2DARB");
+    pglGetCompressedTexImageARB = (void (__stdcall*)(GLenum,GLint,GLvoid*))pwglGetProcAddress( "glGetCompressedTexImageARB");
+    ASSERT( pglCompressedTexImageARB!=NULL && pglGetCompressedTexImageARB!=NULL);
+  }
+
   // mark if there is at least one extension present
   gl_ulFlags &= ~GLF_TEXTURECOMPRESSION;
   if( (gl_ulFlags&GLF_EXTC_ARB)  || (gl_ulFlags&GLF_EXTC_FXT1)
@@ -567,6 +470,9 @@ void CGfxLibrary::InitContext_OGL(void)
   // determine max supported dimension of texture
   pglGetIntegerv( GL_MAX_TEXTURE_SIZE, (GLint*)&gl_pixMaxTextureDimension);
   OGL_CHECKERROR;
+
+  // set max primitive count (OpenGL supports a lot!)
+  gl_ctMaxPrimitives = 16777215;
 
   // determine support for texture LOD biasing
   gl_fMaxTextureLODBias = 0.0f;
@@ -630,23 +536,12 @@ void CGfxLibrary::InitContext_OGL(void)
     OGL_CHECKERROR;
   } 
 
-  // if T-buffer is supported
-  if( _TBCapability) {
-    // add extension and disable t-buffer usage by default
-    AddExtension_OGL( GLF_EXT_TBUFFER, "GL_3DFX_multisample");
-    pglDisable( GL_MULTISAMPLE_3DFX);
-    OGL_CHECKERROR;
-  }
-
   // test for clamp to edge
   TestExtension_OGL( GLF_EXT_EDGECLAMP, "GL_EXT_texture_edge_clamp");
 
   // test for clip volume hint
   TestExtension_OGL( GLF_EXT_CLIPHINT, "GL_EXT_clip_volume_hint");
-  /*
-  // test for occlusion culling
-  TestExtension_OGL( GLF_EXT_OCCLUSIONTEST, "GL_HP_occlusion_test");
-
+  
   pglGenOcclusionQueriesNV = NULL;  pglDeleteOcclusionQueriesNV = NULL;
   pglBeginOcclusionQueryNV = NULL;  pglEndOcclusionQueryNV      = NULL;
   pglGetOcclusionQueryivNV = NULL;  pglGetOcclusionQueryuivNV   = NULL;
@@ -667,13 +562,9 @@ void CGfxLibrary::InitContext_OGL(void)
          && pglGetOcclusionQueryivNV!=NULL && pglGetOcclusionQueryuivNV!=NULL
          && pglIsOcclusionQueryNV!=NULL);
   }
-  */
+  
   // done with seeking for supported extensions
   if( go_strSupportedExtensions=="") go_strSupportedExtensions = "none";
-
-  // allocate vertex buffers
-  // eglAdjustVertexBuffers(ogl_iVertexBufferSize*1024);
-  // OGL_CHECKERROR;
 
   // check if 32-bit textures are supported
   GLuint uiTmpTex;
@@ -707,13 +598,15 @@ void CGfxLibrary::InitContext_OGL(void)
   _ulLastUploadedPattern = 0;
   _tpPattern.Clear();
 
+  // init vertex buffers
+  extern void InitVertexBuffers(void);
+  InitVertexBuffers();
+
   // reset texture filtering and array locking
-  _tpGlobal[0].Clear();
-  _tpGlobal[1].Clear();
-  _tpGlobal[2].Clear();
-  _tpGlobal[3].Clear();
+  for( INDEX i=0; i<GFX_MAXTEXUNITS; i++) _tpGlobal[i].Clear();
   GFX_ctVertices = 0;
   gl_dwVertexShader = NONE;
+  gl_dwPixelShader  = NONE;
 
   // set default texture filtering/biasing
   extern INDEX gap_iTextureFiltering;
@@ -721,6 +614,12 @@ void CGfxLibrary::InitContext_OGL(void)
   extern FLOAT gap_fTextureLODBias;
   gfxSetTextureFiltering( gap_iTextureFiltering, gap_iTextureAnisotropy);
   gfxSetTextureBiasing( gap_fTextureLODBias);
+
+  // generate occlusion query IDs
+  _puiOcclusionQueryIDs = (UINT*)AllocMemory( GFX_MAXOCCQUERIES*sizeof(UINT));
+  if( gl_ulFlags & GLF_EXT_OCCLUSIONQUERY) pglGenOcclusionQueriesNV( GFX_MAXOCCQUERIES, _puiOcclusionQueryIDs);
+  else for( INDEX iID=0; iID<GFX_MAXOCCQUERIES; iID++) _puiOcclusionQueryIDs[iID] = iID;
+  OGL_CHECKERROR;
 
   // mark pretouching and probing
   extern BOOL _bNeedPretouch;
@@ -734,8 +633,10 @@ void CGfxLibrary::InitContext_OGL(void)
   // reload all loaded textures and eventually shadows
   extern INDEX shd_bCacheAll;
   extern void ReloadTextures(void);
+  extern void ReloadMeshes(void);
   extern void CacheShadows(void);
   ReloadTextures();
+  ReloadMeshes();
   if( shd_bCacheAll) CacheShadows();
 }
 
@@ -751,11 +652,11 @@ BOOL CGfxLibrary::InitDriver_OGL( BOOL b3Dfx/*=FALSE*/)
   { // if driver doesn't exists on disk
     char strBuffer[_MAX_PATH+1];
     char *strDummy;
-    int iRes = SearchPathA( NULL, strDriverFileName, NULL, _MAX_PATH, strBuffer, &strDummy);
+    int iRes = SearchPath( NULL, strDriverFileName, NULL, _MAX_PATH, strBuffer, &strDummy);
     if( iRes==0) ThrowF_t(TRANS("OpenGL driver '%s' not present"), strDriverFileName);
 
     // load opengl library
-    gl_hiDriver = ::LoadLibraryA( strDriverFileName);
+    gl_hiDriver = ::LoadLibrary( strDriverFileName);
     // if it cannot be loaded (although it is present on disk)
     if( gl_hiDriver==NONE) {
       // if it is 3dfx stand-alone driver
@@ -787,18 +688,18 @@ BOOL CGfxLibrary::InitDriver_OGL( BOOL b3Dfx/*=FALSE*/)
   // if default driver
   if( !b3Dfx) {
     // use GDI functions
+    // NOTE: some ICD implementations are not infact in OPENGL32.DLL, but in some other 
+    //       installed DLL, which is loaded when original OPENGL32.DLL from MS is loaded. 
+    //       For those, we in fact load OPENGL32.DLL from MS, so we must _not_ call these
+    //       functions directly, because they are in MS dll. We must call functions from GDI,
+    //       which in turn call either OPENGL32.DLL, _or_ the client driver, as appropriate.
     pwglSwapBuffers       = ::SwapBuffers;
     pwglSetPixelFormat    = ::SetPixelFormat;
     pwglChoosePixelFormat = ::ChoosePixelFormat;
-    // NOTE:
-    // some ICD implementations are not infact in OPENGL32.DLL, but in some
-    // other installed DLL, which is loaded when original OPENGL32.DLL from MS is
-    // loaded. For those, we in fact load OPENGL32.DLL from MS, so we must _not_
-    // call these functions directly, because they are in MS dll. We must call
-    // functions from GDI, which in turn call either OPENGL32.DLL, _or_ the client driver,
-    // as appropriate.
   }
-  // done
+
+  // done (mark driver type for gamma adjustment support)
+  _b3DfxDriver = b3Dfx;
   return TRUE;
 } 
 
@@ -806,20 +707,21 @@ BOOL CGfxLibrary::InitDriver_OGL( BOOL b3Dfx/*=FALSE*/)
 // shutdown OpenGL driver
 void CGfxLibrary::EndDriver_OGL(void)
 {
-  // unbind all textures
-  if( _pTextureStock!=NULL) {
-    {FOREACHINDYNAMICCONTAINER( _pTextureStock->st_ctObjects, CTextureData, ittd) {
-      CTextureData &td = *ittd;
-      td.td_tpLocal.Clear();
-      td.Unbind();
-    }}
+  // release occlusion queries
+  if( _puiOcclusionQueryIDs!=NULL) { 
+    if( gl_ulFlags & GLF_EXT_OCCLUSIONQUERY) {
+      pglDeleteOcclusionQueriesNV( GFX_MAXOCCQUERIES, _puiOcclusionQueryIDs);
+    } // and free memory
+    FreeMemory(_puiOcclusionQueryIDs);
+   _puiOcclusionQueryIDs = NULL;
   }
-  // unbind fog, haze and flat texture
-  gfxDeleteTexture( _fog_ulTexture); 
-  gfxDeleteTexture( _haze_ulTexture);
-  ASSERT( _ptdFlat!=NULL);
-  _ptdFlat->td_tpLocal.Clear();
-  _ptdFlat->Unbind();
+
+  // restore system gamma table
+  if( gl_ulFlags & GLF_ADJUSTABLEGAMMA) {
+    const HDC hdc = GetDC(NULL);
+    SetDeviceGammaRamp( hdc, &_auwSystemGammaTable[0]);
+    ReleaseDC( NULL, hdc);
+  }
 
   // shut the driver down
   if( go_hglRC!=NULL) {
@@ -832,6 +734,8 @@ void CGfxLibrary::EndDriver_OGL(void)
     WIN_CHECKERROR( bRes, "DeleteContext");
     go_hglRC = NULL;
   }
+
+  // done
   OGL_ClearFunctionPointers();
 }
 
@@ -885,32 +789,4 @@ BOOL CGfxLibrary::SetCurrentViewport_OGL(CViewPort *pvp)
   // remember as current window
   gl_pvpActive = pvp;
   return TRUE;
-}
-
-
-
-/*
- * 3dfx t-buffer control
- */
-
-
-extern void SetTBufferEffect( BOOL bEnable)
-{
-  // adjust console vars
-  ogl_iTBufferEffect  = Clamp( ogl_iTBufferEffect, 0L, 2L);
-  ogl_iTBufferSamples = (1L) << FastLog2(ogl_iTBufferSamples);
-  if( ogl_iTBufferSamples<2) ogl_iTBufferSamples = 4;
-  // if supported
-  if( _pGfx->gl_ulFlags&GLF_EXT_TBUFFER)
-  { // disable multisampling if not required
-    ASSERT( pglTBufferMask3DFX!=NULL);
-    if( ogl_iTBufferEffect==0 || _pGfx->go_ctSampleBuffers<2 || !bEnable) pglDisable( GL_MULTISAMPLE_3DFX);
-    else {
-      pglEnable( GL_MULTISAMPLE_3DFX);
-      UINT uiMask = 0xFFFFFFFF;
-      // set one buffer in case of motion-blur
-      if( ogl_iTBufferEffect==2) uiMask = (1UL) << _pGfx->go_iCurrentWriteBuffer;
-      //pglTBufferMask3DFX(uiMask);
-    }
-  }
 }

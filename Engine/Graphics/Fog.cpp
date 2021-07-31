@@ -8,7 +8,6 @@
 #include <Engine/Graphics/Color.h>
 #include <Engine/Graphics/GfxLibrary.h>
 #include <Engine/Graphics/Fog_internal.h>
-#include <Engine/Graphics/GfxProfile.h>
 #include <Engine/Graphics/ImageInfo.h>
 
 
@@ -45,34 +44,63 @@ UBYTE *_fog_pubTable=NULL;
 
 extern INDEX gfx_bRenderFog;
 extern BOOL _bMultiPlayer;
+static const __int64 mmWhiteMask = 0x00FFFFFF00FFFFFF;
 
 
 // prepares fog and haze parameters and eventualy converts texture
-ULONG PrepareTexture( UBYTE *pubTexture, PIX pixSizeI, PIX pixSizeJ)
+ULONG PrepareTexture( const UBYTE *pubTexture, const PIX pixTexSize)
 {
-  // need to upload from RGBA format
-  const PIX pixTextureSize = pixSizeI*pixSizeJ;
-  __asm {
-    mov     esi,D [pubTexture]
-    mov     edi,D [pubTexture]
-    mov     ecx,D [pixTextureSize]
-    lea     edi,[esi+ecx]
-pixLoop:
-    movzx   eax,B [esi]
-    or      eax,0xFFFFFF00
-    bswap   eax
-    mov     D [edi],eax
-    add     esi,1
-    add     edi,4
-    dec     ecx
-    jnz     pixLoop
-  }
-  // determine internal format
-  extern INDEX gap_bAllowGrayTextures;
-  extern INDEX tex_bFineFog;
-  if( gap_bAllowGrayTextures) return TS.ts_tfLA8;
-  if( tex_bFineFog) return TS.ts_tfRGBA8;
-  return TS.ts_tfRGBA4;
+	__asm {
+		mov     ecx,D [pixTexSize]
+		mov     esi,D [pubTexture]
+		lea     edi,[esi+ecx]
+		shr     ecx,3
+		jz      rest1
+		movq    mm7,Q [mmWhiteMask]
+pixLoop8:
+//		prefetchnta [esi+16]
+		movq    mm0,Q [esi]
+	punpcklbw mm1,mm0
+	punpckhbw mm2,mm0
+	punpcklwd mm3,mm1
+	punpckhwd mm4,mm1
+	punpcklwd mm5,mm2
+	punpckhwd mm6,mm2
+		por     mm3,mm7
+		por     mm4,mm7
+		por     mm5,mm7
+		por     mm6,mm7
+		movq    Q [edi+ 0*8],mm3
+		movq    Q [edi+ 1*8],mm4
+		movq    Q [edi+ 2*8],mm5
+		movq    Q [edi+ 3*8],mm6
+		add     esi,1*8
+		add     edi,4*8
+		dec     ecx
+		jnz     pixLoop8
+		emms
+rest1:
+		mov     ecx,D [pixTexSize]
+		and     ecx,7
+		jz      done
+pixLoop1:
+		movzx   eax,B [esi]
+		or      eax,0xFFFFFF00
+		bswap   eax
+		mov     D [edi],eax
+		add     esi,1*1
+		add     edi,4*1
+		dec     ecx
+		jnz     pixLoop1
+done:
+	}
+
+	// determine internal format
+	extern INDEX gap_bAllowGrayTextures;
+	extern INDEX tex_bFineFog;
+	if( gap_bAllowGrayTextures) return TS.ts_tfLA8;
+	if( tex_bFineFog) return TS.ts_tfRGBA8;
+	return TS.ts_tfRGBA4;
 }
 
 
@@ -80,219 +108,225 @@ pixLoop:
 // start fog with given parameters
 void StartFog( CFogParameters &fp, const FLOAT3D &vViewPosAbs, const FLOATmatrix3D &mAbsToView)
 {
-  ASSERT( !_fog_bActive);
-  if( _bMultiPlayer) gfx_bRenderFog = 1;
-  if( !gfx_bRenderFog) return;
-  _fog_bActive = TRUE;
+	ASSERT( !_fog_bActive);
+	if( _bMultiPlayer) gfx_bRenderFog = 1;
+	if( !gfx_bRenderFog) return;
+	_fog_bActive = TRUE;
 
-  _fog_fp = fp;
-  _fog_vHDirAbs = -_fog_fp.fp_vFogDir;
-  _fog_vViewPosAbs = vViewPosAbs;
-  _fog_vViewDirAbs(1) = -mAbsToView(3, 1);
-  _fog_vViewDirAbs(2) = -mAbsToView(3, 2);
-  _fog_vViewDirAbs(3) = -mAbsToView(3, 3);
-  _fog_fViewerH = _fog_vViewPosAbs%-_fog_fp.fp_vFogDir;
-  _fog_vHDirView = _fog_vHDirAbs*mAbsToView;
-  // calculate fog mapping factors
-  _fog_fMulZ = 1/(_fog_fp.fp_fFar);
-  _fog_fMulH = 1/(_fog_fp.fp_fH3-_fog_fp.fp_fH0);
-  _fog_fAddH = _fog_fp.fp_fH3+_fog_fViewerH;
+	_fog_fp = fp;
+	_fog_vHDirAbs = -_fog_fp.fp_vFogDir;
+	_fog_vViewPosAbs = vViewPosAbs;
+	_fog_vViewDirAbs(1) = -mAbsToView(3, 1);
+	_fog_vViewDirAbs(2) = -mAbsToView(3, 2);
+	_fog_vViewDirAbs(3) = -mAbsToView(3, 3);
+	_fog_fViewerH = _fog_vViewPosAbs%-_fog_fp.fp_vFogDir;
+	_fog_vHDirView = _fog_vHDirAbs*mAbsToView;
+	// calculate fog mapping factors
+	_fog_fMulZ = 1/(_fog_fp.fp_fFar);
+	_fog_fMulH = 1/(_fog_fp.fp_fH3-_fog_fp.fp_fH0);
+	_fog_fAddH = _fog_fp.fp_fH3+_fog_fViewerH;
 
-  // calculate fog table size wanted
-  extern INDEX tex_iFogSize;
-  tex_iFogSize = Clamp( tex_iFogSize, 4L, 8L); 
-  PIX pixSizeH = ClampUp( _fog_fp.fp_iSizeH, 1L<<tex_iFogSize);
-  PIX pixSizeL = ClampUp( _fog_fp.fp_iSizeL, 1L<<tex_iFogSize);
-  BOOL bNoDiscard = TRUE;
+	// calculate fog table size wanted
+	extern INDEX tex_iFogSize;
+	tex_iFogSize = Clamp( tex_iFogSize, 4L, 8L); 
+	PIX pixSizeH = ClampUp( _fog_fp.fp_iSizeH, 1L<<tex_iFogSize);
+	PIX pixSizeL = ClampUp( _fog_fp.fp_iSizeL, 1L<<tex_iFogSize);
+	BOOL bNoDiscard = TRUE;
 
-  // if fog table is not allocated in right size
-  if( (_fog_pixSizeH!=pixSizeH || _fog_pixSizeL!=pixSizeL) && _fog_pubTable!=NULL) {
-    FreeMemory( _fog_pubTable); // free it
-    _fog_pubTable = NULL;
-  }
-  // allocate table if needed
-  if( _fog_pubTable==NULL) {
-    // allocate byte table (for intensity values) and ULONG table (color values for uploading) right behind!
-    _fog_pubTable = (UBYTE*)AllocMemory( pixSizeH*pixSizeL * (sizeof(UBYTE)+sizeof(ULONG)));
-    _fog_pixSizeH = pixSizeH;
-    _fog_pixSizeL = pixSizeL;
-    _fog_tpLocal.Clear();
-    bNoDiscard = FALSE;
-  } 
+	// if fog table is not allocated in right size
+	if( (_fog_pixSizeH!=pixSizeH || _fog_pixSizeL!=pixSizeL) && _fog_pubTable!=NULL) {
+		FreeMemory( _fog_pubTable); // free it
+		_fog_pubTable = NULL;
+	}
+	// allocate table if needed
+	if( _fog_pubTable==NULL) {
+		// allocate byte table (for intensity values) and ULONG table (color values for uploading) right behind!
+		_fog_pubTable = (UBYTE*)AllocMemory( pixSizeH*pixSizeL * (sizeof(UBYTE)+sizeof(ULONG)));
+		_fog_pixSizeH = pixSizeH;
+		_fog_pixSizeL = pixSizeL;
+		_fog_tpLocal.Clear();
+		bNoDiscard = FALSE;
+	} 
 
-  // update fog alpha value
-  _fog_ulAlpha = (_fog_fp.fp_colColor&CT_AMASK)>>CT_ASHIFT;
+	// update fog alpha value
+	_fog_ulAlpha = (_fog_fp.fp_colColor&CT_AMASK)>>CT_ASHIFT;
 
-  // get parameters
-  const FLOAT fH0  = _fog_fp.fp_fH0;   // lowest point in LUT    ->texture t=1
-  const FLOAT fH1  = _fog_fp.fp_fH1;   // bottom of fog in LUT
-  const FLOAT fH2  = _fog_fp.fp_fH2;   // top of fog in LUT   
-  const FLOAT fH3  = _fog_fp.fp_fH3;   // highest point in LUT   ->texture t=0
-  const FLOAT fFar = _fog_fp.fp_fFar;  // farthest point in LUT  ->texture s=1
-  const FLOAT fDensity = _fog_fp.fp_fDensity;
-  const AttenuationType at = _fog_fp.fp_atType;
-  const FogGraduationType fgt = _fog_fp.fp_fgtType;
-  const FLOAT fHFogSize = fH2-fH1;
-  const FLOAT fHV = -_fog_fViewerH;
-  const FLOAT fEpsilon = 0.001f;
-  ASSERT( fHFogSize>0);
+	// get parameters
+	const FLOAT fH0  = _fog_fp.fp_fH0;   // lowest point in LUT    ->texture t=1
+	const FLOAT fH1  = _fog_fp.fp_fH1;   // bottom of fog in LUT
+	const FLOAT fH2  = _fog_fp.fp_fH2;   // top of fog in LUT   
+	const FLOAT fH3  = _fog_fp.fp_fH3;   // highest point in LUT   ->texture t=0
+	const FLOAT fFar = _fog_fp.fp_fFar;  // farthest point in LUT  ->texture s=1
+	const FLOAT fDensity = _fog_fp.fp_fDensity;
+	const AttenuationType at = _fog_fp.fp_atType;
+	const FogGraduationType fgt = _fog_fp.fp_fgtType;
+	const FLOAT fHFogSize = fH2-fH1;
+	const FLOAT fHV = -_fog_fViewerH;
+	const FLOAT fEpsilon = 0.001f;
+	ASSERT( fHFogSize>0);
 
-  // for each row (height in fog)
-  for( PIX pixH=0; pixH<pixSizeH; pixH++)
-  {
-    // get fog height of the point from row coordinate in texture
-    FLOAT fHP = fH3+FLOAT(pixH)/pixSizeH*(fH0-fH3);
-    // sort viewer and point and get A (lower) and B (higher) fog coord
-    // making sure that they are never same
-    FLOAT fHA, fHB;
-    if (fHP<fHV-fEpsilon) {
-      fHA=fHP;
-      fHB=fHV;
-    } else if (fHP>fHV+fEpsilon) {
-      fHA=fHV;
-      fHB=fHP;
-    } else {
-      fHA=fHV-fEpsilon;
-      fHB=fHP+fEpsilon;
-    }
+	// for each row (height in fog)
+	for( PIX pixH=0; pixH<pixSizeH; pixH++)
+	{
+		// get fog height of the point from row coordinate in texture
+		FLOAT fHP = fH3+FLOAT(pixH)/pixSizeH*(fH0-fH3);
+		// sort viewer and point and get A (lower) and B (higher) fog coord
+		// making sure that they are never same
+		FLOAT fHA, fHB;
+		if (fHP<fHV-fEpsilon) {
+			fHA=fHP;
+			fHB=fHV;
+		} else if (fHP>fHV+fEpsilon) {
+			fHA=fHV;
+			fHB=fHP;
+		} else {
+			fHA=fHV-fEpsilon;
+			fHB=fHP+fEpsilon;
+		}
 
-    // get distance between the two points in height axis
-    FLOAT fDH = fHB-fHA;
-    FLOAT fOoDH = 1/fDH;
-    // calculate relative part of height that goes through the fog
-    FLOAT fA2 = (fH2-fHA)*fOoDH;
-    fA2 = Clamp(fA2,0.0f,1.0f);
-    FLOAT fA1 = (fH1-fHA)*fOoDH;
-    fA1 = Clamp(fA1,0.0f,1.0f);
-    FLOAT fA = fA2-fA1;
-    fA = Clamp(fA,0.0f,1.0f);
-    
-    // if not constant graduation
-    if( fgt!=FGT_CONSTANT) {
-      // calculate fog height for two points, limited to be inside fog
-      FLOAT fFH0 = (fHFogSize-Clamp(fHA-fH1, 0.0f, fHFogSize));
-      FLOAT fFH1 = (fHFogSize-Clamp(fHB-fH1, 0.0f, fHFogSize));
+		// get distance between the two points in height axis
+		FLOAT fDH = fHB-fHA;
+		FLOAT fOoDH = 1/fDH;
+		// calculate relative part of height that goes through the fog
+		FLOAT fA2 = (fH2-fHA)*fOoDH;
+		fA2 = Clamp(fA2,0.0f,1.0f);
+		FLOAT fA1 = (fH1-fHA)*fOoDH;
+		fA1 = Clamp(fA1,0.0f,1.0f);
+		FLOAT fA = fA2-fA1;
+		fA = Clamp(fA,0.0f,1.0f);
+		
+		// if not constant graduation
+		if( fgt!=FGT_CONSTANT) {
+			// calculate fog height for two points, limited to be inside fog
+			FLOAT fFH0 = (fHFogSize-Clamp(fHA-fH1, 0.0f, fHFogSize));
+			FLOAT fFH1 = (fHFogSize-Clamp(fHB-fH1, 0.0f, fHFogSize));
 
-      // multiply the heights by graduation factor
-      fFH0 *= _fog_fp.fp_fGraduation;
-      fFH1 *= _fog_fp.fp_fGraduation;
+			// multiply the heights by graduation factor
+			fFH0 *= _fog_fp.fp_fGraduation;
+			fFH1 *= _fog_fp.fp_fGraduation;
 
-      FLOAT fDens;
-      // if linear graduation
-      if (fgt==FGT_LINEAR) {
-        // get linear integrated density factor
-        fDens = (fFH0+fFH1)/2.0f;
-      // if exponential graduation
-      } else {
-        ASSERT(fgt==FGT_EXP);
-        // sort the two heights and make sure they are not same
-        FLOAT fFA, fFB;
-        if (fFH0<fFH1-fEpsilon) {
-          fFA=fFH0;
-          fFB=fFH1;
-        } else if (fFH0>fFH1+fEpsilon) {
-          fFA=fFH1;
-          fFB=fFH0;
-        } else {
-          fFA=fFH1-fEpsilon;
-          fFB=fFH0+fEpsilon;
-        }
-        // calculate exponential integrated density factor normally
-        fDens = 1.0f+(exp(-fFB)-exp(-fFA))/(fFB-fFA);
-      }
+			FLOAT fDens;
+			// if linear graduation
+			if (fgt==FGT_LINEAR) {
+				// get linear integrated density factor
+				fDens = (fFH0+fFH1)/2.0f;
+			// if exponential graduation
+			} else {
+				ASSERT(fgt==FGT_EXP);
+				// sort the two heights and make sure they are not same
+				FLOAT fFA, fFB;
+				if (fFH0<fFH1-fEpsilon) {
+					fFA=fFH0;
+					fFB=fFH1;
+				} else if (fFH0>fFH1+fEpsilon) {
+					fFA=fFH1;
+					fFB=fFH0;
+				} else {
+					fFA=fFH1-fEpsilon;
+					fFB=fFH0+fEpsilon;
+				}
+				// calculate exponential integrated density factor normally
+				fDens = 1.0f+(exp(-fFB)-exp(-fFA))/(fFB-fFA);
+			}
 
-      // limit the intergrated density factor
-      fDens = Clamp(fDens, 0.0f, 1.0f);
+			// limit the intergrated density factor
+			fDens = Clamp(fDens, 0.0f, 1.0f);
 
-      // relative size multiplied by integrated density factor gives total fog sum
-      fA *= fDens;
-    }
+			// relative size multiplied by integrated density factor gives total fog sum
+			fA *= fDens;
+		}
 
-    // do per-row loop
-    switch(at)
-    {
-    // linear fog
-    case AT_LINEAR: {
-      // calculate linear step for the fog parameter
-      FLOAT fT = 0.0f;
-      FLOAT fTStep = 1.0f/pixSizeL *fFar*fDensity*fA *255;
-      // fog is just clamped fog parameter in each pixel
-      for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
-        _fog_pubTable[pixH*pixSizeL+pixL] = Clamp( FloatToInt(fT), 0L, 255L);
-        fT += fTStep;
-      } 
-    } break;
-    // exp fog
-    case AT_EXP: {
-      // calculate linear step for the fog parameter
-      FLOAT fT = 0.0f;
-      FLOAT fTStep = 1.0f/pixSizeL*fFar*fDensity*fA;
-      // fog is exp(-t) function of fog parameter, now calculate
-      // step (actually multiplication) for the fog
-      FLOAT fExp = 255.0f;
-      FLOAT fExpMul = exp(-fTStep);
-      for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
-        _fog_pubTable[pixH*pixSizeL+pixL] = 255-FloatToInt(fExp);
-        fExp *= fExpMul;
-      } 
-    } break;
-    case AT_EXP2: {
-      // calculate linear step for the fog parameter
-      FLOAT fT = 0.0f;
-      FLOAT fTStep = 1.0f/pixSizeL*fFar*fDensity*fA;
-      // fog is exp(-t^2) function of fog parameter, now calculate
-      // first and second order step (actually multiplication) for the fog
-      FLOAT fExp2 = 255.0f;
-      FLOAT fExp2Mul = exp(-fTStep*fTStep);
-      FLOAT fExp2MulMul = exp(-2*fTStep*fTStep);
-      for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
-        _fog_pubTable[pixH*pixSizeL+pixL] = 255-FloatToInt(fExp2);
-        fExp2    *= fExp2Mul;
-        fExp2Mul *= fExp2MulMul;
-      } 
-    } break;
-    }
-  }
+		// do per-row loop
+		switch(at)
+		{
+		// linear fog
+		case AT_LINEAR: {
+			// calculate linear step for the fog parameter
+			FLOAT fT = 0.0f;
+			FLOAT fTStep = 1.0f/pixSizeL *fFar*fDensity*fA *255;
+			// fog is just clamped fog parameter in each pixel
+			for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
+				_fog_pubTable[pixH*pixSizeL+pixL] = Clamp( FloatToInt(fT), 0L, 255L);
+				fT += fTStep;
+			} 
+		} break;
+		// exp fog
+		case AT_EXP: {
+			// calculate linear step for the fog parameter
+			FLOAT fT = 0.0f;
+			FLOAT fTStep = 1.0f/pixSizeL*fFar*fDensity*fA;
+			// fog is exp(-t) function of fog parameter, now calculate
+			// step (actually multiplication) for the fog
+			FLOAT fExp = 255.0f;
+			FLOAT fExpMul = exp(-fTStep);
+			for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
+				_fog_pubTable[pixH*pixSizeL+pixL] = 255-FloatToInt(fExp);
+				fExp *= fExpMul;
+			} 
+		} break;
+		case AT_EXP2: {
+			// calculate linear step for the fog parameter
+			FLOAT fT = 0.0f;
+			FLOAT fTStep = 1.0f/pixSizeL*fFar*fDensity*fA;
+			// fog is exp(-t^2) function of fog parameter, now calculate
+			// first and second order step (actually multiplication) for the fog
+			FLOAT fExp2 = 255.0f;
+			FLOAT fExp2Mul = exp(-fTStep*fTStep);
+			FLOAT fExp2MulMul = exp(-2*fTStep*fTStep);
+			for( INDEX pixL=0; pixL<pixSizeL; pixL++) {
+				_fog_pubTable[pixH*pixSizeL+pixL] = 255-FloatToInt(fExp2);
+				fExp2    *= fExp2Mul;
+				fExp2Mul *= fExp2MulMul;
+			} 
+		} break;
+		}
+	}
 
-  // determine where fog starts and ends
-  _fog_fStart = LowerLimit(0.0f);
-  _fog_fEnd   = UpperLimit(0.0f);
-  if( _fog_pubTable[pixSizeL-1]) {
-    // going from bottom
-    INDEX pix=pixSizeH-1;
-    for( ; pix>0; pix--) {
-      if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
-    }
-    if( pix<(pixSizeH-1)) _fog_fEnd = (FLOAT)(pix+1) / (FLOAT)(pixSizeH-1);
-  } else {
-    // going from top
-    INDEX pix=0;
-    for( ; pix<pixSizeH; pix++) {
-      if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
-    }
-    if( pix>0) _fog_fStart = (FLOAT)(pix-1) / (FLOAT)(pixSizeH-1);
-  }
+	// determine where fog starts and ends
+	_fog_fStart = LowerLimit(0.0f);
+	_fog_fEnd   = UpperLimit(0.0f);
+	if( _fog_pubTable[pixSizeL-1]) {
+		// going from bottom
+		for( INDEX pix=pixSizeH-1; pix>0; pix--) {
+			if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
+		}
+		if( pix<(pixSizeH-1)) _fog_fEnd = (FLOAT)(pix+1) / (FLOAT)(pixSizeH-1);
+	} else {
+		// going from top
+		for( INDEX pix=0; pix<pixSizeH; pix++) {
+			if( (_fog_pubTable[(pix+1)*pixSizeL-1]*_fog_ulAlpha)>>8) break;
+		}
+		if( pix>0) _fog_fStart = (FLOAT)(pix-1) / (FLOAT)(pixSizeH-1);
+	}
 
-  // prepare and upload the fog table
-  _fog_tpLocal.tp_bSingleMipmap = TRUE;
-  const ULONG ulFormat = PrepareTexture( _fog_pubTable, _fog_pixSizeL, _fog_pixSizeH);
-  if( _fog_ulFormat!=ulFormat) {
-    _fog_ulFormat = ulFormat;
-    bNoDiscard = FALSE;
-  } // set'n'upload
-  gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
-  gfxSetTexture( _fog_ulTexture, _fog_tpLocal);
-  gfxUploadTexture( (ULONG*)(_fog_pubTable + _fog_pixSizeL*_fog_pixSizeH),
-                   _fog_pixSizeL, _fog_pixSizeH, ulFormat, bNoDiscard);
+	// prepare and upload the fog table
+	_fog_tpLocal.tp_bSingleMipmap = TRUE;
+	const ULONG ulFormat = PrepareTexture( _fog_pubTable, _fog_pixSizeL*_fog_pixSizeH);
+	if( _fog_ulFormat!=ulFormat) {
+		_fog_ulFormat = ulFormat;
+		bNoDiscard = FALSE;
+	} // set'n'upload
+	gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
+	gfxSetTexture( _fog_ulTexture, _fog_tpLocal);
+	gfxUploadTexture( (ULONG*)(_fog_pubTable + _fog_pixSizeL*_fog_pixSizeH),
+									 _fog_pixSizeL, _fog_pixSizeH, ulFormat, bNoDiscard);
 }
 
 
 // stop fog
 void StopFog(void)
 {
-  _fog_bActive = FALSE;
+	_fog_bActive = FALSE;
 }
 
+void ClearFog()
+{
+	if(_fog_pubTable)
+	{
+		FreeMemory( _fog_pubTable); // free it
+		_fog_pubTable = NULL;
+	}
+}
 
 // current haze parameters
 BOOL _haze_bActive = FALSE;
@@ -313,82 +347,92 @@ ULONG _haze_ulFormat=0;
 
 // start haze with given parameters
 void StartHaze( CHazeParameters &hp,
-                const FLOAT3D &vViewPosAbs, const FLOATmatrix3D &mAbsToView)
+								const FLOAT3D &vViewPosAbs, const FLOATmatrix3D &mAbsToView)
 {
-  ASSERT( !_haze_bActive);
-  if( _bMultiPlayer) gfx_bRenderFog = 1;
-  if( !gfx_bRenderFog) return;
-  _haze_bActive = TRUE;
+	ASSERT( !_haze_bActive);
+	if( _bMultiPlayer) gfx_bRenderFog = 1;
+	if( !gfx_bRenderFog) return;
+	_haze_bActive = TRUE;
 
-  _haze_hp = hp;
-  _haze_vViewPosAbs = vViewPosAbs;
-  _haze_vViewDirAbs(1) = -mAbsToView(3, 1);
-  _haze_vViewDirAbs(2) = -mAbsToView(3, 2);
-  _haze_vViewDirAbs(3) = -mAbsToView(3, 3);
+	_haze_hp = hp;
+	_haze_vViewPosAbs = vViewPosAbs;
+	_haze_vViewDirAbs(1) = -mAbsToView(3, 1);
+	_haze_vViewDirAbs(2) = -mAbsToView(3, 2);
+	_haze_vViewDirAbs(3) = -mAbsToView(3, 3);
 
-  // calculate haze mapping factors
-  _haze_fMul = 1/(_haze_hp.hp_fFar-_haze_hp.hp_fNear);
-  _haze_fAdd = -_haze_hp.hp_fNear;
+	// calculate haze mapping factors
+	_haze_fMul = 1/(_haze_hp.hp_fFar-_haze_hp.hp_fNear);
+	_haze_fAdd = -_haze_hp.hp_fNear;
 
-  PIX pixSize = _haze_hp.hp_iSize;
-  BOOL bNoDiscard = TRUE;
+	PIX pixSize = _haze_hp.hp_iSize;
+	BOOL bNoDiscard = TRUE;
 
-  // if haze table is not allocated in right size
-  if( _haze_pixSize!=pixSize && _haze_pubTable!=NULL) {
-    FreeMemory( _haze_pubTable);  // free it
-    _haze_pubTable = NULL;
-  }
-  // allocate table if needed
-  if( _haze_pubTable==NULL) {
-    // allocate byte table (for intensity values) and ULONG table (color values for uploading) right behind!
-    _haze_pubTable = (UBYTE*)AllocMemory(pixSize *(sizeof(UBYTE)+sizeof(ULONG)));
-    _haze_pixSize  = pixSize;
-    _haze_tpLocal.Clear();
-    bNoDiscard = FALSE;
-  }
+	// if haze table is not allocated in right size
+	if( _haze_pixSize!=pixSize && _haze_pubTable!=NULL) {
+		FreeMemory( _haze_pubTable);  // free it
+		_haze_pubTable = NULL;
+	}
+	// allocate table if needed
+	if( _haze_pubTable==NULL) {
+		// allocate byte table (for intensity values) and ULONG table (color values for uploading) right behind!
+		_haze_pubTable = (UBYTE*)AllocMemory(pixSize *(sizeof(UBYTE)+sizeof(ULONG)));
+		_haze_pixSize  = pixSize;
+		_haze_tpLocal.Clear();
+		bNoDiscard = FALSE;
+	}
 
-  // update fog alpha value
-  _haze_ulAlpha = (_haze_hp.hp_colColor&CT_AMASK)>>CT_ASHIFT;
+	// update fog alpha value
+	_haze_ulAlpha = (_haze_hp.hp_colColor&CT_AMASK)>>CT_ASHIFT;
 
-  // get parameters
-  FLOAT fNear = _haze_hp.hp_fNear;
-  FLOAT fFar  = _haze_hp.hp_fFar;
-  FLOAT fDensity = _haze_hp.hp_fDensity;
-  AttenuationType at = _haze_hp.hp_atType;
-  // generate table
-  INDEX pix;
-  for( pix=0; pix<pixSize; pix++) {
-    FLOAT fD = FLOAT(pix)/pixSize*(fFar-fNear);
-    FLOAT fT = fDensity*fD;
-    FLOAT fHaze=0.0f;
-    switch(at) {
-    case AT_LINEAR: fHaze = Clamp(fT,0.0f,1.0f); break;
-    case AT_EXP:    fHaze = 1-exp(-fT);          break;
-    case AT_EXP2:   fHaze = 1-exp(-fT*fT);       break;
-    }
-    const UBYTE ubValue = NormFloatToByte(fHaze);
-    _haze_pubTable[pix] = ubValue;
-  }
+	// get parameters
+	FLOAT fNear = _haze_hp.hp_fNear;
+	FLOAT fFar  = _haze_hp.hp_fFar;
+	FLOAT fDensity = _haze_hp.hp_fDensity;
+	AttenuationType at = _haze_hp.hp_atType;
+	// generate table
+	INDEX pix;
+	for( pix=0; pix<pixSize; pix++) {
+		FLOAT fD = FLOAT(pix)/pixSize*(fFar-fNear);
+		FLOAT fT = fDensity*fD;
+		FLOAT fHaze=0.0f;
+		switch(at) {
+		case AT_LINEAR: fHaze = Clamp(fT,0.0f,1.0f); break;
+		case AT_EXP:    fHaze = 1-exp(-fT);          break;
+		case AT_EXP2:   fHaze = 1-exp(-fT*fT);       break;
+		}
+		const UBYTE ubValue = NormFloatToByte(fHaze);
+		_haze_pubTable[pix] = ubValue;
+	}
 
-  // determine where haze starts
-  for( pix=1; pix<pixSize; pix++) if( (_haze_pubTable[pix]*_haze_ulAlpha)>>8) break;
-  _haze_fStart = (FLOAT)(pix-1) / (FLOAT)(pixSize-1);
+	// determine where haze starts
+	for( pix=1; pix<pixSize; pix++) if( (_haze_pubTable[pix]*_haze_ulAlpha)>>8) break;
+	_haze_fStart = (FLOAT)(pix-1) / (FLOAT)(pixSize-1);
 
-  // prepare haze table
-  _haze_tpLocal.tp_bSingleMipmap = TRUE;
-  const ULONG ulFormat = PrepareTexture( _haze_pubTable, _haze_pixSize, 1);
-  if( _haze_ulFormat!=ulFormat) {
-    _haze_ulFormat = ulFormat;
-    bNoDiscard = FALSE;
-  } // set'n'upload
-  gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
-  gfxSetTexture( _haze_ulTexture, _haze_tpLocal);
-  gfxUploadTexture( (ULONG*)(_haze_pubTable + _haze_pixSize*1), _haze_pixSize, 1, ulFormat, bNoDiscard);
+	// prepare haze table
+	_haze_tpLocal.tp_bSingleMipmap = TRUE;
+	const ULONG ulFormat = PrepareTexture( _haze_pubTable, _haze_pixSize);
+	if( _haze_ulFormat!=ulFormat) {
+		_haze_ulFormat = ulFormat;
+		bNoDiscard = FALSE;
+	} // set'n'upload
+	gfxSetTextureWrapping( GFX_CLAMP, GFX_CLAMP);
+	gfxSetTexture( _haze_ulTexture, _haze_tpLocal);
+	gfxUploadTexture( (ULONG*)(_haze_pubTable + _haze_pixSize*1), _haze_pixSize, 1, ulFormat, bNoDiscard);
 }
 
 
 // stop haze
 void StopHaze(void)
 {
-  _haze_bActive = FALSE;
+	_haze_bActive = FALSE;
 }
+
+void ClearHaze()
+{
+	if(_haze_pubTable)
+	{
+		FreeMemory( _haze_pubTable); // free it
+		_haze_pubTable = NULL;
+	}
+}
+

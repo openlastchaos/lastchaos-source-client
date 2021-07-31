@@ -60,14 +60,17 @@ enum DamageType {
    9 DMT_ACID       "Acid",         // caused by being burned by acid
   10 DMT_TELEPORT   "Teleport",     // applied to entities in teleport destination
   11 DMT_FREEZING   "Freezing",     // caused by freezing in cold water
-  12 DMT_CANNONBALL "Cannon ball",  // caused by cannon ball
-  13 DMT_CANNONBALL_EXPLOSION "Cannon ball explosion",   // when cannonball explodes
+//  12 DMT_CANNONBALL "Cannon ball",  // caused by cannon ball
+//  13 DMT_CANNONBALL_EXPLOSION "Cannon ball explosion",   // when cannonball explodes
   14 DMT_SPIKESTAB  "Spike stab",   // stabbed by spikes (usually content type)
   15 DMT_ABYSS      "Abyss",        // when someone falls off a high ledge into the void
   16 DMT_HEAT       "Heat",         // walking under open sun too long
   17 DMT_DAMAGER    "Damager",      // caused by damager
   18 DMT_CHAINSAW   "Chain saw",    // caused by chainsaw
-9999 DMT_NONE       "no damage",    // internal
+  19 DMT_BOMB       "Serious bomb explosion",  // caused by Serious bomb  
+  20 DMT_SHOTGUN    "Shotgun bullet", // caused by shotguns
+  21 DMT_SNIPER     "Sniper bullet", // caused by sniper
+  9999 DMT_NONE     "no damage",    // internal
 };
 
 event EDamage {  // entity has been damaged
@@ -85,3 +88,10 @@ event EDeath { // when this entity dies (health reaches zero)
 event ETakingBreath { // when this entity takes air after being without it for some time
   FLOAT fBreathDelay,  // how long it was without air (0=little, 1=drowning)
 };
+
+event EPlayerInit {
+  ULONG ulWeaponsID,  // ID of the PlayerWeapons entity that belongs to this player
+  ULONG ulAnimatorID, // ID of the PlayerAnimator entity that belongs to this player
+  BOOL  bCreate,      // TRUE if W&A need to be created, FALSE if they just need to be attached
+};
+

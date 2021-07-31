@@ -40,7 +40,7 @@ void Mon_DisableEnable9x_t(BOOL bDisable)
 {
   // load user32
   if (_hUser32Lib==NULL) {
-    _hUser32Lib = ::LoadLibraryA( "user32.dll");
+    _hUser32Lib = ::LoadLibrary( "user32.dll");
     if( _hUser32Lib == NULL) {
       ThrowF_t(TRANS("Cannot load user32.dll."));
     }

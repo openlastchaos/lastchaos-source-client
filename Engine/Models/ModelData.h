@@ -48,11 +48,9 @@ struct ENGINE_API ModelMipInfo
   CStaticArray<UWORD>   mmpi_auwMipToMdl;   // model vertices used in this mip
   CStaticArray<UWORD>   mmpi_auwSrfToMip;     // surface vertices to mip vertices lookup
   CStaticArray<FLOAT2D> mmpi_avmexTexCoord;   // texture coordinates for each surface vertex
-  CStaticArray<FLOAT3D> mmpi_avBumpU;   // bump directions for each surface vertex
-  CStaticArray<FLOAT3D> mmpi_avBumpV;   // bump directions for each surface vertex
   ULONG mmpi_ulLayerFlags;              // all texture layers needed in this mip
   INDEX mmpi_ctTriangles;               // total triangles in this mip
-  CStaticStackArray<INDEX> mmpi_aiElements;
+  CStaticStackArray<UWORD> mmpi_auwElements;
 
 	void Clear();								 // clears this mip model's arays and their sub-arrays, dealocates memory
 	void Read_t( CTStream *istrFile, BOOL bReadPolygonalPatches, BOOL bReadPolygonsPerSurface,

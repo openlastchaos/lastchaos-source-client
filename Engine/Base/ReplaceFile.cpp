@@ -4,7 +4,6 @@
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/ErrorReporting.h>
 #include <Engine/Base/Anim.h>
-#include <Engine/Base/Shell.h>
 #include <Engine/Graphics/Texture.h>
 #include <Engine/Models/ModelObject.h>
 #include <Engine/Sound/SoundObject.h>
@@ -13,6 +12,7 @@
 #include <Engine/Ska/Skeleton.h>
 #include <Engine/Ska/AnimSet.h>
 #include <Engine/Ska/StringTable.h>
+#include <Engine/Templates/Stock_CModelInstance.h>
 #include <Engine/Templates/Stock_CMesh.h>
 #include <Engine/Templates/Stock_CSkeleton.h>
 #include <Engine/Templates/Stock_CAnimSet.h>
@@ -45,7 +45,7 @@ static CTFileName CallFileRequester(char *achrTitle, char *achrSelectedFile, cha
     char *pchrRegistry,
     char *pchrDefaultFileSelected);
 
-  HMODULE hGUI = GetModuleHandleA(ENGINEGUI_DLL_NAME);
+  HMODULE hGUI = GetModuleHandle(ENGINEGUI_DLL_NAME);
   if (hGUI==NULL) {
     WarningMessage(TRANS("Cannot load %s:\n%s\nCannot replace files!"), 
       ENGINEGUI_DLL_NAME, GetWindowsError(GetLastError()));
@@ -65,6 +65,25 @@ static CTFileName CallFileRequester(char *achrTitle, char *achrSelectedFile, cha
 BOOL GetReplacingFile(CTFileName fnSourceFile, CTFileName &fnReplacingFile,
                       char *pFilter)
 {
+
+// if custom programmed replacing
+#if 0
+CTString fnModified;
+fnModified = fnSourceFile;
+  
+if      (fnModified.ReplaceSubstr("TexturesMP", "Textures")) {}
+else if (fnModified.ReplaceSubstr("ModelsMP", "Models")) {}
+else if (fnModified.ReplaceSubstr("SoundsMP", "Sounds")) {}
+else if (fnModified.ReplaceSubstr("MusicMP", "Music")) {}
+else if (fnModified.ReplaceSubstr("DataMP", "Data")) {}
+else    (fnModified.ReplaceSubstr("AnimationsMP", "Animations"));
+
+if(FileExists(fnModified)) {
+  fnReplacingFile = fnModified;
+  return TRUE;
+}
+#endif
+
   // don't replace files if this console variable is set
   if (!wed_bUseBaseForReplacement) {
     return FALSE;
@@ -155,13 +174,8 @@ void SetTextureWithPossibleReplacing_t(CTextureObject &to, CTFileName &fnmTextur
       }
       else
       {
-        if(_pShell->GetINDEX("wed_bUseGenericTextureReplacement")) {
-          fnmTexture = CTString("Textures\\Editor\\Default.tex");
-          to.SetData_t(fnmTexture);
-        } else {
-          ThrowF_t( TRANS("Unable to load world because texture \"%s\" can't be found."),
-            (CTString&)fnmTexture);
-        }
+        ThrowF_t( TRANS("Unable to load world because texture \"%s\" can't be found."),
+          (CTString&)fnmTexture);
       }
     }
   }
@@ -361,7 +375,7 @@ void WriteModelObject_t(CTStream &strm, CModelObject &mo)
   }
 }
 
-void WriteMeshInstances_t(CTStream &strm, CModelInstance &mi)
+static void WriteMeshInstances_t(CTStream &strm, CModelInstance &mi)
 {
   // write mesh instance header
   strm.WriteID_t("MSHI");
@@ -394,7 +408,7 @@ void WriteMeshInstances_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void WriteSkeleton_t(CTStream &strm, CModelInstance &mi)
+static void WriteSkeleton_t(CTStream &strm, CModelInstance &mi)
 {
   // write this model instance skeleton binary file name
   CSkeleton *pSkeleton = mi.mi_psklSkeleton;
@@ -407,7 +421,7 @@ void WriteSkeleton_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void WriteAnimSets(CTStream &strm, CModelInstance &mi)
+static void WriteAnimSets(CTStream &strm, CModelInstance &mi)
 {
   strm.WriteID_t("ANAS");
   // write animsets file names
@@ -421,7 +435,7 @@ void WriteAnimSets(CTStream &strm, CModelInstance &mi)
     strm<<fnAnimSet;
   }
 }
-void WriteColisionBoxes(CTStream &strm, CModelInstance &mi)
+static void WriteColisionBoxes(CTStream &strm, CModelInstance &mi)
 {
   strm.WriteID_t("MICB");
   // write colision boxes and index of current colision box
@@ -441,7 +455,7 @@ void WriteColisionBoxes(CTStream &strm, CModelInstance &mi)
   strm<<mi.mi_cbAllFramesBBox.Max();
 }
 
-void WriteAnimQueue_t(CTStream &strm, CModelInstance &mi)
+static void WriteAnimQueue_t(CTStream &strm, CModelInstance &mi)
 {
   strm.WriteID_t("MIAQ");  // model instance animation queue
   // write animation queue
@@ -465,7 +479,7 @@ void WriteAnimQueue_t(CTStream &strm, CModelInstance &mi)
       strm.WriteID_t("ALPA");  // animation list played anim
       strm<<pa.pa_fStartTime;
       strm<<pa.pa_ulFlags;
-      strm<<pa.pa_Strength;
+      strm<<pa.pa_fStrength;
       strm<<pa.pa_GroupID;
       CTString strPlayedAnimID = ska_GetStringFromTable(pa.pa_iAnimID);
       strm<<strPlayedAnimID;
@@ -476,12 +490,15 @@ void WriteAnimQueue_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void WriteOffsetAndChildren(CTStream &strm, CModelInstance &mi)
+static void WriteOffsetAndChildren(CTStream &strm, CModelInstance &mi)
 {
   strm.WriteID_t("MIOF");  // model instance offset
   // write model instance offset and parent bone
   strm.Write_t(&mi.mi_qvOffset,sizeof(QVect));
-  CTString strParenBoneID = ska_GetStringFromTable(mi.mi_iParentBoneID);
+  CTString strParenBoneID;
+  if(mi.mi_iParentBoneID!=(-1)) {
+    strParenBoneID = ska_IDToString(mi.mi_iParentBoneID);
+  }
   strm<<strParenBoneID;
 
   strm.WriteID_t("MICH");  // model instance child
@@ -492,13 +509,18 @@ void WriteOffsetAndChildren(CTStream &strm, CModelInstance &mi)
   for(INDEX icmi=0;icmi<ctcmi;icmi++) {
     CModelInstance &cmi = mi.mi_cmiChildren[icmi];
     // save child model instance
-    WriteModelInstance_t(strm, cmi);
+    WriteModelInstance_t(strm, cmi,FALSE);
   }
 }
 
-void WriteModelInstance_t(CTStream &strm, CModelInstance &mi)
+extern void WriteModelInstance_t(CTStream &strm, CModelInstance &mi, BOOL bFromStock/*=TRUE*/)
 {
   strm.WriteID_t("MI03"); // model instance 03
+  // if this model instance is from stock and has valid
+  if(bFromStock && mi.mi_pmisSerial!=NULL) {
+    strm.WriteID_t("MISF");
+    strm<<mi.mi_pmisSerial->ser_FileName;
+  }
   // write model instance name
   strm<<mi.GetName();
   // write index of current colision box
@@ -517,8 +539,7 @@ void WriteModelInstance_t(CTStream &strm, CModelInstance &mi)
   strm.WriteID_t("ME03"); // model instance end 03
 }
 
-
-void ReadModelInstanceOld_t(CTStream &strm, CModelInstance &mi)
+static void ReadModelInstanceVer2_t(CTStream &strm, CModelInstance &mi)
 {
   strm.ExpectID_t("SKMI");
   // read model instance name
@@ -624,7 +645,7 @@ void ReadModelInstanceOld_t(CTStream &strm, CModelInstance &mi)
       PlayedAnim &pa = al.al_PlayedAnims[ipa];
       strm>>pa.pa_fStartTime;
       strm>>pa.pa_ulFlags;
-      strm>>pa.pa_Strength;
+      strm>>pa.pa_fStrength;
       strm>>pa.pa_GroupID;
       CTString strPlayedAnimID;
       strm>>strPlayedAnimID;
@@ -643,15 +664,15 @@ void ReadModelInstanceOld_t(CTStream &strm, CModelInstance &mi)
   // for each child model instance
   for(INDEX icmi=0;icmi<ctcmi;icmi++) {
     // create empty model instance
-    CModelInstance *pcmi = CreateModelInstance("Temp");
+    CModelInstance *pcmi = CreateModelInstance("");
     // add as child to parent model isntance
     mi.mi_cmiChildren.Add(pcmi);
     // read child model instance
-    ReadModelInstance_t(strm, *pcmi);
+    ReadModelInstance_t(strm, *pcmi, FALSE);
   }
 }
 
-void ReadMeshInstances_t(CTStream &strm, CModelInstance &mi)
+static void ReadMeshInstances_t(CTStream &strm, CModelInstance &mi)
 {
   INDEX ctmshi = 0;
   INDEX ctti = 0;
@@ -690,7 +711,7 @@ void ReadMeshInstances_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void ReadSkeleton_t(CTStream &strm, CModelInstance &mi)
+static void ReadSkeleton_t(CTStream &strm, CModelInstance &mi)
 {
   // read this model instance skeleton binary file name
   BOOL bHasSkeleton;
@@ -705,7 +726,7 @@ void ReadSkeleton_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void ReadAnimSets_t(CTStream &strm, CModelInstance &mi)
+static void ReadAnimSets_t(CTStream &strm, CModelInstance &mi)
 {
   INDEX ctas = 0;
   strm.ExpectID_t("ANAS");
@@ -721,7 +742,7 @@ void ReadAnimSets_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void ReadAnimQueue_t(CTStream &strm, CModelInstance &mi)
+static void ReadAnimQueue_t(CTStream &strm, CModelInstance &mi)
 {
   INDEX ctal = 0;
   INDEX ctpa = 0;
@@ -746,7 +767,7 @@ void ReadAnimQueue_t(CTStream &strm, CModelInstance &mi)
       strm.ExpectID_t("ALPA");  // animation list played anim
       strm>>pa.pa_fStartTime;
       strm>>pa.pa_ulFlags;
-      strm>>pa.pa_Strength;
+      strm>>pa.pa_fStrength;
       strm>>pa.pa_GroupID;
       CTString strPlayedAnimID;
       strm>>strPlayedAnimID;
@@ -759,7 +780,7 @@ void ReadAnimQueue_t(CTStream &strm, CModelInstance &mi)
   }
 }
 
-void ReadColisionBoxes_t(CTStream &strm, CModelInstance &mi)
+static void ReadColisionBoxes_t(CTStream &strm, CModelInstance &mi)
 {
   INDEX ctcb = 0;
   strm.ExpectID_t("MICB");  // model instance colision boxes
@@ -778,11 +799,14 @@ void ReadColisionBoxes_t(CTStream &strm, CModelInstance &mi)
   }
   strm.ExpectID_t("AFBB");  // all frames bounding box
   // read all frames bounding box
-  strm>>mi.mi_cbAllFramesBBox.Min();
-  strm>>mi.mi_cbAllFramesBBox.Max();
+  FLOAT3D vMin,vMax;
+  strm>>vMin;
+  strm>>vMax;
+  mi.mi_cbAllFramesBBox.SetMin(vMin);
+  mi.mi_cbAllFramesBBox.SetMax(vMax);
 }
 
-void ReadOffsetAndChildren_t(CTStream &strm, CModelInstance &mi)
+static void ReadOffsetAndChildren_t(CTStream &strm, CModelInstance &mi)
 {
   INDEX ctcmi = 0;
   strm.ExpectID_t("MIOF");  // model instance offset
@@ -790,7 +814,11 @@ void ReadOffsetAndChildren_t(CTStream &strm, CModelInstance &mi)
   strm.Read_t(&mi.mi_qvOffset,sizeof(QVect));
   CTString strParenBoneID;
   strm>>strParenBoneID;
-  mi.mi_iParentBoneID = ska_GetIDFromStringTable(strParenBoneID);
+  if(strParenBoneID=="") {
+    mi.mi_iParentBoneID = -1;
+  } else {
+    mi.mi_iParentBoneID = ska_StringToID(strParenBoneID);
+  }
 
   strm.ExpectID_t("MICH");  // model instance child
   // read model instance children
@@ -798,17 +826,33 @@ void ReadOffsetAndChildren_t(CTStream &strm, CModelInstance &mi)
   // for each child model instance
   for(INDEX icmi=0;icmi<ctcmi;icmi++) {
     // create empty model instance
-    CModelInstance *pcmi = CreateModelInstance("Temp");
+    CModelInstance *pcmi = CreateModelInstance("");
     // add as child to parent model isntance
     mi.mi_cmiChildren.Add(pcmi);
     // read child model instance
-    ReadModelInstance_t(strm, *pcmi);
+    ReadModelInstance_t(strm, *pcmi, FALSE);
   }
 }
 
-void ReadModelInstanceNew_t(CTStream &strm, CModelInstance &mi)
+static void ReadModelInstanceVer3_t(CTStream &strm, CModelInstance &mi, BOOL bMarkInStock)
 {
-  strm.ExpectID_t("MI03");  // model instance 02
+  strm.ExpectID_t("MI03");  // model instance 03
+
+  // Read model instance source file name it its writen
+  if(strm.PeekID_t() == CChunkID("MISF")) {
+    CTFileName fnmSource;
+    strm.ExpectID_t("MISF");
+    strm>>fnmSource;
+    ASSERT(fnmSource!="");
+    ASSERT(mi.mi_pmisSerial==NULL);
+    // if it needs to be marked in stock
+    if(bMarkInStock) {
+      // Mark model instance used in stock
+      mi.mi_pmisSerial = _pModelInstanceStock->Obtain_t(fnmSource);
+      ASSERT(mi.mi_pmisSerial!=NULL);
+    }
+  }
+
   // Read model instance name
   CTString strModelInstanceName;
   strm>>strModelInstanceName;
@@ -827,31 +871,30 @@ void ReadModelInstanceNew_t(CTStream &strm, CModelInstance &mi)
   ReadAnimQueue_t(strm, mi);
   ReadColisionBoxes_t(strm, mi);
   ReadOffsetAndChildren_t(strm, mi);
-  strm.ExpectID_t("ME03"); // model instance end 02
+  strm.ExpectID_t("ME03"); // model instance end 03
 }
 
-void ReadModelInstance_t(CTStream &strm, CModelInstance &mi)
+extern void ReadModelInstance_t(CTStream &strm, CModelInstance &mi, BOOL bMarkInStock/*=TRUE*/)
 {
   // is model instance writen in old format
   if(strm.PeekID_t() == CChunkID("SKMI")) {
-    ReadModelInstanceOld_t(strm, mi);
+    ReadModelInstanceVer2_t(strm, mi);
   // is model instance writen in new format
   } else if(strm.PeekID_t() == CChunkID("MI03")) {
-    ReadModelInstanceNew_t(strm, mi);
+    ReadModelInstanceVer3_t(strm, mi, bMarkInStock);
   // unknown format
   } else {
     strm.Throw_t("Unknown model instance format");
-    ASSERT(FALSE);
   }
 }
 
-void SkipModelInstance_t(CTStream &strm)
+extern void SkipModelInstance_t(CTStream &strm)
 {
   CModelInstance miDummy;
-  ReadModelInstance_t(strm,miDummy);
+  ReadModelInstance_t(strm,miDummy,FALSE);
 }
 
-// read an anim object from a file together with its anim data filename
+// read a anim object from a file together with its anim data filename
 void ReadAnimObject_t(CTStream &strm, CAnimObject &ao)
 {
   // read anim data filename
@@ -904,18 +947,18 @@ void WriteAnimObject_t(CTStream &strm, CAnimObject &ao)
 
 // read a sound object from a file together with its sound data filename
 // NOTE: sound objects cannot be replaced
-void ReadSoundObject_t(CTStream &strm, CSoundObject &so)
+void ReadSoundObject_t(CTStream &strm, CSoundObject &so, BOOL bNetwork /* = FALSE */)
 {
-  so.Read_t(&strm);
+  so.Read_t(&strm,bNetwork);
 }
 
-void SkipSoundObject_t(CTStream &strm)
+void SkipSoundObject_t(CTStream &strm, BOOL bNetwork)
 {
   CSoundObject soDummy;
-  soDummy.Read_t(&strm);
+  soDummy.Read_t(&strm,bNetwork);
 }
 
-void WriteSoundObject_t(CTStream &strm, CSoundObject &so)
+void WriteSoundObject_t(CTStream &strm, CSoundObject &so, BOOL bNetwork /* = FALSE */)
 {
-  so.Write_t(&strm);
+  so.Write_t(&strm,bNetwork);
 }

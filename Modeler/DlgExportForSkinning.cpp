@@ -98,7 +98,7 @@ BOOL CDlgExportForSkinning::OnInitDialog()
   while( iWidth <= 2048)
   {
     strTemp.PrintF( "%d x %d", iWidth, INDEX(iWidth/fWHRatio));
-    INDEX iAddedAs = m_ctrlExportPictureSize.AddString( CString(strTemp));
+    INDEX iAddedAs = m_ctrlExportPictureSize.AddString( strTemp);
     m_ctrlExportPictureSize.SetItemData( iAddedAs, iWidth);
     if( iWidth == m_iTextureWidth)
     {

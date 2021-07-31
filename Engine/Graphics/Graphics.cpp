@@ -5,7 +5,6 @@
 #include <Engine/Graphics/RenderPoly.h>
 #include <Engine/Graphics/Color.h>
 #include <Engine/Graphics/Texture.h>
-#include <Engine/Graphics/GfxProfile.h>
 
 // asm shortcuts
 #define O offset
@@ -18,7 +17,7 @@ extern INDEX tex_bProgressiveFilter; // filter mipmaps in creation time (not aft
 
 
 // returns number of mip-maps to skip from original texture
-INDEX ClampTextureSize( PIX pixClampSize, PIX pixClampDimension, PIX pixSizeU, PIX pixSizeV)
+extern INDEX ClampTextureSize( PIX pixClampSize, PIX pixClampDimension, PIX pixSizeU, PIX pixSizeV)
 {
   __int64 pixMaxSize  = (__int64)pixSizeU * (__int64)pixSizeV;
   PIX pixMaxDimension = Max( pixSizeU, pixSizeV);
@@ -101,71 +100,77 @@ void FlipBitmap( UBYTE *pubSrc, UBYTE *pubDst, PIX pixWidth, PIX pixHeight, INDE
   // safety
   ASSERT( iFlipType>=0 && iFlipType<4);
   // no flipping ?
-  PIX pixSize = pixWidth*pixHeight;
-  if( iFlipType==0) {
-    // copy bitmap only if needed
-    INDEX ctBPP = (bAlphaChannel ? 4 : 3);
+  const PIX pixSize = pixWidth*pixHeight;
+  const INDEX ctBPP = (bAlphaChannel ? 4 : 3);
+  if( iFlipType==0) { // eventually just copy bitmap if no flipping required
     if( pubSrc!=pubDst) memcpy( pubDst, pubSrc, pixSize*ctBPP);
     return;
   }
 
-  // prepare images without alpha channels
-  ULONG *pulNew = NULL;
-  ULONG *pulNewSrc = (ULONG*)pubSrc;
-  ULONG *pulNewDst = (ULONG*)pubDst;
-  if( !bAlphaChannel) {
-    pulNew = (ULONG*)AllocMemory( pixSize *BYTES_PER_TEXEL);
-    AddAlphaChannel( pubSrc, pulNew, pixSize);
-    pulNewSrc = pulNew;
-    pulNewDst = pulNew;
+  // prepare variables
+  UBYTE *pubSrcInc=pubSrc, *pubSrcDec;
+  UBYTE *pubDstInc=pubDst, *pubDstDec;
+  INDEX ctRows, ctPixs;
+  INDEX iPixAdv, iRowAdv;
+  // horizontal
+  if( iFlipType==1) {
+    pubSrcDec = pubSrcInc + (pixWidth-1)*ctBPP;
+    pubDstDec = pubDstInc + (pixWidth-1)*ctBPP;
+    ctRows = pixHeight;
+    ctPixs = (pixWidth+1) /2;
+    iRowAdv = +pixWidth*ctBPP;
+    iPixAdv = -ctBPP;
+  } // vertical
+  else if( iFlipType==2) {
+    pubSrcDec = pubSrcInc + pixWidth*(pixHeight-1)*ctBPP;
+    pubDstDec = pubDstInc + pixWidth*(pixHeight-1)*ctBPP;
+    ctRows = (pixHeight+1)/2;
+    ctPixs = pixWidth;
+    iRowAdv = -pixWidth*ctBPP;
+    iPixAdv = +ctBPP;
+  } // diagonal
+  else {
+    ASSERT( iFlipType==3);
+    pubSrcDec = pubSrcInc + pixWidth*pixHeight*ctBPP -ctBPP;
+    pubDstDec = pubDstInc + pixWidth*pixHeight*ctBPP -ctBPP;
+    ctRows = (pixHeight+1)/2;
+    ctPixs = (pixWidth+1) /2;
+    iRowAdv = +pixWidth*ctBPP;
+    iPixAdv = +ctBPP;
   }
 
-  // prepare half-width and half-height rounded
-  const PIX pixHalfWidth  = (pixWidth+1) /2;
-  const PIX pixHalfHeight = (pixHeight+1)/2;
-
-  // flip horizontal
-  if( iFlipType==2 || iFlipType==3)
-  { // for each row
-    for( INDEX iRow=0; iRow<pixHeight; iRow++)
-    { // find row pointer
-      PIX pixRowOffset = iRow*pixWidth;
-      // for each pixel in row
-      for( INDEX iPix=0; iPix<pixHalfWidth; iPix++)
-      { // transfer pixels
-        PIX pixBeg = pulNewSrc[pixRowOffset+iPix];
-        PIX pixEnd = pulNewSrc[pixRowOffset+(pixWidth-1-iPix)];
-        pulNewDst[pixRowOffset+iPix]              = pixEnd;
-        pulNewDst[pixRowOffset+(pixWidth-1-iPix)] = pixBeg;
-      }
+  ULONG ulInc, ulDec;
+  UWORD uwInc, uwDec;
+  UBYTE ubInc, ubDec;
+  // for each row
+  for( INDEX iRow=0; iRow<ctRows; iRow++)
+  { // for each pixel in row
+    UBYTE *pubSrcPixInc = pubSrcInc;
+    UBYTE *pubSrcPixDec = pubSrcDec;
+    UBYTE *pubDstPixInc = pubDstInc;
+    UBYTE *pubDstPixDec = pubDstDec;
+    for( INDEX iPix=0; iPix<ctPixs; iPix++)
+    { // transfer pixel
+      if( ctBPP==3) {
+        uwInc = *(UWORD*)pubSrcPixInc;  uwDec = *(UWORD*)pubSrcPixDec;    // red & green
+        *(UWORD*)pubDstPixInc = uwDec;  *(UWORD*)pubDstPixDec = uwInc;
+        ubInc = pubSrcPixInc[2];  ubDec = pubSrcPixDec[2];                // blue
+        pubDstPixInc[2] = ubDec;  pubDstPixDec[2] = ubInc;
+      } else {
+        ASSERT( ctBPP==4);
+        ulInc = *(ULONG*)pubSrcPixInc;  ulDec = *(ULONG*)pubSrcPixDec;    // red, green, blue & alpha
+        *(ULONG*)pubDstPixInc = ulDec;  *(ULONG*)pubDstPixDec = ulInc;
+      } // advance to next pixel
+      pubSrcPixInc += ctBPP;
+      pubDstPixInc += ctBPP;
+      pubSrcPixDec += iPixAdv;
+      pubDstPixDec += iPixAdv;
     }
-  }
-
-  // prepare new pointers
-  if( iFlipType==3) pulNewSrc = pulNewDst;
-
-  // flip vertical/diagonal
-  if( iFlipType==1 || iFlipType==3)
-  { // for each row
-    for( INDEX iRow=0; iRow<pixHalfHeight; iRow++)
-    { // find row pointers
-      PIX pixBegOffset = iRow*pixWidth;
-      PIX pixEndOffset = (pixHeight-1-iRow)*pixWidth;
-      // for each pixel in row
-      for( INDEX iPix=0; iPix<pixWidth; iPix++)
-      { // transfer pixels
-        PIX pixBeg = pulNewSrc[pixBegOffset+iPix];
-        PIX pixEnd = pulNewSrc[pixEndOffset+iPix];
-        pulNewDst[pixBegOffset+iPix] = pixEnd;
-        pulNewDst[pixEndOffset+iPix] = pixBeg;
-      }
-    }
-  }
-
-  // postpare images without alpha channels
-  if( !bAlphaChannel) {
-    RemoveAlphaChannel( pulNewDst, pubDst, pixSize);
-    if( pulNew!=NULL) FreeMemory(pulNew);
+    // advance to next row
+    pubSrcInc += pixWidth*ctBPP;
+    pubDstInc += pixWidth*ctBPP;
+    pubSrcDec += iRowAdv;
+    pubDstDec += iRowAdv;
   }
 }
 
@@ -173,7 +178,7 @@ void FlipBitmap( UBYTE *pubSrc, UBYTE *pubDst, PIX pixWidth, PIX pixHeight, INDE
 
 // makes one level lower mipmap (bilinear or nearest-neighbour with border preservance)
 static __int64 mmRounder = 0x0002000200020002;
-static void MakeOneMipmap( ULONG *pulSrcMipmap, ULONG *pulDstMipmap, PIX pixWidth, PIX pixHeight, BOOL bBilinear)
+static void MakeOneMipmap( ULONG *pulSrcMipmap, ULONG *pulDstMipmap, PIX pixWidth, PIX pixHeight)
 {
   // some safety checks
   ASSERT( pixWidth>1 && pixHeight>1);
@@ -182,106 +187,55 @@ static void MakeOneMipmap( ULONG *pulSrcMipmap, ULONG *pulDstMipmap, PIX pixWidt
   pixWidth >>=1;
   pixHeight>>=1;
 
-  if( bBilinear) // type of filtering?
-  { // BILINEAR
-    __asm {
-      pxor    mm0,mm0
-      mov     ebx,D [pixWidth]
-      mov     esi,D [pulSrcMipmap]
-      mov     edi,D [pulDstMipmap]
-      mov     edx,D [pixHeight]
+  __asm {
+    pxor    mm0,mm0
+    movq    mm7,Q [mmRounder]
+    mov     ebx,D [pixWidth]
+    mov     esi,D [pulSrcMipmap]
+    mov     edi,D [pulDstMipmap]
+    mov     edx,D [pixHeight]
 rowLoop:
-      mov     ecx,D [pixWidth]
-pixLoopN:           
-      movd    mm1,D [esi+ 0]        // up-left
-      movd    mm2,D [esi+ 4]        // up-right
-      movd    mm3,D [esi+ ebx*8 +0] // down-left
-      movd    mm4,D [esi+ ebx*8 +4] // down-right
-      punpcklbw mm1,mm0
-      punpcklbw mm2,mm0
-      punpcklbw mm3,mm0
-      punpcklbw mm4,mm0
-      paddw   mm1,mm2
-      paddw   mm1,mm3
-      paddw   mm1,mm4
-      paddw   mm1,Q [mmRounder]
-      psrlw   mm1,2
-      packuswb mm1,mm0
-      movd    D [edi],mm1
-      // advance to next pixel
-      add     esi,4*2
-      add     edi,4
-      dec     ecx
-      jnz     pixLoopN
-      // advance to next row
-      lea     esi,[esi+ ebx*8] // skip one row in source mip-map
-      dec     edx
-      jnz     rowLoop
-      emms
-    }
-  }
-  else
-  { // NEAREST-NEIGHBOUR but with border preserving
-    ULONG ulRowModulo = pixWidth*2 *BYTES_PER_TEXEL;
-    __asm {   
-      xor     ebx,ebx
-      mov     esi,D [pulSrcMipmap]
-      mov     edi,D [pulDstMipmap]
-      // setup upper half
-      mov     edx,D [pixHeight]
-      shr     edx,1
-halfLoop:
-      mov     ecx,D [pixWidth]
-      shr     ecx,1
-leftLoop:
-      mov     eax,D [esi+ ebx*8+ 0] // upper-left (or lower-left)
-      mov     D [edi],eax
-      // advance to next pixel
-      add     esi,4*2
-      add     edi,4
-      sub     ecx,1
-      jg      leftLoop
-      // do right row half
-      mov     ecx,D [pixWidth]
-      shr     ecx,1
-      jz      halfEnd
-rightLoop:
-      mov     eax,D [esi+ ebx*8+ 4] // upper-right (or lower-right)
-      mov     D [edi],eax
-      // advance to next pixel
-      add     esi,4*2
-      add     edi,4
-      sub     ecx,1
-      jg      rightLoop
-halfEnd:
-      // advance to next row
-      add     esi,D [ulRowModulo]  // skip one row in source mip-map
-      sub     edx,1
-      jg      halfLoop
-      // do eventual lower half loop (if not yet done)
-      mov     edx,D [pixHeight]
-      shr     edx,1
-      jz      fullEnd
-      cmp     ebx,D [pixWidth]
-      mov     ebx,D [pixWidth]
-      jne     halfLoop
-fullEnd:
-    }
+    mov     ecx,D [pixWidth]
+pixLoop:           
+//    prefetchnta [esi+ 16]
+//    prefetchnta [esi+ ebx*8+ 16]
+    movq    mm1,Q [esi]        // up-left   & up-right
+    movq    mm3,Q [esi+ ebx*8] // down-left & down-right 
+    movq    mm2,mm1
+    movq    mm4,mm3
+  punpcklbw mm1,mm0
+  punpcklbw mm3,mm0
+  punpckhbw mm2,mm0
+  punpckhbw mm4,mm0
+    paddw   mm1,mm3
+    paddw   mm2,mm4
+    paddw   mm1,mm7 // rounding
+    paddw   mm1,mm2
+    psrlw   mm1,2
+   packuswb mm1,mm0
+    movd    D [edi],mm1
+    // advance to next pixel
+    add     esi,4*2
+    add     edi,4
+    dec     ecx
+    jnz     pixLoop
+    // advance to next row
+    lea     esi,[esi+ ebx*8] // skip one row in source mip-map
+    dec     edx
+    jnz     rowLoop
+    emms
   }
 }
 
 
-// makes ALL lower mipmaps (to size of 1x1!) of a specified 32-bit bitmap
+// makes ALL lower mipmaps (to size of 1x1!) of an specified 32-bit bitmap
 // and returns pointer to newely created and mipmaped image
 // (only first ctFineMips number of mip-maps will be filtered with bilinear subsampling, while
 //  all others will be downsampled with nearest-neighbour method)
-void MakeMipmaps( INDEX ctFineMips, ULONG *pulMipmaps, PIX pixWidth, PIX pixHeight, INDEX iFilter/*=NONE*/)
+void MakeMipmaps( ULONG *pulMipmaps, PIX pixWidth, PIX pixHeight, INDEX iFilter/*=NONE*/)
 {
-  ASSERT( pixWidth>0 && pixHeight>0);
-  _pfGfxProfile.StartTimer( CGfxProfile::PTI_MAKEMIPMAPS);
-
   // prepare some variables
-  INDEX ctMipmaps = 1;
+  ASSERT( pixWidth>0 && pixHeight>0);
   PIX pixTexSize  = 0;
   PIX pixCurrWidth  = pixWidth;
   PIX pixCurrHeight = pixHeight;
@@ -303,17 +257,41 @@ void MakeMipmaps( INDEX ctFineMips, ULONG *pulMipmaps, PIX pixWidth, PIX pixHeig
     // do pre filter is required
     if( iFilterMode<0) FilterBitmap( iFilter, pulSrcMipmap, pulSrcMipmap, pixCurrWidth, pixCurrHeight);
     // create one mipmap
-    MakeOneMipmap( pulSrcMipmap, pulDstMipmap, pixCurrWidth, pixCurrHeight, ctMipmaps<ctFineMips);
+    MakeOneMipmap( pulSrcMipmap, pulDstMipmap, pixCurrWidth, pixCurrHeight);
     // do post filter if required
     if( iFilterMode>0) FilterBitmap( iFilter, pulSrcMipmap, pulSrcMipmap, pixCurrWidth, pixCurrHeight);
     // advance to next mipmap
     pixTexSize += pixMipSize;
     pixCurrWidth  >>=1;
     pixCurrHeight >>=1;
-    ctMipmaps++;
   }
-  // all done
-  _pfGfxProfile.StopTimer( CGfxProfile::PTI_MAKEMIPMAPS);
+}
+
+
+// make one sub-mipmap (mipmap that is lower than Nx1 or 1xM)
+void MakeSubMipmap( ULONG *pulSrc, ULONG *pulDst, PIX pixDstSize)
+{
+  ASSERT( pixDstSize>0);
+  __asm {   
+    pxor    mm0,mm0
+    mov     esi,D [pulSrc]
+    mov     edi,D [pulDst]
+    mov     ecx,D [pixDstSize]
+pixLoop:
+    movq    mm1,Q [esi+0]
+    movq    mm2,mm1
+  punpcklbw mm1,mm0
+  punpckhbw mm2,mm0
+    paddw   mm1,mm2
+    psrlw   mm1,1
+   packuswb mm1,mm0
+    movd    D [edi],mm1
+    add     esi,4*2
+    add     edi,4
+    dec     ecx
+    jnz     pixLoop
+    emms
+  }
 }
 
 
@@ -419,8 +397,6 @@ static ULONG *pulDitherTable;
 void DitherBitmap( INDEX iDitherType, ULONG *pulSrc, ULONG *pulDst, PIX pixWidth, PIX pixHeight,
                    PIX pixCanvasWidth, PIX pixCanvasHeight)
 {
-  _pfGfxProfile.StartTimer( CGfxProfile::PTI_DITHERBITMAP);
-
   // determine row modulo
   if( pixCanvasWidth ==0) pixCanvasWidth  = pixWidth;
   if( pixCanvasHeight==0) pixCanvasHeight = pixHeight;
@@ -431,9 +407,11 @@ void DitherBitmap( INDEX iDitherType, ULONG *pulSrc, ULONG *pulDst, PIX pixWidth
   // if bitmap is smaller than 4x2 pixels
   if( pixWidth<4 || pixHeight<2)
   { // don't dither it at all, rather copy only (if needed)
-    if( pulDst!=pulSrc) memcpy( pulDst, pulSrc, pixCanvasWidth*pixCanvasHeight *BYTES_PER_TEXEL);
+    if( pulDst!=pulSrc) CopyLongs( pulSrc, pulDst, pixCanvasWidth*pixCanvasHeight);
     goto theEnd;
   }
+  if( pulDst!=pulSrc) CopyLongs( pulSrc, pulDst, pixCanvasWidth*pixCanvasHeight);
+  goto theEnd;
 
   // determine proper dither type
   switch( iDitherType)
@@ -488,7 +466,7 @@ void DitherBitmap( INDEX iDitherType, ULONG *pulSrc, ULONG *pulDst, PIX pixWidth
     // improper dither type
     ASSERTALWAYS( "Improper dithering type.");
     // if bitmap copying is needed
-    if( pulDst!=pulSrc) memcpy( pulDst, pulSrc, pixCanvasWidth*pixCanvasHeight *BYTES_PER_TEXEL);
+    if( pulDst!=pulSrc) CopyLongs( pulSrc, pulDst, pixCanvasWidth*pixCanvasHeight);
     goto theEnd;
   }
 
@@ -537,7 +515,7 @@ nextRowO:
     // advance to next row
     dec     edx
     jnz     rowLoopO
-    emms;
+    emms
   }
   goto theEnd;
 
@@ -545,7 +523,7 @@ nextRowO:
 
 ditherError:
   // since error diffusion algorithm requires in-place dithering, original bitmap must be copied if needed
-  if( pulDst!=pulSrc) memcpy( pulDst, pulSrc, pixCanvasWidth*pixCanvasHeight *BYTES_PER_TEXEL);
+  if( pulDst!=pulSrc) CopyLongs( pulSrc, pulDst, pixCanvasWidth*pixCanvasHeight);
   // slModulo+=4;
   // now, dither destination
   __asm {
@@ -639,13 +617,13 @@ pixLoopER:
     dec     edx
     jnz     rowLoopE
 allDoneE:
-    emms;
+    emms
   }
   goto theEnd;
 
   // all done
 theEnd:
-  _pfGfxProfile.StopTimer( CGfxProfile::PTI_DITHERBITMAP);
+  return;
 }
 
 
@@ -692,7 +670,7 @@ static __int64 mmInvDiv;
 static __int64 mmAdd = 0x0007000700070007;
 
 // temp rows for in-place filtering support
-static ULONG aulRows[2048];
+extern ULONG _aulTempRow[4096] = {0};  // filtering will be skipped if width of bitmap is larger than this buffer
 
 
 // FilterBitmap() INTERNAL: generates convolution filter matrix if needed
@@ -735,19 +713,16 @@ static void GenerateConvolutionMatrix( INDEX iFilter)
 void FilterBitmap( INDEX iFilter, ULONG *pulSrc, ULONG *pulDst, PIX pixWidth, PIX pixHeight,
                    PIX pixCanvasWidth, PIX pixCanvasHeight)
 {
-  _pfGfxProfile.StartTimer( CGfxProfile::PTI_FILTERBITMAP);
-  ASSERT( iFilter>=-6 && iFilter<=+6);
-
   // adjust canvas size
+  ASSERT( iFilter>=-6 && iFilter<=+6);
   if( pixCanvasWidth ==0) pixCanvasWidth  = pixWidth;
   if( pixCanvasHeight==0) pixCanvasHeight = pixHeight;
   ASSERT( pixCanvasWidth>=pixWidth && pixCanvasHeight>=pixHeight);
 
-  // if bitmap is smaller than 4x4
-  if( pixWidth<4 || pixHeight<4)
+  // if bitmap is smaller than 4x4 or row is bigger than temp row size
+  if( pixWidth<4 || pixHeight<4 || pixWidth>4096)
   { // don't blur it at all, but eventually only copy
-    if( pulDst!=pulSrc) memcpy( pulDst, pulSrc, pixCanvasWidth*pixCanvasHeight *BYTES_PER_TEXEL);
-    _pfGfxProfile.StopTimer( CGfxProfile::PTI_FILTERBITMAP);
+    if( pulDst!=pulSrc) CopyLongs( pulSrc, pulDst, pixCanvasWidth*pixCanvasHeight);
     return;
   }
 
@@ -787,7 +762,7 @@ void FilterBitmap( INDEX iFilter, ULONG *pulSrc, ULONG *pulDst, PIX pixWidth, PI
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    D [ebx+ aulRows],mm1
+    movd    D [ebx+ _aulTempRow],mm1
     add     esi,4
     add     ebx,4
 
@@ -821,7 +796,7 @@ upperLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    D [ebx+ aulRows],mm1
+    movd    D [ebx+ _aulTempRow],mm1
     // advance to next pixel
     add     esi,4
     add     ebx,4
@@ -847,7 +822,7 @@ upperLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    D [ebx+ aulRows],mm1
+    movd    D [ebx+ _aulTempRow],mm1
 
 // ----------------------- process bitmap middle pixels
 
@@ -884,8 +859,8 @@ rowLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
-    movd    D [ebx+ aulRows],mm1
+    movd    mm2,D [ebx+ _aulTempRow]
+    movd    D [ebx+ _aulTempRow],mm1
     movd    D [edi+ edx*4],mm2
     add     esi,4
     add     edi,4
@@ -933,8 +908,8 @@ pixLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
-    movd    D [ebx+ aulRows],mm1
+    movd    mm2,D [ebx+ _aulTempRow]
+    movd    D [ebx+ _aulTempRow],mm1
     movd    D [edi+ edx*4],mm2
     // advance to next pixel
     add     esi,4
@@ -968,8 +943,8 @@ pixLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
-    movd    D [ebx+ aulRows],mm1
+    movd    mm2,D [ebx+ _aulTempRow]
+    movd    D [ebx+ _aulTempRow],mm1
     movd    D [edi+ edx*4],mm2
     // advance to next row
     add     esi,D [slModulo1]
@@ -998,7 +973,7 @@ pixLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
+    movd    mm2,D [ebx+ _aulTempRow]
     movd    D [edi],mm1
     movd    D [edi+ edx*4],mm2
     add     esi,4
@@ -1035,7 +1010,7 @@ lowerLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
+    movd    mm2,D [ebx+ _aulTempRow]
     movd    D [edi],mm1
     movd    D [edi+ edx*4],mm2
     // advance to next pixel
@@ -1064,14 +1039,11 @@ lowerLoop:
     paddsw  mm1,Q [mmAdd]
     pmulhw  mm1,Q [mmInvDiv]
     packuswb mm1,mm0
-    movd    mm2,D [ebx+ aulRows]
+    movd    mm2,D [ebx+ _aulTempRow]
     movd    D [edi],mm1
     movd    D [edi+ edx*4],mm2
     emms
   }
-
-  // all done (finally)
-  _pfGfxProfile.StopTimer( CGfxProfile::PTI_FILTERBITMAP);
 }
  
 
@@ -1268,7 +1240,8 @@ void DrawTriangle_Mask( UBYTE *pubMaskPlane, SLONG slMaskWidth, SLONG slMaskHeig
         currK = 1.0f/curr1oK;
         pixTexU = (FloatToInt(currUoK*currK)) & (_pixTexWidth -1);
         pixTexV = (FloatToInt(currVoK*currK)) & (_pixTexHeight-1);
-        if( _pulTexture[pixTexV*_pixTexWidth+pixTexU] & ((CT_rAMASK<<7)&CT_rAMASK)) pubMaskPlane[currI] = 0;
+        const ULONG ulRGBA = _pulTexture[pixTexV*_pixTexWidth+pixTexU];
+        if( ((ulRGBA&CT_rAMASK)>>CT_rASHIFT) > 127) pubMaskPlane[currI] = 0;
         curr1oK += fD1oKoDI;
         currUoK += fDUoKoDI;
         currVoK += fDVoKoDI;
@@ -1302,7 +1275,8 @@ void DrawTriangle_Mask( UBYTE *pubMaskPlane, SLONG slMaskWidth, SLONG slMaskHeig
         currK = 1.0f/curr1oK;
         pixTexU = (FloatToInt(currUoK*currK)) & (_pixTexWidth -1);
         pixTexV = (FloatToInt(currVoK*currK)) & (_pixTexHeight-1);
-        if( _pulTexture[pixTexV*_pixTexWidth+pixTexU] & CT_rAMASK) pubMaskPlane[currI] = 0;
+        const ULONG ulRGBA = _pulTexture[pixTexV*_pixTexWidth+pixTexU];
+        if( ((ulRGBA&CT_rAMASK)>>CT_rASHIFT) > 127) pubMaskPlane[currI] = 0;
         curr1oK += fD1oKoDI;
         currUoK += fDUoKoDI;
         currVoK += fDVoKoDI;

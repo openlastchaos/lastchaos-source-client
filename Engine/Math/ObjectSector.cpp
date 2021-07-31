@@ -43,7 +43,8 @@ inline int CompareVertices(const CObjectVertex &vx0, const CObjectVertex &vx1)
   else if (vx0(2)-vx1(2) > +VTX_EPSILON) return 1;
   else if (vx0(3)-vx1(3) < -VTX_EPSILON) return -1;
   else if (vx0(3)-vx1(3) > +VTX_EPSILON) return 1;
-  else                    return 0;
+  else                    
+	  return 0;
 }
 
 /*
@@ -233,7 +234,7 @@ void CObjectPolygonEdge::GetVertices(CObjectVertex *&povxStart, CObjectVertex *&
  * Default constructor.
  */
 CObjectSector::CObjectSector(void) :
-  osc_colAmbient(0), osc_colColor(0), osc_strName("")
+  osc_colAmbient(0), osc_colColor(0), osc_strName(""), osc_Index(-1)
 {
   osc_ulFlags[0] = 0;
   osc_ulFlags[1] = 0;
@@ -278,6 +279,7 @@ inline void CEdgeEx::Initialize(const DOUBLE3D *pvPoint0, const DOUBLE3D *pvPoin
   const DOUBLE3D &vPoint1=*pvPoint1;
 
   // normalize the direction
+  ASSERT( vPoint1 != vPoint0 && "Invalid Direction!!!" );
   edx_vDirection = (vPoint1-vPoint0).Normalize();
   DOUBLE fDirectionLen = edx_vDirection.Length();
   ASSERT(0.999<fDirectionLen && fDirectionLen<1.001);
@@ -1764,6 +1766,7 @@ CObjectSector &CObjectSector::operator=(CObjectSector &oscOriginal)
     // use vertices in this object with same index
     itoed->oed_Vertex0 = &osc_aovxVertices[itoed->oed_Vertex0->ovx_Index];
     itoed->oed_Vertex1 = &osc_aovxVertices[itoed->oed_Vertex1->ovx_Index];
+	ASSERT( itoed->oed_Vertex0 != itoed->oed_Vertex1 && "Invalid Index" );
   }
 
   // for all polygons

@@ -32,8 +32,8 @@ properties:
   20 FLOAT  m_tmLastActivation = 0.0f, // internal - the last time when manager was triggered
 
 components:
-  1 model   MODEL_MANAGER     "ModelsMP\\Editor\\TacticsHolder.mdl",
-  2 texture TEXTURE_MANAGER   "ModelsMP\\Editor\\TacticsHolder.tex"
+  1 editor model   MODEL_MANAGER     "Data\\ModelsMP\\Editor\\TacticsHolder.mdl",
+  2 editor texture TEXTURE_MANAGER   "Data\\ModelsMP\\Editor\\TacticsHolder.tex"
 
 functions:
   const CTString &GetDescription(void) const {

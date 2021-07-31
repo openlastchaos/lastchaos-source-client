@@ -29,7 +29,7 @@ properties:
  14 BOOL m_bFlying                "Flying" 'F' = FALSE,     // flying model
  16 FLOAT m_fWaitTime = 0.0f,
 
- 20 CTFileName m_fnMdl           "Model" 'M' = CTFILENAME("Models\\Editor\\Axis.mdl"),
+ 20 CTFileName m_fnMdl           "Model" 'M' = CTFILENAME("Data\\Models\\Editor\\Axis.mdl"),
  21 CTFileName m_fnTex           "Texture" 'X' = CTString(""),
  22 ANIMATION m_iAnim            "Animation" =0,
 
@@ -107,7 +107,7 @@ functions:
     }
 
     // assure valid target
-    if (m_penTarget!=NULL && !IsOfClass(m_penTarget, "Environment Marker")) {
+    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CEnvironmentMarker_DLLClass)) {
       WarningMessage("Target '%s' is not of Environment Marker class!", m_penTarget->GetName());
       m_penTarget = NULL;
       return FALSE;
@@ -246,7 +246,7 @@ functions:
     }
 
     // assure valid target
-    if (m_penTarget!=NULL && !IsOfClass(m_penTarget, "Environment Marker")) {
+    if( m_penTarget!=NULL && !IsOfClass( m_penTarget, &CEnvironmentMarker_DLLClass)) {
       WarningMessage("Target '%s' is not of Environment Marker class!", m_penTarget->GetName());
       m_penTarget = NULL;
     }

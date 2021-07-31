@@ -1,6 +1,6 @@
 /*
  *  Game library
- *  Copyright (c) 1997-1999, CroTeam. 
+ *  Copyright (c) 1997-1999, CroTeam. All rights reserved.
  */
 
 #include "stdafx.h"
@@ -12,9 +12,6 @@ extern CGame *_pGame;
  */
 CControls::CControls(void)
 {
-  // buttons are all none anyway (empty list)
-  // switch axes actions to defaults
-  SwitchAxesToDefaults();
 }
 
 /*
@@ -43,12 +40,6 @@ CControls &CControls::operator=(CControls &ctrlOriginal)
     AddButtonAction() = *itButtonAction;
   }}
 
-  // for all axis-type actions
-  for( INDEX iAxisAction=0; iAxisAction<AXIS_ACTIONS_CT; iAxisAction++) {
-    // copy it
-    ctrl_aaAxisActions[iAxisAction] = ctrlOriginal.ctrl_aaAxisActions[iAxisAction];
-  }
-
   // copy global settings
   ctrl_fSensitivity  = ctrlOriginal.ctrl_fSensitivity;
   ctrl_bInvertLook   = ctrlOriginal.ctrl_bInvertLook;
@@ -57,47 +48,13 @@ CControls &CControls::operator=(CControls &ctrlOriginal)
   return *this;
 }
 
-/*
- * Switches button and axis action mounters to defaults
- */
-void CControls::SwitchAxesToDefaults(void)
-{
-  // for all axis-type actions
-  for( INDEX iAxisAction=0; iAxisAction<AXIS_ACTIONS_CT; iAxisAction++)
-  {
-    // set axis action none
-    ctrl_aaAxisActions[ iAxisAction].aa_iAxisAction = AXIS_NONE;
-    ctrl_aaAxisActions[ iAxisAction].aa_fSensitivity = 50;
-    ctrl_aaAxisActions[ iAxisAction].aa_fDeadZone = 0;
-    ctrl_aaAxisActions[ iAxisAction].aa_bInvert = FALSE;
-    ctrl_aaAxisActions[ iAxisAction].aa_bRelativeControler = TRUE;
-    ctrl_aaAxisActions[ iAxisAction].aa_bSmooth = FALSE;
-    ctrl_aaAxisActions[ iAxisAction].aa_fLastReading = 0.0f;
-  }
-  // set default controlers for some axis-type actions
-  // mouse left/right motion
-  ctrl_aaAxisActions[ AXIS_TURN_LR].aa_iAxisAction = MOUSE_X_AXIS;
-  ctrl_aaAxisActions[ AXIS_TURN_LR].aa_fSensitivity = 45;
-  ctrl_aaAxisActions[ AXIS_TURN_LR].aa_bInvert = FALSE;
-  ctrl_aaAxisActions[ AXIS_TURN_LR].aa_bRelativeControler = TRUE;
-  // mouse up/down motion
-  ctrl_aaAxisActions[ AXIS_TURN_UD].aa_iAxisAction = MOUSE_Y_AXIS;
-  ctrl_aaAxisActions[ AXIS_TURN_UD].aa_fSensitivity = 45;
-  ctrl_aaAxisActions[ AXIS_TURN_UD].aa_bInvert = TRUE;
-  ctrl_aaAxisActions[ AXIS_TURN_UD].aa_bRelativeControler = TRUE;
-
-  ctrl_fSensitivity = 50;
-  ctrl_bInvertLook = FALSE;
-  ctrl_bSmoothAxes = TRUE;
-}
-
 void CControls::SwitchToDefaults(void)
 {
   // copy controls from initial player
   try
   {
     CControls ctrlDefaultControls;
-    ctrlDefaultControls.Load_t( CTString("Data\\Defaults\\InitialControls.ctl"));
+//    ctrlDefaultControls.Load_t( CTString("Data\\Defaults\\InitialControls.ctl"));
     *this = ctrlDefaultControls;
   }
   catch( char *strError)
@@ -106,40 +63,49 @@ void CControls::SwitchToDefaults(void)
   }
 }
 
-/*
- * Depending on axis attributes and type (rotation or translation),
- * calculates axis influence factors for all axis actions
- */
-void CControls::CalculateInfluencesForAllAxis(void)
+BOOL OptReadBoolFromLine(CTStream &strm, const CTString &strKeyword)
 {
-  FLOAT fSensitivityGlobal = (FLOAT)pow(1.2, (ctrl_fSensitivity-50.0)*1.0/5.0);
-  FLOAT fBaseDelta; // different for rotations and translations
-  // for all axis actions
-  for( INDEX iAxisAction=0; iAxisAction<AXIS_ACTIONS_CT; iAxisAction++)
-  {
-    fBaseDelta = 1.0f;
-    // apply invert factor
-    if( ctrl_aaAxisActions[ iAxisAction].aa_bInvert || 
-      ( (iAxisAction==AXIS_TURN_UD||iAxisAction==AXIS_LOOK_UD) && ctrl_bInvertLook) ) {
-      // negative factor
-      fBaseDelta = -fBaseDelta;
-    }
+  // Remember position in stream 
+  SLONG slStreamPos = strm.GetPos_t();
 
-    FLOAT fSensitivityLocal = (FLOAT)pow(2.0, (ctrl_aaAxisActions[ iAxisAction].aa_fSensitivity-50.0)*1.0/5.0);
-
-    // calculate influence for current axis
-    ctrl_aaAxisActions[ iAxisAction].aa_fAxisInfluence = fBaseDelta * fSensitivityGlobal * fSensitivityLocal;
+  CTString strLine;
+  strm.GetLine_t(strLine);
+  strLine.TrimSpacesLeft();
+  // if line doesn't contain searched keyword
+  if (!strLine.RemovePrefix(strKeyword)) {
+    // Seek line back
+    strm.SetPos_t(slStreamPos);
+    return FALSE;
   }
+  strLine.TrimSpacesLeft();
+  strLine.TrimSpacesRight();
+  if(strLine == "TRUE") {
+    return TRUE;
+  }
+  return FALSE;
 }
 
-INDEX DIKForName( CTString strKeyName)
+CTString OptReadTextLine(CTStream &strm, const CTString &strKeyword, BOOL bTranslate)
 {
-  if( strKeyName == "None") return KID_NONE;
-  for( INDEX iButton=0; iButton<MAX_OVERALL_BUTTONS; iButton++)
-  {
-    if( _pInput->GetButtonName( iButton) == strKeyName) return iButton;
+  // Remember position in stream 
+  SLONG slStreamPos = strm.GetPos_t();
+
+  CTString strLine;
+  strm.GetLine_t(strLine);
+  strLine.TrimSpacesLeft();
+  if (!strLine.RemovePrefix(strKeyword)) {
+    // Seek line back
+    strm.SetPos_t(slStreamPos);
+    return "";
   }
-  return KID_NONE;
+  strLine.TrimSpacesLeft();
+  if (bTranslate) {
+    strLine.RemovePrefix("TTRS");
+  }
+  strLine.TrimSpacesLeft();
+  strLine.TrimSpacesRight();
+
+  return strLine;
 }
 
 CTString ReadTextLine(CTStream &strm, const CTString &strKeyword, BOOL bTranslate)
@@ -160,13 +126,25 @@ CTString ReadTextLine(CTStream &strm, const CTString &strKeyword, BOOL bTranslat
   return strLine;
 }
 
+BOOL GetStringFromLine(CTString strLine, CTString &strResult, const CTString &strKeyword, BOOL bTranslate)
+{
+  if(strLine.FindSubstr(strKeyword)>=0) {
+    strLine.RemovePrefix(strKeyword);
+    strLine.TrimSpacesLeft();
+    if(bTranslate) {
+      strLine.RemovePrefix("TTRS");
+    }
+    strLine.TrimSpacesLeft();
+    strResult = strLine;
+    return TRUE;
+  }
+  return FALSE;
+}
+
 void CControls::Load_t( CTFileName fnFile)
 {
   char achrLine[ 1024];
-  char achrName[ 1024];
   char achrID[ 1024];
-  char achrActionName[ 1024];
-  
   // open script file for reading
   CTFileStream strmFile;
   strmFile.Open_t( fnFile);				
@@ -183,66 +161,65 @@ void CControls::Load_t( CTFileName fnFile)
     strmFile.GetLine_t( achrLine, 1024);
     sscanf( achrLine, "%s", achrID);
     // if name
-    if( CTString( achrID) == "Name") {
-      // name is obsolete, just skip it
-      sscanf( achrLine, "%*[^\"]\"%1024[^\"]\"", achrName);
-    
     // if this is button action
-    } else if( CTString( achrID) == "Button") {
+    if(CTString(achrID) == "Control") {
       // create and read button action
       CButtonAction &baNew = AddButtonAction();
-      baNew.ba_strName = ReadTextLine(strmFile, "Name:", TRUE);
 
-      baNew.ba_iFirstKey = DIKForName( ReadTextLine(strmFile, "Key1:", FALSE));
-      baNew.ba_iSecondKey = DIKForName( ReadTextLine(strmFile, "Key2:", FALSE));
-      
-      baNew.ba_strCommandLineWhenPressed = ReadTextLine(strmFile, "Pressed:", FALSE);
-      baNew.ba_strCommandLineWhenReleased = ReadTextLine(strmFile, "Released:", FALSE);
+      CTString strName = "???";
+      CTString strControl1;
+      CTString strControl2;
+      CTString strDevice1;
+      CTString strDevice2;
+      CTString strHidden;
+      CTString strPressed;
+      CTString strReleased;
+      CTString strHeld;
 
-    // if this is axis action
-    } else if( CTString( achrID) == "Axis") {
-      char achrAxis[ 1024];
-      achrAxis[ 0] = 0;
-      char achrIfInverted[ 1024];
-      achrIfInverted[ 0] = 0;
-      char achrIfRelative[ 1024];
-      achrIfRelative[ 0] = 0;
-      char achrIfSmooth[ 1024];
-      achrIfSmooth[ 0] = 0;
-      achrActionName[ 0] = 0;
-      FLOAT fSensitivity = 50;
-      FLOAT fDeadZone = 0;
-      sscanf( achrLine, "%*[^\"]\"%1024[^\"]\"%*[^\"]\"%1024[^\"]\" %g %g %1024s %1024s",
-              achrActionName, achrAxis, &fSensitivity, &fDeadZone, achrIfInverted, achrIfRelative, achrIfSmooth);
-      // find action axis
-      INDEX iActionAxisNo = -1;
-      {for( INDEX iAxis=0; iAxis<AXIS_ACTIONS_CT; iAxis++){
-        if( CTString(_pGame->gm_astrAxisNames[iAxis]) == achrActionName)
-        {
-          iActionAxisNo = iAxis;
+      // read each line of one control
+      for(INDEX iln=0;iln<32;iln++) {
+        if(strmFile.AtEOF()) {
           break;
         }
-      }}
-      // find controller axis
-      INDEX iCtrlAxisNo = -1;
-      {for( INDEX iAxis=0; iAxis<MAX_OVERALL_AXES; iAxis++) {
-        if( _pInput->GetAxisName( iAxis) == achrAxis)
-        {
-          iCtrlAxisNo = iAxis;
+
+        CTString strLine;
+        strmFile.GetLine_t(strLine);
+        strLine.TrimSpacesLeft();
+        strLine.TrimSpacesRight();
+
+        BOOL bRet = FALSE;
+        bRet |= GetStringFromLine(strLine,strName,"Name:",TRUE);
+        bRet |= GetStringFromLine(strLine,strControl1,"Control1:",FALSE);
+        bRet |= GetStringFromLine(strLine,strControl2,"Control2:",FALSE);
+        bRet |= GetStringFromLine(strLine,strDevice1,"Device1:"  ,FALSE);
+        bRet |= GetStringFromLine(strLine,strDevice2,"Device2:"  ,FALSE);
+        bRet |= GetStringFromLine(strLine,strHidden,"Hidden:"    ,FALSE);
+        bRet |= GetStringFromLine(strLine,strPressed,"Pressed:"  ,FALSE);
+        bRet |= GetStringFromLine(strLine,strReleased,"Released:",FALSE);
+        bRet |= GetStringFromLine(strLine,strHeld,"Held:"        ,FALSE);
+
+        // if none of strings were found
+        if(!bRet) {
           break;
         }
-      }}
-      // if valid axis found
-      if( iActionAxisNo!=-1 && iCtrlAxisNo!=-1) {
-        // set it
-        ctrl_aaAxisActions[ iActionAxisNo].aa_iAxisAction = iCtrlAxisNo;
-        ctrl_aaAxisActions[ iActionAxisNo].aa_fSensitivity = fSensitivity;
-        ctrl_aaAxisActions[ iActionAxisNo].aa_fDeadZone = fDeadZone;
-        ctrl_aaAxisActions[ iActionAxisNo].aa_bInvert = ( CTString( "Inverted") == achrIfInverted);
-        ctrl_aaAxisActions[ iActionAxisNo].aa_bRelativeControler = ( CTString( "Relative") == achrIfRelative);
-        ctrl_aaAxisActions[ iActionAxisNo].aa_bSmooth = ( CTString( "Smooth") == achrIfRelative);
       }
-    // read global parameters
+
+      if(strPressed.Length() == 0) {
+        strPressed = strHeld;
+      }
+
+      baNew.ba_strName = strName;
+      baNew.ba_ulFirstControl  = _pInput->GetControlGIDFromString(strDevice1,strControl1);
+      baNew.ba_ulSecondControl = _pInput->GetControlGIDFromString(strDevice2,strControl2);
+      baNew.ba_strCommandLineWhenPressed  = strPressed;
+      baNew.ba_strCommandLineWhenReleased = strReleased;
+      baNew.ba_strCommandLineWhenHeld     = strHeld;
+      if(strHidden==CTString("TRUE")) {
+        baNew.ba_bHidden = TRUE;
+      } else {
+        baNew.ba_bHidden = FALSE;
+      }
+    // if this is axis action
     } else if( CTString( achrID) == "GlobalInvertLook") {
       ctrl_bInvertLook = TRUE;
     } else if( CTString( achrID) == "GlobalDontInvertLook") {
@@ -256,46 +233,6 @@ void CControls::Load_t( CTFileName fnFile)
     }
   }
 	while( !strmFile.AtEOF());
-
-/*
-  // search for talk button
-  BOOL bHasTalk = FALSE;
-  BOOL bHasT = FALSE;
-  FOREACHINLIST( CButtonAction, ba_lnNode, ctrl_lhButtonActions, itba) {
-    CButtonAction &ba = *itba;
-    if (ba.ba_strName=="Talk") {
-      bHasTalk = TRUE;
-    }
-    if (ba.ba_iFirstKey==KID_T) {
-      bHasT = TRUE;
-    }
-    if (ba.ba_iSecondKey==KID_T) {
-      bHasT = TRUE;
-    }
-  }
-  // if talk button not found
-  if (!bHasTalk) {
-    // add it
-    CButtonAction &baNew = AddButtonAction();
-    baNew.ba_strName = "Talk";
-    baNew.ba_iFirstKey = KID_NONE;
-    baNew.ba_iSecondKey = KID_NONE;
-    baNew.ba_strCommandLineWhenPressed = "  con_bTalk=1;";
-    baNew.ba_strCommandLineWhenReleased = "";
-    // if T key is not bound to anything
-    if (!bHasT) {
-      // bind it to talk
-      baNew.ba_iFirstKey = KID_T;
-    // if we couldn't bind it
-    } else {
-      // put it to the top of the list
-      baNew.ba_lnNode.Remove();
-      ctrl_lhButtonActions.AddHead(baNew.ba_lnNode);
-    }
-  }
-  */
-
-  CalculateInfluencesForAllAxis();
 }
 
 void CControls::Save_t( CTFileName fnFile)
@@ -308,78 +245,82 @@ void CControls::Save_t( CTFileName fnFile)
   // write button actions
   FOREACHINLIST( CButtonAction, ba_lnNode, ctrl_lhButtonActions, itba)
   {
-    strLine.PrintF("Button\n Name: TTRS %s\n Key1: %s\n Key2: %s",
-      itba->ba_strName,
-      _pInput->GetButtonName( itba->ba_iFirstKey),
-      _pInput->GetButtonName( itba->ba_iSecondKey) );
+
+    strLine.PrintF("Control\n Name: TTRS %s",(const char*)itba->ba_strName);
     strmFile.PutLine_t( strLine);
 
-    // export pressed command
-    strLine.PrintF(" Pressed:  %s", itba->ba_strCommandLineWhenPressed);
-    {for( INDEX iLetter = 0; strLine[ iLetter] != 0; iLetter++)
-    {
-      // delete EOL-s
-      if( (strLine[ iLetter] == 0x0d) || (strLine[ iLetter] == 0x0a) )
+    if(itba->ba_ulFirstControl!=CONTROL_NONE) {
+      strLine.PrintF(" Control1: %s\n Device1: %s",
+        (const char*)_pInput->GetControlName(itba->ba_ulFirstControl),
+        (const char*)_pInput->GetInputDeviceName(GetInputDeviceID(itba->ba_ulFirstControl)));
+      strmFile.PutLine_t( strLine);
+    }
+
+    if(itba->ba_ulSecondControl!=CONTROL_NONE) {
+      strLine.PrintF(" Control2: %s\n Device2: %s",
+        (const char*)_pInput->GetControlName(itba->ba_ulSecondControl),
+        (const char*)_pInput->GetInputDeviceName(GetInputDeviceID(itba->ba_ulSecondControl)));
+      strmFile.PutLine_t( strLine);
+    }
+
+    // if control is hidden
+    if(itba->ba_bHidden) {
+      strLine.PrintF(" Hidden: TRUE");
+      strmFile.PutLine_t( strLine);
+    }
+
+    CButtonAction *pba = (CButtonAction*)itba;
+    if(itba->ba_strCommandLineWhenPressed.Length()>0 && itba->ba_strCommandLineWhenPressed!=itba->ba_strCommandLineWhenHeld) {
+      // export pressed command
+      strLine.PrintF(" Pressed:  %s", itba->ba_strCommandLineWhenPressed);
+      for( INDEX iLetter = 0; strLine[ iLetter] != 0; iLetter++)
       {
-        ((char*)(const char*)strLine)[ iLetter] = ' ';
+        // delete EOL-s
+        if( (strLine[ iLetter] == 0x0d) || (strLine[ iLetter] == 0x0a) )
+        {
+          ((char*)(const char*)strLine)[ iLetter] = ' ';
+        }
       }
-    }}
-    strmFile.PutLine_t( strLine);
+      strmFile.PutLine_t( strLine);
+    }
 
     // export released command
-    strLine.PrintF(" Released: %s", itba->ba_strCommandLineWhenReleased);
-    {for( INDEX iLetter = 0; strLine[ iLetter] != 0; iLetter++)
-    {
-      // delete EOL-s
-      if( (strLine[ iLetter] == 0x0d) || (strLine[ iLetter] == 0x0a) )
+    if(itba->ba_strCommandLineWhenReleased.Length()>0) {
+      strLine.PrintF(" Released: %s", itba->ba_strCommandLineWhenReleased);
+      for( INDEX iLetter = 0; strLine[ iLetter] != 0; iLetter++)
       {
-        ((char*)(const char*)strLine)[ iLetter] = ' ';
+        // delete EOL-s
+        if( (strLine[ iLetter] == 0x0d) || (strLine[ iLetter] == 0x0a) )
+        {
+          ((char*)(const char*)strLine)[ iLetter] = ' ';
+        }
       }
-    }}
-    strmFile.PutLine_t( strLine);
-  }
-  // write axis actions
-  for( INDEX iAxis=0; iAxis<AXIS_ACTIONS_CT; iAxis++)
-  {
-    CTString strIfInverted;
-    CTString strIfRelative;
-    CTString strIfSmooth;
+      strmFile.PutLine_t( strLine);
+    }
 
-    if( ctrl_aaAxisActions[iAxis].aa_bInvert) {
-      strIfInverted = "Inverted";
-    } else {
-      strIfInverted = "NotInverted";
+    if(itba->ba_strCommandLineWhenHeld.Length()>0) {
+      // export held command
+      strLine.PrintF(" Held: %s", itba->ba_strCommandLineWhenHeld);
+      for( INDEX iLetter = 0; strLine[ iLetter] != 0; iLetter++)
+      {
+        // delete EOL-s
+        if( (strLine[ iLetter] == 0x0d) || (strLine[ iLetter] == 0x0a) )
+        {
+          ((char*)(const char*)strLine)[ iLetter] = ' ';
+        }
+      }
+      strmFile.PutLine_t( strLine);
     }
-    if( ctrl_aaAxisActions[iAxis].aa_bRelativeControler) {
-      strIfRelative = "Relative";
-    } else {
-      strIfRelative = "Absolute";
-    }
-    if( ctrl_aaAxisActions[iAxis].aa_bSmooth) {
-      strIfSmooth = "Smooth";
-    } else {
-      strIfSmooth = "NotSmooth";
-    }
-    
-
-    strLine.PrintF("Axis \"%s\" \"%s\" %g %g %s %s %s",
-      _pGame->gm_astrAxisNames[iAxis], 
-      _pInput->GetAxisName(ctrl_aaAxisActions[iAxis].aa_iAxisAction),
-      ctrl_aaAxisActions[ iAxis].aa_fSensitivity,
-      ctrl_aaAxisActions[ iAxis].aa_fDeadZone,
-      strIfInverted,
-      strIfRelative,
-      strIfSmooth);
-    strmFile.PutLine_t( strLine);
+    strmFile.PutLine_t("\n");
   }
 
   // write global parameters
-  if (ctrl_bInvertLook) {
+  if(ctrl_bInvertLook) {
     strmFile.PutLine_t( "GlobalInvertLook");
   } else {
     strmFile.PutLine_t( "GlobalDontInvertLook");
   }
-  if (ctrl_bSmoothAxes) {
+  if(ctrl_bSmoothAxes) {
     strmFile.PutLine_t( "GlobalSmoothAxes");
   } else {
     strmFile.PutLine_t( "GlobalDontSmoothAxes");
@@ -390,22 +331,18 @@ void CControls::Save_t( CTFileName fnFile)
 // check if these controls use any joystick
 BOOL CControls::UsesJoystick(void)
 {
-  // for each button
+  // for each control
   FOREACHINLIST( CButtonAction, ba_lnNode, ctrl_lhButtonActions, itba) {
     CButtonAction &ba = *itba;
-    if (ba.ba_iFirstKey>=FIRST_JOYBUTTON || ba.ba_iSecondKey>=FIRST_JOYBUTTON) {
+    CInputDevice *pidDevice1 = _pInput->GetInputDevice(GetInputDeviceID(ba.ba_ulFirstControl));
+    CInputDevice *pidDevice2 = _pInput->GetInputDevice(GetInputDeviceID(ba.ba_ulSecondControl));
+    if(pidDevice1!=NULL && pidDevice1->GetDeviceType()==DT_JOYSTICK) {
+      return TRUE;
+    }
+    if(pidDevice2!=NULL && pidDevice2->GetDeviceType()==DT_JOYSTICK) {
       return TRUE;
     }
   }
-
-    // write axis actions
-  for( INDEX iAxis=0; iAxis<AXIS_ACTIONS_CT; iAxis++)
-  {
-    if (ctrl_aaAxisActions[iAxis].aa_iAxisAction>=FIRST_JOYAXIS) {
-      return TRUE;
-    }
-  }
-
   return FALSE;
 }
 

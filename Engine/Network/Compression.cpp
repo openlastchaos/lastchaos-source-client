@@ -1,6 +1,8 @@
 #include "stdh.h"
 
 #include <Engine/Base/Stream.h>
+#include <Engine/Math/Functions.h>
+#include <Engine/Math/Vector.h>
 #include <Engine/Network/Compression.h>
 #include <Engine/Base/Synchronization.h>
 #include <Engine/zlib/zlib.h>
@@ -8,14 +10,14 @@
 extern CTCriticalSection zip_csLock; // critical section for access to zlib functions
 
 /* Unpack from stream to stream. */
-void CCompressor::UnpackStream_t(CTMemoryStream &strmSrc, CTStream &strmDst) // throw char *
+void CCompressor::UnpackStream_t(CTStream &strmSrc, CTStream &strmDst) // throw char *
 {
   // read the header
   SLONG slSizeDst, slSizeSrc;
   strmSrc>>slSizeDst;
   strmSrc>>slSizeSrc;
   // get the buffer of source stream
-  UBYTE *pubSrc = strmSrc.mstrm_pubBuffer + strmSrc.mstrm_slLocation;
+  UBYTE *pubSrc = strmSrc.strm_pubCurrentPos;
   // allocate buffer for decompression
   UBYTE *pubDst = (UBYTE*)AllocMemory(slSizeDst);
   // compress there
@@ -33,10 +35,10 @@ void CCompressor::UnpackStream_t(CTMemoryStream &strmSrc, CTStream &strmDst) // 
   FreeMemory(pubDst);
 }
 
-void CCompressor::PackStream_t(CTMemoryStream &strmSrc, CTStream &strmDst) // throw char *
+void CCompressor::PackStream_t(CTStream &strmSrc, CTStream &strmDst) // throw char *
 {
   // get the buffer of source stream
-  UBYTE *pubSrc = strmSrc.mstrm_pubBuffer + strmSrc.mstrm_slLocation;
+  UBYTE *pubSrc = strmSrc.strm_pubBufferBegin;
   SLONG slSizeSrc = strmSrc.GetStreamSize();
   // allocate buffer for compression
   SLONG slSizeDst = NeededDestinationSize(slSizeSrc);
@@ -442,4 +444,159 @@ int ZEXPORT uncompress (dest, destLen, source, sourceLen)
   } else {
     return FALSE;
   }
+}
+
+
+
+
+
+// pack a float into a signed word - span is -327 to +327, resolution is 0.01
+SWORD PackFloatToWord(FLOAT fUnpacked) {
+  ASSERT(fabs(fUnpacked) <= 327);
+  return (SWORD) (fUnpacked*100);
+}
+// unpack a float from a signed word
+FLOAT UnpackFloatFromWord(SWORD swPacked) {
+  return ((FLOAT) swPacked)/100;
+}
+
+ULONG PackFloat(UBYTE ubExponent,UBYTE ubMantissa,UBYTE ubBias,FLOAT fUnpacked) 
+{
+  ULONG ulSign,ulExponent,ulExponentMask,ulMantissa;
+  ULONG ulPacked;
+  ULONG* pulUnpacked = (ULONG*) &fUnpacked;
+
+  ulMantissa = *pulUnpacked &   0x007FFFFF;
+  ulExponent = ((*pulUnpacked & 0x7F800000) >> 23);
+
+  if (ulExponent < 127) {
+    ulMantissa = (ulMantissa | 0x00800000) >> (127-ulExponent);
+    ulExponent = 0;
+  } else {
+    ulExponentMask = (((ULONG)1) << ubExponent) - 1;
+    ulExponent     = (((ulExponent-127) & ulExponentMask) + ubBias) << ubMantissa; 
+  } 
+
+  ulSign      = (*pulUnpacked &  0x80000000) >> 31;
+  ulMantissa  = ulMantissa >> (23 - ubMantissa);
+
+  ulPacked   = (ulSign << (ubExponent + ubMantissa)) | ulExponent | ulMantissa;
+
+  return ulPacked;
+};
+
+
+FLOAT UnpackFloat(UBYTE ubExponent,UBYTE ubMantissa,UBYTE ubBias,ULONG ulPacked) 
+{
+  FLOAT fUnpacked = 0;
+  ULONG ulSign,ulExponent,ulExponentMask,ulMantissa,ulMantissaMask;
+  ULONG* pulUnpacked = (ULONG*) &fUnpacked;
+
+  ulExponentMask = (((ULONG)1) << ubExponent) - 1;
+  ulMantissaMask = (((ULONG)1) << ubMantissa) - 1;
+
+  ulMantissa = ulPacked & ulMantissaMask;
+  ulExponent = ((ulPacked >> ubMantissa) & ulExponentMask);
+  ulSign     = ulPacked >> (ubExponent + ubMantissa);
+
+  if (ulExponent == 0) {
+    if (ulMantissa == 0) {
+      *pulUnpacked = (ulSign << 31);
+      return fUnpacked;
+    }
+    SBYTE ubShift = ubMantissa - FastLog2(ulMantissa);
+    ulMantissa  = ulMantissa << ubShift;
+    ulExponent  = -ubShift;
+    ulMantissa &= ulMantissaMask;
+  } else {
+    ulExponent -= ubBias;
+  }
+
+  ulExponent = ((ulExponent + 127) << 23);
+  ulMantissa = ulMantissa << (23-ubMantissa);
+
+  *pulUnpacked = (ulSign << 31) | ulExponent | ulMantissa;
+
+  return fUnpacked;
+};
+
+ULONG PackVectorToULONG(FLOAT3D &vPosition) 
+{
+  ULONG ulX,ulY,ulZ;
+  ULONG ulPacked;
+
+  ulX = ((PackFloat(4,6,1,vPosition(1)) & 0x000007FF) << 21);
+  ulY = ((PackFloat(4,5,1,vPosition(2)) & 0x000003FF) << 11);
+  ulZ =  (PackFloat(4,6,1,vPosition(3)) & 0x000007FF);
+
+  ulPacked = ulX | ulY | ulZ;
+  
+  return ulPacked;
+};
+
+void UnpackVectorFromULONG(ULONG ulPacked,FLOAT3D &vPosition)
+{
+  ULONG ulX,ulY,ulZ;
+
+  ulX = (ulPacked >> 21) & 0x000007FF;
+  ulY = (ulPacked >> 11) & 0x000003FF;
+  ulZ = ulPacked & 0x000007FF;
+
+  vPosition(1) = UnpackFloat(4,6,1,ulX);
+  vPosition(2) = UnpackFloat(4,5,1,ulY);
+  vPosition(3) = UnpackFloat(4,6,1,ulZ);
+};
+
+ULONG PackFloatsToULONG(FLOAT f1,FLOAT f2,FLOAT f3) 
+{
+  FLOAT3D vVector;
+  vVector(1) = f1;
+  vVector(2) = f2;
+  vVector(3) = f3;
+  return PackVectorToULONG(vVector);
+}
+
+void UnpackFloatsFromULONG(ULONG ulPacked,FLOAT &f1,FLOAT &f2,FLOAT &f3)
+{
+  FLOAT3D vVector;
+  UnpackVectorFromULONG(ulPacked,vVector);
+  f1 = vVector(1);
+  f2 = vVector(2);
+  f3 = vVector(3);
+}
+
+// packs a 3D angle from vector to unsigned long (precision is 0.2 degrees)
+ULONG PackAngle(const ANGLE3D &aAngle3D) 
+{
+  ULONG ulPackedAngle;
+  SWORD swH,swP,swB;
+  ANGLE3D aNormalized3D;
+
+  // compress angle - pitch wrapped to between 0 and 180, heading and banking are 0 to 360
+  swH = (SWORD) ((NormalizeAngle(aAngle3D(1)) + 180)*5);
+  swP = (SWORD) ((NormalizeAngle(aAngle3D(2)) +  90)*5);
+  swB = (SWORD) ((NormalizeAngle(aAngle3D(3)) + 180)*5);
+
+  ulPackedAngle  = ((((ULONG) swH) & 0x000007FF) << 21);
+  ulPackedAngle |= ((((ULONG) swP) & 0x000003FF) << 11);
+  ulPackedAngle |= (((ULONG) swB) & 0x000007FF);
+
+  return ulPackedAngle;
+}
+
+// unpacks a 3D angle from unsigned long to vector
+void UnpackAngle(ULONG ulPackedAngle,ANGLE3D &aAngle3D) 
+{
+  SWORD swH,swP,swB;
+
+  // decompress orientaion
+  swB = (SWORD) ulPackedAngle & 0x000007FF;
+  swP = (SWORD) (ulPackedAngle >> 11) & 0x000003FF;
+  swH = (SWORD) (ulPackedAngle >> 21) & 0x000007FF;
+
+  // fill the destination - angles were wrapped while packing (0..360)
+  aAngle3D(1) = ((float)swH) / 5 - 180;
+  aAngle3D(2) = ((float)swP) / 5 -  90;
+  aAngle3D(3) = ((float)swB) / 5 - 180;
+
 }

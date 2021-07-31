@@ -3,7 +3,6 @@
 #include <Engine/Models/ModelObject.h>
 #include <Engine/Base/Translation.h>
 #include <Engine/Models/ModelData.h>
-#include <Engine/Models/ModelProfile.h>
 #include <Engine/Models/RenderModel.h>
 #include <Engine/Models/Model_internal.h>
 #include <Engine/Templates/StaticArray.cpp>
@@ -316,8 +315,6 @@ static void RenderOneSide( CRenderModel &rm, const INDEX iVisibility)
           PolyVertex2D &pvx2 = ptvdSrc[ivx+1].tvd_pv2;
           DrawTriangle_Mask( _pubMask, _slMaskWidth, _slMaskHeight, &pvx0, &pvx1, &pvx2, bTransparency);
         }}
-        _pfModelProfile.IncrementCounter(CModelProfile::PCI_MASK_TRIANGLES, mpPolygon.mp_PolygonVertices.Count()-2);
-        _pfModelProfile.IncrementCounter(CModelProfile::PCI_MASK_POLYGONS);
       } // if the polygon is not clipped
       else
       {
@@ -328,8 +325,6 @@ static void RenderOneSide( CRenderModel &rm, const INDEX iVisibility)
           PolyVertex2D &pvx2 = mpPolygon.mp_PolygonVertices[ivx+1].mpv_ptvTransformedVertex->tvd_pv2;
           DrawTriangle_Mask( _pubMask, _slMaskWidth, _slMaskHeight, &pvx0, &pvx1, &pvx2, bTransparency);
         }}
-        _pfModelProfile.IncrementCounter(CModelProfile::PCI_MASK_TRIANGLES, mpPolygon.mp_PolygonVertices.Count()-2);
-        _pfModelProfile.IncrementCounter(CModelProfile::PCI_MASK_POLYGONS);
       }
     }
   }
@@ -349,9 +344,6 @@ void CModelObject::RenderModel_Mask( CRenderModel &rm)
     return;
   }
 
-  _pfModelProfile.StartTimer( CModelProfile::PTI_MASK_INITMODELRENDERING);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_MASK_INITMODELRENDERING);
-
   // cache drawport width (for horizontal screen clipping purposes)
   pixWidth = _slMaskWidth;
 
@@ -369,7 +361,7 @@ void CModelObject::RenderModel_Mask( CRenderModel &rm)
   ULONG *pulCurrentMipmap = NULL;
   if( rm.rm_rtRenderType & RT_TEXTURE) {
     // reload texture
-    ptd->Force( TEX_STATIC);
+    ptd->Force(TEX_STATIC|TEX_CONSTANT);
     // get texture parameters for current frame and needed mip factor
     pulCurrentMipmap = ptd->td_pulFrames + (mo_toTexture.GetFrame()*ptd->td_slFrameSize)/BYTES_PER_TEXEL;
     iMipLevel        = ptd->td_iFirstMipLevel;
@@ -514,14 +506,7 @@ void CModelObject::RenderModel_Mask( CRenderModel &rm)
       }}
     }
   }
-  _pfModelProfile.StopTimer( CModelProfile::PTI_MASK_INITMODELRENDERING);
-
-  _pfModelProfile.StartTimer( CModelProfile::PTI_MASK_RENDERMODEL);
-  _pfModelProfile.IncrementTimerAveragingCounter( CModelProfile::PTI_MASK_RENDERMODEL);
-
   // render back side first and front side after that
   RenderOneSide( rm, VISIBLE_BACK);
   RenderOneSide( rm, VISIBLE_FRONT);
-
-  _pfModelProfile.StopTimer( CModelProfile::PTI_MASK_RENDERMODEL);
 }

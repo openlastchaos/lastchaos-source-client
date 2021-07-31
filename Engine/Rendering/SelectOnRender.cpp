@@ -6,6 +6,7 @@
 #include <Engine/Rendering/Render_internal.h>
 #include <Engine/Templates/Selection.cpp>
 #include <Engine/Models/ModelObject.h>
+#include <Engine/Ska/ModelInstance.h>
 
 static PIX _pixSizeI;
 static PIX _pixSizeJ;
@@ -245,6 +246,7 @@ void SelectEntityOnRender(CProjection3D &prProjection, CEntity &en)
   else if(en.en_RenderType==CEntity::RT_SKAMODEL || en.en_RenderType==CEntity::RT_SKAEDITORMODEL)
   {
     en.GetModelInstance()->GetCurrentColisionBox( bbox);
+    bbox.StretchByVector(en.GetModelInstance()->mi_vStretch);
     pmR = &en.en_mRotation;
     vOffset = en.GetPlacement().pl_PositionVector;
   }

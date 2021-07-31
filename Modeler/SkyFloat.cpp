@@ -31,8 +31,8 @@ BOOL FloatFromString(CWnd* pWnd, float& fNumber)
 
 BOOL FloatFromString(HWND hWnd, float &fNumber)
 {
-	char szWindowText[20];
-	::GetWindowTextA(hWnd, szWindowText, 19);
+	TCHAR szWindowText[20];
+	::GetWindowText(hWnd, szWindowText, 19);
   
   float fTmpNumber = fNumber;
   int iNumLen, iRetLen;

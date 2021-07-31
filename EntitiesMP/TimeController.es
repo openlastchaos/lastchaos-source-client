@@ -20,8 +20,8 @@ properties:
   9 FLOAT m_fNewTimeStretch=0.0f,
 
 components:
-  1 model   MODEL_TIME_CONTROLLER     "ModelsMP\\Editor\\TimeControler.mdl",
-  2 texture TEXTURE_TIME_CONTROLLER   "ModelsMP\\Editor\\TimeController.tex"
+  1 editor model   MODEL_TIME_CONTROLLER     "Data\\ModelsMP\\Editor\\TimeControler.mdl",
+  2 editor texture TEXTURE_TIME_CONTROLLER   "Data\\ModelsMP\\Editor\\TimeController.tex"
 
 functions:
 
@@ -35,10 +35,19 @@ procedures:
       autowait(_pTimer->TickQuantum);
       m_fMyTimer+=_pTimer->TickQuantum/_pNetwork->GetRealTimeFactor();
       FLOAT fNewStretch=Lerp(m_fOldTimeStretch, m_fNewTimeStretch, Clamp(m_fMyTimer/m_tmFadeIn, 0.0f, 1.0f));
-      _pNetwork->SetRealTimeFactor(fNewStretch);
+      
+      if (_pNetwork->ga_bDemoPlay) {
+        _pNetwork->ga_fDemoRealTimeFactor = fNewStretch;
+      } else {
+        _pNetwork->SetRealTimeFactor(fNewStretch);
+      }
     }
-    _pNetwork->SetRealTimeFactor(m_fNewTimeStretch);
-    return EReturn();
+    if (_pNetwork->ga_bDemoPlay) {
+      _pNetwork->ga_fDemoRealTimeFactor = m_fNewTimeStretch;
+    } else {
+      _pNetwork->SetRealTimeFactor(m_fNewTimeStretch);
+    }
+    return EReturn();  
   }
 
   ApplyTimeStretch(EVoid)

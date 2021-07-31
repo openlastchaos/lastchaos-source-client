@@ -109,11 +109,8 @@
 #define CT_rBSHIFT 16
 #define CT_rASHIFT 24
 
-// global factors for saturation and stuff
-extern SLONG _slTexSaturation;
-extern SLONG _slTexHueShift;
-extern SLONG _slShdSaturation; 
-extern SLONG _slShdHueShift;
+// this should be used only when GfxLib is inaccessable
+extern INDEX _iGfxAPI;  // 0=OGL, 1=D3D
 
 
 // COLOR FORMAT CONVERSION ROUTINES
@@ -175,6 +172,13 @@ ENGINE_API extern COLOR AdjustGamma( COLOR const col, FLOAT const fGamma);
 // color lerping functions
 ENGINE_API extern COLOR LerpColor( COLOR col0, COLOR col1, FLOAT fRatio);
 ENGINE_API extern void  LerpColor( COLOR col0, COLOR col1, FLOAT fRatio, UBYTE &ubR, UBYTE &ubG, UBYTE &ubB);
+
+//안태훈 수정 시작	//(Add & Modify SSSE Effect)(0.1)
+inline COLOR LerpColorInline( COLOR col0, COLOR col1, FLOAT fRatio )
+{
+	return LerpColor(col0, col1, fRatio);
+}
+//안태훈 수정 끝	//(Add & Modify SSSE Effect)(0.1)
 
 // some fast color manipulation functions
 ENGINE_API extern COLOR MulColors( COLOR col1, COLOR col2); // fast color multiply function - RES = 1ST * 2ND /255
@@ -259,42 +263,39 @@ __forceinline ULONG abgr2argb( ULONG ul)
 }
 
 
+// returns color in current API format
+__forceinline ULONG ColorAPI( COLOR col)
+{
+#if (defined USE_PORTABLE_C)
+	// this could be simplified, this is just a safe conversion from asm code
+       if( _iGfxAPI==0) return ByteSwap(col);
+  else if( _iGfxAPI==1) return rgba2argb(col);
+  else return col;
+
+#elif (defined _MSC_VER)
+  ULONG ulRet;
+  __asm { 
+    mov   eax,dword ptr [col]
+    mov   edx,eax
+    bswap eax
+    ror   edx,8
+    cmp   dword ptr [_iGfxAPI],1
+    cmove eax,edx  // faster without jumps
+    mov   dword ptr [ulRet],eax
+  }
+  return ulRet;
+
+#else
+  #error please define for your platform.
+#endif
+}
+
+
 // multiple conversion from OpenGL color to DirectX color
 extern void abgr2argb( ULONG *pulSrc, ULONG *pulDst, INDEX ct);
 
-
-// fast memory copy of ULONGs
-inline void CopyLongs( ULONG *pulSrc, ULONG *pulDst, INDEX ctLongs)
-{
-#if (defined _MSC_VER)
-  __asm {
-    cld
-    mov   esi,dword ptr [pulSrc]
-    mov   edi,dword ptr [pulDst]
-    mov   ecx,dword ptr [ctLongs]
-    rep   movsd
-  }
-#else
-  memcpy( pulDst, pulSrc, ctLongs*4);
-#endif
-}
-
-
-// fast memory set of ULONGs
-inline void StoreLongs( ULONG ulVal, ULONG *pulDst, INDEX ctLongs)
-{
-#if (defined _MSC_VER)
-  __asm {
-    cld
-    mov   eax,dword ptr [ulVal]
-    mov   edi,dword ptr [pulDst]
-    mov   ecx,dword ptr [ctLongs]
-    rep   stosd
-  }
-#else
-  for( INDEX i=0; i<ctLongs; i++) pulDst[i] = ulVal;
-#endif
-}
+// multiple conversion from Croteam color to current API format
+extern void ColorAPI( COLOR *pcolSrc, ULONG *pulDst, INDEX ct);
 
 
 #endif  /* include-once check. */

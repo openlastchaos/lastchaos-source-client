@@ -19,13 +19,13 @@ properties:
   7 FLOAT m_fRotateSpeed    "Rotate speed" 'B' = -1.0f,       // rotate speed
 
  // for browsing animations on marker for base environment model
- 20 CTFileName m_fnMdl           "Model" 'M' = CTFILENAME("Models\\Editor\\Axis.mdl"),
+ 20 CTFileName m_fnMdl           "Model" 'M' = CTFILENAME("Data\\Models\\Editor\\Axis.mdl"),
  21 ANIMATION m_iAnim            "Animation" 'A' =0,
  22 CModelObject m_moAnimData,
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\EnvironmentMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\EnvironmentMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\EnvironmentMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\EnvironmentMarker.tex"
 
 functions:
   /* Check if entity is moved on a route set up by its targets. */
@@ -59,7 +59,7 @@ functions:
     // if failed
     } catch(char *strError) {
       strError;
-      DECLARE_CTFILENAME(fnmDefault, "Models\\Editor\\Axis.mdl");
+      DECLARE_CTFILENAME(fnmDefault, "Data\\Models\\Editor\\Axis.mdl");
       // try to
       try {
         // load the default model data

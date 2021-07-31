@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <conio.h>
-#include <string.h>
+#include <string>
 #include <stddef.h>
 #include <time.h>
 #include <math.h>
@@ -16,9 +16,13 @@
 
 #include <crtdbg.h>
 
-#include <winsock2.h>
-#include <windows.h>
-#include <mmsystem.h> // for timers
+#include <Engine/Xbox/XKeyboard.h>
+
+  #include <winsock2.h>
+  #include <windows.h>
+  #include <mmsystem.h> // for timers
 
 #include <Engine/Base/Types.h>
 #include <Engine/Base/Assert.h>
+
+#pragma warning(disable : 4786)

@@ -4,9 +4,11 @@
 #include "EntitiesMP/Effector.h"
 #include "EntitiesMP/MovingBrush.h"
 %}
-uses "EntitiesMP/Devil";
 uses "EntitiesMP/Debris";
 uses "EntitiesMP\GradientMarker";
+
+event EArchitectureDeath {
+};
 
 %{
 struct DebrisInfo {
@@ -67,45 +69,59 @@ properties:
 components:
 
 // ************** DEBRIS PARTS **************
- 10 texture   TEXTURE_OBELISK        "Models\\CutSequences\\Obelisk\\Obelisk.tex",
- 11 model     MODEL_OBELISK01        "Models\\CutSequences\\Obelisk\\Part01.mdl",
- 12 model     MODEL_OBELISK02        "Models\\CutSequences\\Obelisk\\Part02.mdl",
- 13 model     MODEL_OBELISK03        "Models\\CutSequences\\Obelisk\\Part03.mdl",
- 14 model     MODEL_OBELISK04        "Models\\CutSequences\\Obelisk\\Part04.mdl",
- 15 model     MODEL_OBELISK05        "Models\\CutSequences\\Obelisk\\Part05.mdl",
- 16 model     MODEL_OBELISK06        "Models\\CutSequences\\Obelisk\\Part06.mdl",
- 17 model     MODEL_OBELISK07        "Models\\CutSequences\\Obelisk\\Part07.mdl",
- 18 model     MODEL_OBELISK08        "Models\\CutSequences\\Obelisk\\Part08.mdl",
- 19 model     MODEL_OBELISK09        "Models\\CutSequences\\Obelisk\\Part09.mdl",
+ 10 texture   TEXTURE_OBELISK        "Data\\Models\\CutSequences\\Obelisk\\Obelisk.tex",
+ 11 model     MODEL_OBELISK01        "Data\\Models\\CutSequences\\Obelisk\\Part01.mdl",
+ 12 model     MODEL_OBELISK02        "Data\\Models\\CutSequences\\Obelisk\\Part02.mdl",
+ 13 model     MODEL_OBELISK03        "Data\\Models\\CutSequences\\Obelisk\\Part03.mdl",
+ 14 model     MODEL_OBELISK04        "Data\\Models\\CutSequences\\Obelisk\\Part04.mdl",
+ 15 model     MODEL_OBELISK05        "Data\\Models\\CutSequences\\Obelisk\\Part05.mdl",
+ 16 model     MODEL_OBELISK06        "Data\\Models\\CutSequences\\Obelisk\\Part06.mdl",
+ 17 model     MODEL_OBELISK07        "Data\\Models\\CutSequences\\Obelisk\\Part07.mdl",
+ 18 model     MODEL_OBELISK08        "Data\\Models\\CutSequences\\Obelisk\\Part08.mdl",
+ 19 model     MODEL_OBELISK09        "Data\\Models\\CutSequences\\Obelisk\\Part09.mdl",
  
- 20 texture   TEXTURE_PYLON          "Models\\CutSequences\\Pylon\\Pylon.tex",
- 21 model     MODEL_PYLON01          "Models\\CutSequences\\Pylon\\Part01.mdl",
- 22 model     MODEL_PYLON02          "Models\\CutSequences\\Pylon\\Part02.mdl",
- 23 model     MODEL_PYLON03          "Models\\CutSequences\\Pylon\\Part03.mdl",
- 24 model     MODEL_PYLON04          "Models\\CutSequences\\Pylon\\Part04.mdl",
- 25 model     MODEL_PYLON05          "Models\\CutSequences\\Pylon\\Part05.mdl",
- 26 model     MODEL_PYLON06          "Models\\CutSequences\\Pylon\\Part06.mdl",
- 27 model     MODEL_PYLON07          "Models\\CutSequences\\Pylon\\Part07.mdl",
- 28 model     MODEL_PYLON08          "Models\\CutSequences\\Pylon\\Part08.mdl",
- 29 model     MODEL_PYLON09          "Models\\CutSequences\\Pylon\\Part09.mdl",
+ 20 texture   TEXTURE_PYLON          "Data\\Models\\CutSequences\\Pylon\\Pylon.tex",
+ 21 model     MODEL_PYLON01          "Data\\Models\\CutSequences\\Pylon\\Part01.mdl",
+ 22 model     MODEL_PYLON02          "Data\\Models\\CutSequences\\Pylon\\Part02.mdl",
+ 23 model     MODEL_PYLON03          "Data\\Models\\CutSequences\\Pylon\\Part03.mdl",
+ 24 model     MODEL_PYLON04          "Data\\Models\\CutSequences\\Pylon\\Part04.mdl",
+ 25 model     MODEL_PYLON05          "Data\\Models\\CutSequences\\Pylon\\Part05.mdl",
+ 26 model     MODEL_PYLON06          "Data\\Models\\CutSequences\\Pylon\\Part06.mdl",
+ 27 model     MODEL_PYLON07          "Data\\Models\\CutSequences\\Pylon\\Part07.mdl",
+ 28 model     MODEL_PYLON08          "Data\\Models\\CutSequences\\Pylon\\Part08.mdl",
+ 29 model     MODEL_PYLON09          "Data\\Models\\CutSequences\\Pylon\\Part09.mdl",
  
 // ************** NEEDED CLASSES **************
  30 class     CLASS_DEBRIS       "Classes\\Debris.ecl",
  31 class     CLASS_EFFECTOR     "Classes\\Effector.ecl",
 
 // ************** STONE PARTS **************
- 32 model     MODEL_STONE        "Models\\Effects\\Debris\\Stone\\Stone.mdl",
- 33 texture   TEXTURE_STONE      "Models\\Effects\\Debris\\Stone\\Stone.tex",
+ 32 model     MODEL_STONE        "Data\\Models\\Effects\\Debris\\Stone\\Stone.mdl",
+ 33 texture   TEXTURE_STONE      "Data\\Models\\Effects\\Debris\\Stone\\Stone.tex",
 
 
 functions:
+ /* Handle an event, return false if the event is not handled. */
+  BOOL HandleEvent(const CEntityEvent &ee)
+  { 
+    if (ee.ee_slEvent==EVENTCODE_EArchitectureDeath) {
+      if (!CMovableBrushEntity::HandleEvent(ee)) {
+        CPrintF(" Warning: architecture death event not handled!\n");
+        SetFlags( GetFlags()|ENF_HIDDEN);
+        SetCollisionFlags(ECF_IMMATERIAL);    
+      }
+      return FALSE;
+    }
+    return CMovableBrushEntity::HandleEvent(ee);
+  }
 
   void Precache(void)
   {
-    PrecacheClass     (CLASS_DEBRIS     , ET_DISAPPEAR_MODEL);
-    PrecacheClass     (CLASS_EFFECTOR   , ET_DISAPPEAR_MODEL);
-    PrecacheModel     (MODEL_STONE      );
-    PrecacheTexture   (TEXTURE_STONE    );
+    PrecacheClass     (CLASS_DEBRIS           );
+    PrecacheClass     (CLASS_EFFECTOR, ET_DESTROY_OBELISK);
+    PrecacheClass     (CLASS_EFFECTOR, ET_DESTROY_PYLON  );
+    PrecacheModel     (MODEL_STONE            );
+    PrecacheTexture   (TEXTURE_STONE          );
     // precache acording to destroying architecture
     switch( m_etType)
     {
@@ -147,7 +163,7 @@ functions:
     // if gradient marker
     if( slPropertyOffset==offsetof(CDestroyableArchitecture, m_penGradient) )
     {
-      return (IsDerivedFromClass(penTarget, "Gradient Marker"));
+      return( IsDerivedFromClass( penTarget, &CGradientMarker_DLLClass));
     }
     return CEntity::IsTargetValid(slPropertyOffset, penTarget);
   }
@@ -212,8 +228,9 @@ functions:
     {
       // react only on explosions
       if( (dmtType == DMT_EXPLOSION) ||
-          (dmtType == DMT_PROJECTILE) ||
-          (dmtType == DMT_CANNONBALL) )
+          (dmtType == DMT_PROJECTILE) 
+		  //||(dmtType == DMT_CANNONBALL) 
+		  )
       {
         CMovableBrushEntity::ReceiveDamage(penInflictor, dmtType, fDamageAmmount, vHitPoint, vDirection);
       }
@@ -228,7 +245,7 @@ functions:
       FLOAT3D vOffset = FLOAT3D( di.vOffset[0], di.vOffset[1], di.vOffset[2])*m_fStretch;
       FLOAT3D vPos = GetPlacement().pl_PositionVector+vOffset;
       CEntityPointer penDebris = GetWorld()->CreateEntity_t(
-        CPlacement3D(vPos, ANGLE3D(0,0,0)), CTFILENAME("Classes\\Debris.ecl"));
+        CPlacement3D(vPos, ANGLE3D(0,0,0)), CTFILENAME("Classes\\Debris.ecl"),WLD_AUTO_ENTITY_ID,FALSE);
       // prepare parameters
       ESpawnDebris eSpawn;
       eSpawn.fDustStretch=m_fDustStretch;
@@ -248,7 +265,7 @@ functions:
       eSpawn.vStretch = FLOAT3D(1,1,1);
       eSpawn.penFallFXPapa=NULL;
       // initialize it
-      penDebris->Initialize(eSpawn);
+      penDebris->Initialize(eSpawn,FALSE);
 
       // speed it up
       FLOAT fHeightRatio = di.vOffset[1]*m_fStretch/120.0f;
@@ -278,13 +295,13 @@ functions:
     SetCollisionFlags(ECF_IMMATERIAL);
     
     // spawn spray spray
-    CEntity *penEffector = CreateEntity( plObelisk, CLASS_EFFECTOR);
+    CEntity *penEffector = CreateEntity( plObelisk, CLASS_EFFECTOR,WLD_AUTO_ENTITY_ID,FALSE);
     // set spawn parameters
     ESpawnEffector eSpawnEffector;
     eSpawnEffector.tmLifeTime = 6.0f;
     eSpawnEffector.eetType = ET_DESTROY_OBELISK;
     // initialize spray
-    penEffector->Initialize( eSpawnEffector);
+    penEffector->Initialize( eSpawnEffector,FALSE);
   }
 
   void DestroyPylon()
@@ -295,7 +312,7 @@ functions:
       FLOAT3D vOffset = FLOAT3D( di.vOffset[0], di.vOffset[1], di.vOffset[2])*m_fStretch;
       FLOAT3D vPos = GetPlacement().pl_PositionVector+vOffset;
       CEntityPointer penDebris = GetWorld()->CreateEntity_t(
-        CPlacement3D(vPos, ANGLE3D(0,0,0)), CTFILENAME("Classes\\Debris.ecl"));
+        CPlacement3D(vPos, ANGLE3D(0,0,0)), CTFILENAME("Classes\\Debris.ecl"),WLD_AUTO_ENTITY_ID,FALSE);
       // prepare parameters
       ESpawnDebris eSpawn;
       eSpawn.fDustStretch=m_fDustStretch;
@@ -315,7 +332,7 @@ functions:
       eSpawn.vStretch = FLOAT3D(1,1,1);
       eSpawn.penFallFXPapa=NULL;
       // initialize it
-      penDebris->Initialize(eSpawn);
+      penDebris->Initialize(eSpawn,FALSE);
 
       // speed it up
       FLOAT fHeightRatio = di.vOffset[1]*m_fStretch/120.0f;
@@ -332,14 +349,14 @@ functions:
     m_fHealth = -1;
     CPlacement3D plObelisk = GetPlacement();
     // spawn spray spray
-    CEntity *penEffector = CreateEntity( plObelisk, CLASS_EFFECTOR);
+    CEntity *penEffector = CreateEntity( plObelisk, CLASS_EFFECTOR,WLD_AUTO_ENTITY_ID,FALSE);
     // set spawn parameters
     ESpawnEffector eSpawnEffector;
     eSpawnEffector.eetType = ET_DESTROY_PYLON;
     eSpawnEffector.tmLifeTime = 6.0f;
     eSpawnEffector.vDamageDir = m_vDamageDir;
     // initialize spray
-    penEffector->Initialize( eSpawnEffector);
+    penEffector->Initialize( eSpawnEffector,FALSE);
 
     ForceFullStop();
     SetDefaultProperties();
@@ -380,21 +397,14 @@ procedures:
       on (EBegin) : {
         resume;
       }
-      on (EBrushDestroyedByDevil ebdbd) :
-      {
-        m_vDamageDir = ebdbd.vDamageDir;
-        switch( m_etType)
-        {
-        case ET_DESTROY_OBELISK:
-          DestroyObelisk();
-          break;
-        case ET_DESTROY_PYLON:
-          DestroyPylon();
-          break;
+      on (EDeath) : {
+        if (_pNetwork->IsServer()) {
+          EArchitectureDeath ead;
+          SendEvent(ead,TRUE);
         }
-        stop;
+        resume;
       }
-      on (EDeath eDeath) : {
+      on (EArchitectureDeath) : {
         // get your size
         FLOATaabbox3D box;
         GetSize(box);

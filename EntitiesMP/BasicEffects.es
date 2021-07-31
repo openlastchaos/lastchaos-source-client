@@ -14,6 +14,8 @@
 #define SHOCKWAVE_TEXTURE_ANIM_FAST 0
 #define SHOCKWAVE_TEXTURE_ANIM_MEDIUM 1
 #define SHOCKWAVE_TEXTURE_ANIM_SLOW 2
+
+extern INDEX gam_iBlood;
 %}
 
 uses "EntitiesMP/Light";
@@ -38,8 +40,8 @@ enum BasicEffectType {
  17 BET_TELEPORT             "Teleport",     // teleportation
  18 BET_BOMB                 "Bomb",     // small bomb explosion
  20 BET_BULLETTRAIL          "Bullet trail",     // white trail where bullet has passed
- 21 BET_GIZMO_SPLASH_FX      "Gizmo splash fx",     // gizmo splash fx
- 22 BET_GIZMOSTAIN           "Gizmo stain",     // gizmo stain
+// 21 BET_GIZMO_SPLASH_FX      "Gizmo splash fx",     // gizmo splash fx
+// 22 BET_GIZMOSTAIN           "Gizmo stain",     // gizmo stain
  30 BET_BULLETSTAINSTONE     "Bullet stain stone",     // bullet stain with ricochet on stone
  31 BET_BULLETSTAINSAND      "Bullet stain sand",     // bullet stain with ricochet on sand
  32 BET_BULLETSTAINWATER     "Bullet stain water",     // bullet stain with ricochet on water surface
@@ -58,7 +60,7 @@ enum BasicEffectType {
  45 BET_BULLETSTAINWOODNOSOUND  "Bullet stain wood no sound",     // bullet stain on wood with no sound
  46 BET_EXPLOSION_DEBRIS        "Explosion debris",     // debrises flying out of explosion
  47 BET_EXPLOSION_SMOKE         "Explosion smoke",     // smoke left behind explosion
- 48 BET_SUMMONERSTAREXPLOSION   "Summoner star explosion",     // magic explosion of starts for summoner
+// 48 BET_SUMMONERSTAREXPLOSION   "Summoner star explosion",     // magic explosion of starts for summoner
  49 BET_COLLECT_ENERGY          "Collect energy",
  50 BET_GROWING_SWIRL           "Growing swirl",
 // 51 BET_SNIPER_RESIDUE          "Sniper Residue",		// smoke left after firing sniper
@@ -170,11 +172,13 @@ void CBasicEffect_OnPrecache(CDLLEntityClass *pdec, INDEX iUser)
     pdec->PrecacheModel(MODEL_BULLET_TRAIL);
     pdec->PrecacheTexture(TEXTURE_BULLET_TRAIL);
     break;
+	/*
   case BET_GIZMO_SPLASH_FX:
     pdec->PrecacheModel(MODEL_BULLET_HIT);
     pdec->PrecacheTexture(TEXTURE_BULLET_HIT);
     pdec->PrecacheSound(SOUND_GIZMO_SPLASH);
     break;
+	*/
   case BET_BLOODEXPLODE:
     pdec->PrecacheModel(MODEL_BLOOD_EXPLODE);
     pdec->PrecacheTexture(TEXTURE_BLOOD_EXPLODE);
@@ -183,7 +187,7 @@ void CBasicEffect_OnPrecache(CDLLEntityClass *pdec, INDEX iUser)
   case BET_BLOODSTAIN:
   case BET_BLOODSTAINGROW:
   case BET_BLOODSPILL:
-  case BET_GIZMOSTAIN:
+  //case BET_GIZMOSTAIN:
     pdec->PrecacheModel(MODEL_BLOOD_STAIN);
     pdec->PrecacheTexture(TEXTURE_BLOOD_STAIN1);
     pdec->PrecacheTexture(TEXTURE_BLOOD_STAIN2);
@@ -210,22 +214,22 @@ void CBasicEffect_OnPrecache(CDLLEntityClass *pdec, INDEX iUser)
 class CBasicEffect : CRationalEntity {
 name      "BasicEffect";
 thumbnail "";
-features "ImplementsOnPrecache", "CanBePredictable";
+features "ImplementsOnPrecache", "CanBePredictable","NotSentOverNet";
 
 properties:
-  1 enum BasicEffectType m_betType = BET_NONE, // type of effect
-  2 FLOAT m_fWaitTime = 0.0f,       // wait time
-  3 FLOAT m_fFadeTime = 0.0f,       // fade away time
-  4 BOOL  m_bFade = FALSE,          // fade is enabled
-  5 FLOAT m_fFadeStartTime  = 0.0f,        // fade away start time
-  9 FLOAT m_fFadeStartAlpha = 1.0f,        // alpha value 
-  6 FLOAT3D m_vNormal    = FLOAT3D(0,0,0), // normal for orientative effects
-  7 FLOAT3D m_vStretch   = FLOAT3D(0,0,0), // stretch effect
-  8 FLOAT3D m_vDirection = FLOAT3D(0,0,0), // direction oriented effects
-  10 FLOAT m_fDepthSortOffset = 0.0f,
-  11 FLOAT m_fFadeInSpeed = 0.0f,
-  12 FLOAT m_tmSpawn = 0.0f,  // when it was spawned
-  13 FLOAT m_tmWaitAfterDeath = 0.0f,       // after death wait time
+ 1 enum BasicEffectType m_betType = BET_NONE  features(EPROPF_NETSEND), // type of effect
+ 2 FLOAT m_fWaitTime = 0.0f,       // wait time
+ 3 FLOAT m_fFadeTime = 0.0f,       // fade away time
+ 4 BOOL  m_bFade = FALSE,          // fade is enabled
+ 5 FLOAT m_fFadeStartTime  = 0.0f,        // fade away start time
+ 9 FLOAT m_fFadeStartAlpha = 1.0f,        // alpha value 
+ 6 FLOAT3D m_vNormal    = FLOAT3D(0,0,0)  features(EPROPF_NETSEND), // normal for orientative effects
+ 7 FLOAT3D m_vStretch   = FLOAT3D(0,0,0)  features(EPROPF_NETSEND), // stretch effect
+ 8 FLOAT3D m_vDirection = FLOAT3D(0,0,0)  features(EPROPF_NETSEND), // direction oriented effects
+ 10 FLOAT m_fDepthSortOffset = 0.0f,
+ 11 FLOAT m_fFadeInSpeed = 0.0f,
+ 12 FLOAT m_tmSpawn = 0.0f,  // when it was spawned
+ 13 FLOAT m_tmWaitAfterDeath = 0.0f,       // after death wait time
 
  20 BOOL m_bLightSource = FALSE,    // effect is also light source
  21 CAnimObject m_aoLightAnimation, // light animation object
@@ -246,94 +250,98 @@ properties:
 components:
 
 // ********** PROJECTILE EXPLOSIONS **********
-  1 model   MDL_ROCKET_EXPLOSION      "Models\\Effects\\ExplosionRocket\\ExplosionRocket.mdl",
-  2 model   MDL_ROCKET3D_EXPLOSION    "Models\\Effects\\ExplosionRocket\\ExplosionRocket3D.mdl",
-  3 texture TXT_ROCKET_EXPLOSION      "Models\\Effects\\Explosionrocket\\Texture.tex",
-  4 model   MDL_GRENADE_EXPLOSION     "Models\\Effects\\ExplosionGrenade\\ExplosionGrenade.mdl",
-  5 model   MDL_GRENADE3D_EXPLOSION   "Models\\Effects\\ExplosionGrenade\\ExplosionGrenade3D.mdl",
-  6 texture TXT_GRENADE_EXPLOSION     "Models\\Effects\\ExplosionGrenade\\Texture.tex",
-  7 model   MDL_PARTICLES_EXPLOSION   "Models\\Effects\\ExplosionParticles\\Particles.mdl",
-  8 model   MDL_PARTICLES3D_EXPLOSION "Models\\Effects\\ExplosionParticles\\Particles3D.mdl",
-  9 texture TXT_PARTICLES_EXPLOSION   "Models\\Effects\\ExplosionParticles\\Texture.tex",
- 10 sound   SOUND_EXPLOSION           "Sounds\\Weapons\\_Explosion02.wav",
- 11 model   MDL_CANNON_EXPLOSION     "Models\\Effects\\ExplosionGrenade\\ExplosionGrenade.mdl",
- 12 model   MDL_CANNON3D_EXPLOSION   "Models\\Effects\\ExplosionGrenade\\ExplosionGrenade3D.mdl",
- 13 texture TXT_CANNON_EXPLOSION     "Models\\Effects\\ExplosionGrenade\\Texture.tex",
+  1 model   MDL_ROCKET_EXPLOSION      "Data\\Models\\Effects\\ExplosionRocket\\ExplosionRocket.mdl",
+  2 model   MDL_ROCKET3D_EXPLOSION    "Data\\Models\\Effects\\ExplosionRocket\\ExplosionRocket3D.mdl",
+  3 texture TXT_ROCKET_EXPLOSION      "Data\\Models\\Effects\\Explosionrocket\\Texture.tex",
+  4 model   MDL_GRENADE_EXPLOSION     "Data\\Models\\Effects\\ExplosionGrenade\\ExplosionGrenade.mdl",
+  5 model   MDL_GRENADE3D_EXPLOSION   "Data\\Models\\Effects\\ExplosionGrenade\\ExplosionGrenade3D.mdl",
+  6 texture TXT_GRENADE_EXPLOSION     "Data\\Models\\Effects\\ExplosionGrenade\\Texture.tex",
+  7 model   MDL_PARTICLES_EXPLOSION   "Data\\Models\\Effects\\ExplosionParticles\\Particles.mdl",
+  8 model   MDL_PARTICLES3D_EXPLOSION "Data\\Models\\Effects\\ExplosionParticles\\Particles3D.mdl",
+  9 texture TXT_PARTICLES_EXPLOSION   "Data\\Models\\Effects\\ExplosionParticles\\Texture.tex",
+ 10 sound   SOUND_EXPLOSION           "data\\sounds\\Default.wav",
+ 11 model   MDL_CANNON_EXPLOSION     "Data\\Models\\Effects\\ExplosionGrenade\\ExplosionGrenade.mdl",
+ 12 model   MDL_CANNON3D_EXPLOSION   "Data\\Models\\Effects\\ExplosionGrenade\\ExplosionGrenade3D.mdl",
+ 13 texture TXT_CANNON_EXPLOSION     "Data\\Models\\Effects\\ExplosionGrenade\\Texture.tex",
 
 // ********** BULLET HIT **********
- 15 model   MODEL_BULLET_HIT      "Models\\Effects\\BulletParticles\\BulletParticles.mdl",
- 16 texture TEXTURE_BULLET_HIT    "Models\\Effects\\BulletParticles\\BulletParticles.tex",
- 18 model   MODEL_BULLET_STAIN    "Models\\Effects\\BulletOnTheWall\\Bullet.mdl",
- 19 texture TEXTURE_BULLET_STAIN  "Models\\Effects\\BulletOnTheWall\\Bullet.tex",
- 70 texture TEXTURE_BULLET_TRAIL  "Models\\Effects\\BulletTrail\\BulletTrail.tex",
- 71 model   MODEL_BULLET_TRAIL    "Models\\Effects\\BulletTrail\\BulletTrail.mdl",
+ 15 model   MODEL_BULLET_HIT      "Data\\Models\\Effects\\BulletParticles\\BulletParticles.mdl",
+ 16 texture TEXTURE_BULLET_HIT    "Data\\Models\\Effects\\BulletParticles\\BulletParticles.tex",
+ 18 model   MODEL_BULLET_STAIN    "Data\\Models\\Effects\\BulletOnTheWall\\Bullet.mdl",
+ 19 texture TEXTURE_BULLET_STAIN  "Data\\Models\\Effects\\BulletOnTheWall\\Bullet.tex",
+ 70 texture TEXTURE_BULLET_TRAIL  "Data\\Models\\Effects\\BulletTrail\\BulletTrail.tex",
+ 71 model   MODEL_BULLET_TRAIL    "Data\\Models\\Effects\\BulletTrail\\BulletTrail.mdl",
 
- 90 sound   SOUND_BULLET_STONE    "Sounds\\Weapons\\_BulletHitWall.wav",
- 91 sound   SOUND_BULLET_SAND     "Sounds\\Weapons\\BulletHitSand.wav",
- 92 sound   SOUND_BULLET_WATER    "Sounds\\Weapons\\BulletHitWater.wav",
- 93 sound   SOUND_BULLET_FLESH    "Sounds\\Weapons\\_BulletHitFlesh.wav",
- 94 texture TEXTURE_BULLET_SAND   "Models\\Effects\\BulletOnTheWall\\BulletSand.tex",
- 95 sound   SOUND_BULLET_GRASS    "SoundsMP\\Weapons\\BulletHitGrass.wav",
- 96 sound   SOUND_BULLET_WOOD     "SoundsMP\\Weapons\\BulletHitWood.wav",
- 97 sound   SOUND_BULLET_SNOW     "SoundsMP\\Weapons\\BulletHitSnow.wav",
+ 90 sound   SOUND_BULLET_STONE    "data\\sounds\\Default.wav",
+ 91 sound   SOUND_BULLET_SAND     "data\\sounds\\Default.wav",
+ 92 sound   SOUND_BULLET_WATER    "data\\sounds\\Default.wav",
+ 93 sound   SOUND_BULLET_FLESH    "data\\sounds\\Default.wav",
+ 94 texture TEXTURE_BULLET_SAND   "Data\\Models\\Effects\\BulletOnTheWall\\BulletSand.tex",
+ 95 sound   SOUND_BULLET_GRASS    "data\\sounds\\Default.wav",
+ 96 sound   SOUND_BULLET_WOOD     "data\\sounds\\Default.wav",
+ 97 sound   SOUND_BULLET_SNOW     "data\\sounds\\Default.wav",
 
 // ********** BLOOD **********
- 21 model   MODEL_BLOOD_EXPLODE   "Models\\Effects\\BloodCloud\\BloodCloud.mdl",
- 22 texture TEXTURE_BLOOD_EXPLODE "Models\\Effects\\BloodCloud\\BloodCloud.tex",
- 23 model   MODEL_BLOOD_STAIN     "Models\\Effects\\BloodOnTheWall01\\Blood.mdl",
- 24 texture TEXTURE_BLOOD_STAIN1  "Models\\Effects\\BloodOnTheWall01\\BloodStain01.tex",
- 25 texture TEXTURE_BLOOD_STAIN2  "Models\\Effects\\BloodOnTheWall01\\BloodStain02.tex",
- 26 texture TEXTURE_BLOOD_STAIN3  "Models\\Effects\\BloodOnTheWall01\\BloodStain03.tex",
- 27 texture TEXTURE_BLOOD_STAIN4  "Models\\Effects\\BloodOnTheWall01\\BloodStain04.tex",
- 28 texture TEXTURE_BLOOD_SPILL1  "Models\\Effects\\BloodOnTheWall01\\BloodSpill02.tex",
- 29 texture TEXTURE_BLOOD_SPILL2  "Models\\Effects\\BloodOnTheWall01\\BloodSpill05.tex",
- 30 texture TEXTURE_BLOOD_SPILL3  "Models\\Effects\\BloodOnTheWall01\\BloodSpill06.tex",
- 31 texture TEXTURE_BLOOD_FLOWER1 "Models\\Effects\\Flowers\\Flowers1s.tex",
- 32 texture TEXTURE_BLOOD_FLOWER2 "Models\\Effects\\Flowers\\Flowers2s.tex",
- 33 texture TEXTURE_BLOOD_FLOWER3 "Models\\Effects\\Flowers\\Flowers3s.tex",
+ 21 model   MODEL_BLOOD_EXPLODE   "Data\\Models\\Effects\\BloodCloud\\BloodCloud.mdl",
+ 22 texture TEXTURE_BLOOD_EXPLODE "Data\\Models\\Effects\\BloodCloud\\BloodCloud.tex",
+ 23 model   MODEL_BLOOD_STAIN     "Data\\Models\\Effects\\BloodOnTheWall01\\Blood.mdl",
+ 24 texture TEXTURE_BLOOD_STAIN1  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodStain01.tex",
+ 25 texture TEXTURE_BLOOD_STAIN2  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodStain02.tex",
+ 26 texture TEXTURE_BLOOD_STAIN3  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodStain03.tex",
+ 27 texture TEXTURE_BLOOD_STAIN4  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodStain04.tex",
+ 28 texture TEXTURE_BLOOD_SPILL1  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodSpill02.tex",
+ 29 texture TEXTURE_BLOOD_SPILL2  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodSpill05.tex",
+ 30 texture TEXTURE_BLOOD_SPILL3  "Data\\Models\\Effects\\BloodOnTheWall01\\BloodSpill06.tex",
+ 31 texture TEXTURE_BLOOD_FLOWER1 "Data\\Models\\Effects\\Flowers\\Flowers1s.tex",
+ 32 texture TEXTURE_BLOOD_FLOWER2 "Data\\Models\\Effects\\Flowers\\Flowers2s.tex",
+ 33 texture TEXTURE_BLOOD_FLOWER3 "Data\\Models\\Effects\\Flowers\\Flowers3s.tex",
  
 // ********** SHOCK WAVE **********
- 40 model   MODEL_SHOCKWAVE       "Models\\Effects\\ShockWave01\\ShockWave.mdl",
- 41 texture TEXTURE_SHOCKWAVE     "Models\\Effects\\ShockWave01\\Textures\\ShockWave.tex",
+ 40 model   MODEL_SHOCKWAVE       "Data\\Models\\Effects\\ShockWave01\\ShockWave.mdl",
+ 41 texture TEXTURE_SHOCKWAVE     "Data\\Models\\Effects\\ShockWave01\\Textures\\ShockWave.tex",
  
- 42 model   MODEL_CANNONSHOCKWAVE   "Models\\Effects\\ShockWave01\\ShockWave.mdl",
- 43 texture TEXTURE_CANNONSHOCKWAVE "Models\\Effects\\ShockWave01\\Textures\\ShockWave.tex",
+ 42 model   MODEL_CANNONSHOCKWAVE   "Data\\Models\\Effects\\ShockWave01\\ShockWave.mdl",
+ 43 texture TEXTURE_CANNONSHOCKWAVE "Data\\Models\\Effects\\ShockWave01\\Textures\\ShockWave.tex",
 
 // ********** EXPLOSION STAIN **********
- 45 model   MODEL_EXPLOSION_STAIN     "Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.mdl",
- 46 texture TEXTURE_EXPLOSION_STAIN   "Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.tex",
+ 45 model   MODEL_EXPLOSION_STAIN     "Data\\Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.mdl",
+ 46 texture TEXTURE_EXPLOSION_STAIN   "Data\\Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.tex",
 
- 47 model   MODEL_CANNON_EXPLOSION_STAIN     "Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.mdl",
- 48 texture TEXTURE_CANNON_EXPLOSION_STAIN   "Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.tex",
+ 47 model   MODEL_CANNON_EXPLOSION_STAIN     "Data\\Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.mdl",
+ 48 texture TEXTURE_CANNON_EXPLOSION_STAIN   "Data\\Models\\Effects\\BurnedStainOnTheWall\\BurnedStainOnTheWall.tex",
 
 // ********** LASER WAVE **********
- 50 model   MODEL_LASERWAVE       "Models\\Effects\\ShockWaveGreen\\ShockWaveGreen.mdl",
- 51 texture TEXTURE_LASERWAVE     "Models\\Effects\\ShockWaveGreen\\ShockWaveGreen.tex",
+ 50 model   MODEL_LASERWAVE       "Data\\Models\\Effects\\ShockWaveGreen\\ShockWaveGreen.mdl",
+ 51 texture TEXTURE_LASERWAVE     "Data\\Models\\Effects\\ShockWaveGreen\\ShockWaveGreen.tex",
 
 // ********** TELEPORT **********
- 61 model   MODEL_TELEPORT_EFFECT        "Models\\Effects\\Teleport01\\Teleport.mdl",
- 62 texture TEXTURE_TELEPORT_EFFECT      "Textures\\Effects\\Effect01\\Effect.tex",
- 63 sound   SOUND_TELEPORT               "Sounds\\Misc\\Teleport.wav",
+ 61 model   MODEL_TELEPORT_EFFECT        "Data\\Models\\Effects\\Teleport01\\Teleport.mdl",
+ 62 texture TEXTURE_TELEPORT_EFFECT      "Data\\Textures\\Effects\\Effect01\\Effect.tex",
+ 63 sound   SOUND_TELEPORT               "Data\\Sounds\\Misc\\Teleport.wav",
 
 // ********** GIZMO SPLASH FX **********
- 80 sound   SOUND_GIZMO_SPLASH           "Models\\Enemies\\Gizmo\\Sounds\\Death.wav",
+// 80 sound   SOUND_GIZMO_SPLASH           "Data\\Models\\Enemies\\Gizmo\\Sounds\\Death.wav",
 
 // ********** Water shockwave texture **********
- 100 texture TEXTURE_WATER_WAVE          "Models\\Effects\\ShockWave01\\Textures\\WaterWave.tex",
+ 100 texture TEXTURE_WATER_WAVE          "Data\\Models\\Effects\\ShockWave01\\Textures\\WaterWave.tex",
 
 functions:
 
-  // dump sync data to text file
-  export void DumpSync_t(CTStream &strm, INDEX iExtensiveSyncCheck)  // throw char *
+  virtual void InitializeFromNet()
   {
-    CRationalEntity::DumpSync_t(strm, iExtensiveSyncCheck);
-    strm.FPrintF_t("Type: %d\n", m_betType);
+    ESpawnEffect eSpawn;
+    eSpawn.betType = m_betType;
+    eSpawn.vNormal = m_vNormal;
+    eSpawn.vDirection = m_vDirection;
+    eSpawn.vStretch = m_vStretch;
+    eSpawn.colMuliplier = m_colMultiplyColor;
+    Initialize(eSpawn);
   }
 
   /* Read from stream. */
-  void Read_t( CTStream *istr) // throw char *
+  void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CRationalEntity::Read_t(istr);
+    CRationalEntity::Read_t(istr,bNetwork);
     // setup light source
     if( m_bLightSource) {
       SetupLightSource();
@@ -343,7 +351,7 @@ functions:
   /* Get static light source information. */
   CLightSource *GetLightSource(void)
   {
-    if( m_bLightSource && !IsPredictor()) {
+    if( m_bLightSource) {
       return &m_lsLightSource;
     } else {
       return NULL;
@@ -356,9 +364,9 @@ functions:
     if( m_iLightAnimation>=0)
     { // set light animation if available
       try {
-        m_aoLightAnimation.SetData_t(CTFILENAME("Animations\\BasicEffects.ani"));
+        m_aoLightAnimation.SetData_t(CTFILENAME("Data\\Animations\\BasicEffects.ani"));
       } catch (char *strError) {
-        WarningMessage(TRANS("Cannot load Animations\\BasicEffects.ani: %s"), strError);
+        WarningMessage(TRANS("Cannot load Data\\Animations\\BasicEffects.ani: %s"), strError);
       }
       // play light animation
       if (m_aoLightAnimation.GetData()!=NULL) {
@@ -432,11 +440,12 @@ functions:
       Particles_ExplosionDebris2(this, m_tmSpawn, m_vStretch, m_colMultiplyColor);
       Particles_ExplosionDebris3(this, m_tmSpawn, m_vStretch, m_colMultiplyColor);
     }
+	/*
     if(m_betType==BET_COLLECT_ENERGY)
     {
-      Particles_CollectEnergy(this, m_tmSpawn, m_tmSpawn+m_fWaitTime);
+      Particles_CollectEnergy(this, m_tmSpawn, m_tmSpawn+m_fWaitTime, TRUE);
     }
-    /*if(m_betType==BET_SNIPER_RESIDUE)
+    if(m_betType==BET_SNIPER_RESIDUE)
     {
       Particles_SniperResidue(this, m_tmSpawn, m_tmSpawn+m_fWaitTime, m_vNormal, m_vDirection);
     }*/
@@ -444,11 +453,13 @@ functions:
     {
       Particles_ExplosionSmoke(this, m_tmSpawn+m_fWaitTime, m_vStretch, m_colMultiplyColor);
     }
+	  /*
     if(m_betType==BET_SUMMONERSTAREXPLOSION)
     {
       Particles_SummonerExplode(this, GetPlacement().pl_PositionVector,
                                 60.0f, 1.0f, m_tmSpawn, m_fWaitTime);
     }
+	*/
     if(m_betType==BET_GROWING_SWIRL)
     {
       FLOAT fStretch=(m_vStretch(1)+m_vStretch(2)+m_vStretch(3))/3.0f;
@@ -656,16 +667,17 @@ functions:
  *         PROJECTILE/GRENADE EXPLOSION,  STAIN             *
  ************************************************************/
 
+  /*
   void ProjectileExplosion(void)
   {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_ROCKET_EXPLOSION);
     SetModelMainTexture(TXT_ROCKET_EXPLOSION);
     AddAttachment(0, MDL_PARTICLES_EXPLOSION, TXT_PARTICLES_EXPLOSION);
     RandomBanking();
     SetNonLoopingTexAnims();
-    m_soEffect.Set3DParameters(150.0f, 3.0f, 1.0f, 1.0f);
+    m_soEffect.Set3DParameters( 200.0f, 10.0f, 1.0f, 1.0f);
     PlaySound(m_soEffect, SOUND_EXPLOSION, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_EXPLOSION);
     m_fWaitTime = 0.95f;
@@ -674,7 +686,7 @@ functions:
   };
 
   void ProjectilePlaneExplosion(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_ROCKET3D_EXPLOSION);
     SetModelMainTexture(TXT_ROCKET_EXPLOSION);
@@ -686,13 +698,13 @@ functions:
   };
 
   void BombExplosion(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_GRENADE_EXPLOSION);
     SetModelMainTexture(TXT_GRENADE_EXPLOSION);
     SetNonLoopingTexAnims();
     FLOAT fSizeFactor = m_vStretch.MaxNorm();
-    m_soEffect.Set3DParameters(50.0f*fSizeFactor, 10.0f*fSizeFactor, 1.0f*fSizeFactor, 1.0f);
+    m_soEffect.Set3DParameters( 50.0f*fSizeFactor, 10.0f*fSizeFactor, 1.0f, 1.0f);
     PlaySound(m_soEffect, SOUND_EXPLOSION, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_EXPLOSION);
     m_fWaitTime = 0.95f;
@@ -702,37 +714,40 @@ functions:
   
   void GizmoSplashFX(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
-    m_soEffect.Set3DParameters(50.0f, 10.0f, 1.0f, 1.0f);
+    m_soEffect.Set3DParameters( 50.0f, 10.0f, 1.0f, 1.0f);
     PlaySound(m_soEffect, SOUND_GIZMO_SPLASH, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_GIZMO_SPLASH);
     m_fWaitTime = 0.95f;
     m_bLightSource = FALSE;
   };
+  */
 
   void ExplosionDebris(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 0.95f;
     m_bLightSource = FALSE;
   };
   
+  /*
   void CollectEnergy(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 2;
     m_bLightSource = FALSE;
   }
+  */
   
   void GrowingSwirl(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 10.0f;
@@ -741,7 +756,7 @@ functions:
 
   void DisappearDust(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 10.0f;
@@ -750,7 +765,7 @@ functions:
 
   void DustFall(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 10.0f;
@@ -761,7 +776,7 @@ functions:
   {
 	// NOTE: m_vNormal and m_vDirection here represent the starting and the
 	// ending point of this effect!!!
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime = 0.05f;
@@ -770,7 +785,7 @@ functions:
 
   void ExplosionSmoke(void)
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime=0.25f;
@@ -779,14 +794,14 @@ functions:
   };
 
   void GrenadeExplosion(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_GRENADE_EXPLOSION);
     SetModelMainTexture(TXT_GRENADE_EXPLOSION);
     AddAttachment(0, MDL_PARTICLES_EXPLOSION, TXT_PARTICLES_EXPLOSION);
     RandomBanking();
     SetNonLoopingTexAnims();
-    m_soEffect.Set3DParameters(150.0f, 3.0f, 1.0f, 1.0f);
+    m_soEffect.Set3DParameters( 150.0f, 5.0f, 1.0f, 1.0f);
     PlaySound(m_soEffect, SOUND_EXPLOSION, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_EXPLOSION);
     m_fWaitTime = 0.95f;
@@ -795,7 +810,7 @@ functions:
   };
 
   void GrenadePlaneExplosion(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_GRENADE3D_EXPLOSION);
     SetModelMainTexture(TXT_GRENADE_EXPLOSION);
@@ -807,7 +822,7 @@ functions:
   };
 
   void CannonExplosion(BOOL bLoVolume, BOOL bNoLight) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_CANNON_EXPLOSION);
     CModelObject &moExplosion = *GetModelObject();
@@ -815,13 +830,10 @@ functions:
     moExplosion.mo_colBlendColor = m_colMultiplyColor;
     moExplosion.mo_toTexture.PlayAnim(EXPLOSION_GRENADE_TEXTURE_ANIM_FAST, 0);
     RandomBanking();
-    if( bLoVolume)
-    {
-      m_soEffect.Set3DParameters(150.0f, 3.0f, 0.5f, 1.0f);
-    }
-    else
-    {
-      m_soEffect.Set3DParameters(150.0f, 3.0f, 1.0f, 1.0f);
+    if( bLoVolume) {
+      m_soEffect.Set3DParameters( 200.0f, 10.0f, 0.5f, 1.0f);
+    } else {
+      m_soEffect.Set3DParameters( 200.0f, 10.0f, 1.0f, 1.0f);
     }
 
     PlaySound(m_soEffect, SOUND_EXPLOSION, SOF_3D);
@@ -839,7 +851,7 @@ functions:
   };
 
   void CannonPlaneExplosion(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MDL_CANNON3D_EXPLOSION);
     CModelObject &moExplosion = *GetModelObject();
@@ -877,7 +889,7 @@ functions:
  *                   SHOCK / LASER WAVE                     *
  ************************************************************/
   void ShockWave(void) {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_SHOCKWAVE);
     CModelObject &moShockwave = *GetModelObject();
     moShockwave.PlayAnim(SHOCKWAVE_ANIM_FAST, 0);
@@ -890,7 +902,7 @@ functions:
   };
 
   void CannonShockWave(void) {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MODEL_CANNONSHOCKWAVE);
     CModelObject &moShockwave = *GetModelObject();
@@ -923,7 +935,7 @@ functions:
    ************************************************************/
   void TeleportEffect(void)
   {
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MODEL_TELEPORT_EFFECT);
     CModelObject &mo = *GetModelObject();
@@ -931,7 +943,7 @@ functions:
     mo.PlayAnim(TELEPORT_ANIM_ACTIVATE, 0);
     RandomBanking();
     FLOAT fSize = m_vStretch.MaxNorm();
-    m_soEffect.Set3DParameters(40.0f*fSize, 10.0f*fSize, 1.0f, 1.0f);
+    m_soEffect.Set3DParameters( 50*fSize, 10*fSize, 1.0f, 1.0f);
     PlaySound(m_soEffect, SOUND_TELEPORT, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_TELEPORT);
     m_fWaitTime = 0.8f;
@@ -941,9 +953,10 @@ functions:
   /************************************************************
    *                SUMMONER STAR EXPLOSION                   *
    ************************************************************/
+  /*
   void SummonerStarExplosion()
   {
-    SetPredictable(TRUE);
+    
     SetModel(MODEL_BULLET_HIT);
     SetModelMainTexture(TEXTURE_BULLET_HIT);
     m_fWaitTime=16.0f;
@@ -952,15 +965,15 @@ functions:
     m_vStretch = FLOAT3D(1.0f, 1.0f, 1.0f);
     Stretch();
   };
+  */
 
   /************************************************************
  *                   BULLET HIT / STAIN                     *
  ************************************************************/
   void BulletStainSand(BOOL bSound)
   {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_SAND, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_SAND);
     }
@@ -983,9 +996,8 @@ functions:
 
   void BulletStainRedSand(BOOL bSound)
   {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_SAND, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_SAND);
     }
@@ -1009,9 +1021,8 @@ functions:
 
   void BulletStainStone(BOOL bSound, BOOL bSmoke)
   {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_STONE, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_STONE);
     }
@@ -1034,11 +1045,11 @@ functions:
     m_vStretch = vTemp;
   }
 
+
   void BulletStainWater(BOOL bSound)
   {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_WATER, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_WATER);
     }
@@ -1059,7 +1070,9 @@ functions:
     m_eptType = EPT_BULLET_WATER;
   }
 
-  void BulletTrail(void) {
+
+  void BulletTrail(void)
+  {
     Stretch();
     SetModel(MODEL_BULLET_TRAIL);
     SetModelMainTexture(TEXTURE_BULLET_TRAIL);
@@ -1070,10 +1083,11 @@ functions:
     m_bLightSource = FALSE;
   };
 
-  void BulletStainGrass(BOOL bSound) {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+
+  void BulletStainGrass(BOOL bSound)
+  {
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_GRASS, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_GRASS);
     }
@@ -1095,10 +1109,11 @@ functions:
     m_vStretch = vTemp;
   };
 
-  void BulletStainWood(BOOL bSound) {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+
+  void BulletStainWood( BOOL bSound)
+  {
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_WOOD, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_WOOD);
     }
@@ -1120,10 +1135,11 @@ functions:
     m_vStretch = vTemp;
   };
 
-  void BulletStainSnow(BOOL bSound) {
-    if( bSound)
-    {
-      m_soEffect.Set3DParameters(20.0f, 10.0f, 1.0f, 1.0f+FRnd()*0.2f);
+
+  void BulletStainSnow( BOOL bSound)
+  {
+    if( bSound) {
+      m_soEffect.Set3DParameters( 20.0f, 5.0f, 0.9f+FRnd()*0.2f, 0.8f+FRnd()*0.2f);
       PlaySound(m_soEffect, SOUND_BULLET_SNOW, SOF_3D);
       m_fSoundTime = GetSoundLength(SOUND_BULLET_SNOW);
     }
@@ -1153,14 +1169,14 @@ functions:
   // bullet hitpoint wound
   void BloodExplode(void)
   {
-    // readout blood type
-    const INDEX iBloodType = GetSP()->sp_iBlood;
-    if( iBloodType<1) { return; }
+    // clamp blood type
+    gam_iBlood = Clamp( gam_iBlood, (INDEX)0, (INDEX)3);
+    if( gam_iBlood<1) { return; }
+    
 
-    SetPredictable(TRUE);
     Stretch();
     SetModel(MODEL_BLOOD_EXPLODE);
-    if( iBloodType==3) {
+    if( gam_iBlood==3) {
       // flower mode! :)
       SetModelColor( RGBAToColor( 255,255,255,255));
       switch( IRnd()&3) {
@@ -1171,12 +1187,12 @@ functions:
       }
     } else {
       SetModelMainTexture(TEXTURE_BLOOD_EXPLODE);
-      if( iBloodType==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
+      if( gam_iBlood==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
       else               { SetModelColor( RGBAToColor( 0,250,0,255)); }
     }
     //RandomBanking();
-    m_soEffect.Set3DParameters(7.5f, 5.0f, 1.0f, 1.0f);
-    PlaySound(m_soEffect, SOUND_BULLET_FLESH, SOF_3D);
+    m_soEffect.Set3DParameters( 10.0f, 5.0f, 1.0f, 1.0f);
+    PlaySound( m_soEffect, SOUND_BULLET_FLESH, SOF_3D);
     m_fSoundTime = GetSoundLength(SOUND_BULLET_FLESH);
     m_fWaitTime = 0.25f;
     m_fFadeTime = 0.75f;
@@ -1187,13 +1203,13 @@ functions:
   // blood stain on wall/floor
   void BloodStain(void)
   {
-    // readout blood type
-    const INDEX iBloodType = GetSP()->sp_iBlood;
-    if( iBloodType<1) { return; }
+     // clamp blood type
+    gam_iBlood = Clamp( gam_iBlood, (INDEX)0, (INDEX)3);
+    if( gam_iBlood<1) { return; }
 
     Stretch();
     SetModel(MODEL_BLOOD_STAIN);
-    if( iBloodType==3) {
+    if( gam_iBlood==3) {
       // flower mode! :)
       SetModelColor( RGBAToColor( 255,255,255,255));
       switch( IRnd()&3) {
@@ -1209,7 +1225,7 @@ functions:
       case 3:  { SetModelMainTexture(TEXTURE_BLOOD_STAIN3);   break; }
       default: { SetModelMainTexture(TEXTURE_BLOOD_STAIN4);   break; }
       }
-      if( iBloodType==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
+      if( gam_iBlood==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
       else               { SetModelColor( RGBAToColor( 0,250,0,255)); }
     }
 
@@ -1225,14 +1241,14 @@ functions:
   // blood stain on wall/floor that grows
   void BloodStainGrow(void)
   {
-    // readout blood type
-    const INDEX iBloodType = GetSP()->sp_iBlood;
-    if( iBloodType<1) { return; }
+    // clamp blood type
+    gam_iBlood = Clamp( gam_iBlood, (INDEX)0, (INDEX)3);
+    if( gam_iBlood<1) { return; }
 
-    SetPredictable(TRUE);
+    
     Stretch();
     SetModel(MODEL_BLOOD_STAIN);
-    if( iBloodType==3) {
+    if( gam_iBlood==3) {
       // flower mode! :)
       SetModelColor( RGBAToColor( 255,255,255,255));
       switch( IRnd()&3) {
@@ -1243,7 +1259,7 @@ functions:
       }
     } else {
       SetModelMainTexture(TEXTURE_BLOOD_STAIN4);
-      if( iBloodType==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
+      if( gam_iBlood==2) { SetModelColor( RGBAToColor( 250,20,20,255)); }
       else               { SetModelColor( RGBAToColor( 0,250,0,255)); }
     }
     SetNormalAndDirection();
@@ -1259,16 +1275,17 @@ functions:
   }
 
 
+  /*
   // gizmo stain on wall/floor
   void GizmoStain(void)
   {
-    // readout blood type
-    const INDEX iBloodType = GetSP()->sp_iBlood;
-    if( iBloodType<1) { return; }
+    // clamp blood type
+    gam_iBlood = Clamp( gam_iBlood, (INDEX)0, (INDEX)3);
+    if( gam_iBlood<1) { return; }
 
     Stretch();
     SetModel(MODEL_BLOOD_STAIN);
-    if( iBloodType==3) {
+    if( gam_iBlood==3) {
       // flower mode! :)
       SetModelColor( RGBAToColor( 255,255,255,255));
       switch( IRnd()&3) {
@@ -1293,18 +1310,19 @@ functions:
     m_fDepthSortOffset = -0.1f;
     ParentToNearestPolygonAndStretch();
   }
+  */
 
 
   // bullet exit wound blood on wall/floor
   void BloodSpill(COLOR colBloodSpillColor)
   {
-    // readout blood type
-    const INDEX iBloodType = GetSP()->sp_iBlood;
-    if( iBloodType<1) { return; }
+    // clamp blood type
+    gam_iBlood = Clamp( gam_iBlood, (INDEX)0, (INDEX)3);
+    if( gam_iBlood<1) { return; }
 
     Stretch();
     SetModel(MODEL_BLOOD_STAIN);
-    if( iBloodType==3) {
+    if( gam_iBlood==3) {
       // flower mode! :)
       SetModelColor( RGBAToColor( 255,255,255,255));
       switch( IRnd()&3) {
@@ -1321,10 +1339,7 @@ functions:
       case 4:  { SetModelMainTexture(TEXTURE_BLOOD_SPILL2); break; }
       default: { SetModelMainTexture(TEXTURE_BLOOD_SPILL3); break; }
       }
-      if( iBloodType==2)
-      {
-        SetModelColor( colBloodSpillColor);
-      }
+      if( gam_iBlood==2) { SetModelColor( colBloodSpillColor); }
       else               { SetModelColor( RGBAToColor( 0,250,0,255)); }
     }
     SetNormalAndDirection();
@@ -1343,10 +1358,11 @@ procedures:
 
   Main(ESpawnEffect eSpawn)
   {
-    if(eSpawn.betType==BET_GIZMO_SPLASH_FX ||
+    if(
+		//eSpawn.betType==BET_GIZMO_SPLASH_FX ||
        eSpawn.betType==BET_EXPLOSION_DEBRIS ||
        eSpawn.betType==BET_EXPLOSION_SMOKE ||
-       eSpawn.betType==BET_SUMMONERSTAREXPLOSION  ||
+       //eSpawn.betType==BET_SUMMONERSTAREXPLOSION  ||
        eSpawn.betType==BET_COLLECT_ENERGY ||
        eSpawn.betType==BET_GROWING_SWIRL||
        eSpawn.betType==BET_DISAPPEAR_DUST||
@@ -1362,6 +1378,7 @@ procedures:
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
     SetFlags(GetFlags() | ENF_SEETHROUGH);
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     // set appearance
     m_tmSpawn = _pTimer->CurrentTick();
@@ -1372,8 +1389,8 @@ procedures:
     m_colMultiplyColor = eSpawn.colMuliplier;
     
     switch (m_betType) {
-      case BET_ROCKET: ProjectileExplosion(); break;
-      case BET_ROCKET_PLANE: ProjectilePlaneExplosion(); break;
+//      case BET_ROCKET: ProjectileExplosion(); break;
+//      case BET_ROCKET_PLANE: ProjectilePlaneExplosion(); break;
       case BET_GRENADE: GrenadeExplosion(); break;
       case BET_GRENADE_PLANE: GrenadePlaneExplosion(); break;
       case BET_EXPLOSIONSTAIN: Stain(); break;
@@ -1392,7 +1409,7 @@ procedures:
       case BET_BULLETSTAINUNDERWATERNOSOUND: BulletStainStone(FALSE, FALSE); break;
       case BET_BLOODSPILL: BloodSpill(m_colMultiplyColor); break;
       case BET_BLOODSTAIN: BloodStain(); break;
-      case BET_GIZMOSTAIN: GizmoStain(); break;
+      //case BET_GIZMOSTAIN: GizmoStain(); break;
       case BET_BLOODSTAINGROW: BloodStainGrow(); break;
       case BET_BLOODEXPLODE: BloodExplode(); break;
       case BET_CANNON: CannonExplosion(FALSE, FALSE); break;
@@ -1402,17 +1419,17 @@ procedures:
       case BET_CANNONEXPLOSIONSTAIN: CannonStain(); break;
       case BET_CANNONSHOCKWAVE: CannonShockWave(); break;
       case BET_TELEPORT: TeleportEffect(); break;
-      case BET_BOMB: BombExplosion(); break;
-      case BET_GIZMO_SPLASH_FX: GizmoSplashFX(); break;
+//      case BET_BOMB: BombExplosion(); break;
+      //case BET_GIZMO_SPLASH_FX: GizmoSplashFX(); break;
       case BET_BULLETSTAINGRASS: BulletStainGrass(TRUE); break;
       case BET_BULLETSTAINGRASSNOSOUND: BulletStainGrass(FALSE); break;
       case BET_BULLETSTAINWOOD: BulletStainWood(TRUE); break;
       case BET_BULLETSTAINWOODNOSOUND: BulletStainWood(FALSE); break;
       case BET_EXPLOSION_DEBRIS: ExplosionDebris(); break;
-      case BET_COLLECT_ENERGY: CollectEnergy(); break;
+      //case BET_COLLECT_ENERGY: CollectEnergy(); break;
       /*case BET_SNIPER_RESIDUE: SniperResidue(); break;*/
       case BET_EXPLOSION_SMOKE: ExplosionSmoke(); break;
-      case BET_SUMMONERSTAREXPLOSION: SummonerStarExplosion(); break;
+      //case BET_SUMMONERSTAREXPLOSION: SummonerStarExplosion(); break;
       case BET_GROWING_SWIRL: GrowingSwirl(); break;
       case BET_DISAPPEAR_DUST: DisappearDust(); break;
       case BET_DUST_FALL: DustFall(); break;
@@ -1433,7 +1450,7 @@ procedures:
     }
 
     // cease to exist
-    Destroy();
+    Destroy(FALSE);
     return;
   }
 

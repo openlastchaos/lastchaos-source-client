@@ -2,7 +2,7 @@
 enum CEmiterType {
   ET_AIR_ELEMENTAL = 1,
   ET_SUMMONER_STAFF,
-  ET_FIREWORKS01,
+//  ET_FIREWORKS01,
 };
 
 class DECL_DLL CEmittedParticle {
@@ -21,8 +21,8 @@ public:
 
   /* Default constructor. */
   CEmittedParticle(void);
-  void Read_t( CTStream &strm);
-  void Write_t( CTStream &strm);
+  void Read_t( CTStream &strm,BOOL bNetwork);
+  void Write_t( CTStream &strm,BOOL bNetwork);
 };
 
 class DECL_DLL CEmiter {
@@ -44,7 +44,7 @@ public:
   void AnimateParticles(void);
   void AddParticle(FLOAT3D vPos, FLOAT3D vSpeed, FLOAT fRot, FLOAT fRotSpeed, 
     FLOAT tmBirth, FLOAT tmLife, FLOAT fStretch, COLOR colColor);
-  void Read_t( CTStream &strm);
-  void Write_t( CTStream &strm);
+  void Read_t( CTStream &strm,BOOL bNetwork);
+  void Write_t( CTStream &strm,BOOL bNetwork);
 };
 

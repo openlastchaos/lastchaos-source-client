@@ -2,6 +2,8 @@
 
 #pragma warning (disable: 4244)
 
+#if COPY_PROTECTION
+
 /*
  * Author     :  Paul Kocher
  * E-mail     :  pck@netcom.com
@@ -403,3 +405,5 @@ void Blowfish_Init(BLOWFISH_CTX *ctx, unsigned char *key, int keyLen) {
     }
   }
 }
+
+#endif

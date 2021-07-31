@@ -35,8 +35,8 @@ properties:
   23 FLOAT3D m_vForceDir = FLOAT3D(1,0,0),
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\GravityMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\GravityMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\GravityMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\GravityMarker.tex"
 
 functions:
   // find strength at given distance

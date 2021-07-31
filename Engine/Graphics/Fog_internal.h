@@ -62,7 +62,7 @@ __forceinline ULONG GetFogAlpha( const GFXTexCoord &tex)
   PIX pixT = FloatToInt( tex.t * _fog_pixSizeH);
       pixT = Clamp( pixT, 0L, _fog_pixSizeH-1L) * _fog_pixSizeL;
   // linear interpolation of depth
-  const PIX pixSF = FloatToInt( tex.s*(FLOAT)_fog_pixSizeL*255.499f);
+  const PIX pixSF = FloatToInt( tex.s*(FLOAT)_fog_pixSizeL*255.499f-128);
   const PIX pixS1 = Clamp( (PIX)((pixSF>>8)+0), 0L, _fog_pixSizeL-1L);
   const PIX pixS2 = Clamp( (PIX)((pixSF>>8)+1), 0L, _fog_pixSizeL-1L);
   const ULONG ulF  = pixSF & 255;
@@ -84,7 +84,7 @@ __forceinline BOOL InFog( const FLOAT fT)
 __forceinline ULONG GetHazeAlpha( const FLOAT fS)
 {
   // linear interpolation of depth
-  const PIX pixSH = FloatToInt( fS*(FLOAT)_haze_pixSize*255.4999f);
+  const PIX pixSH = FloatToInt( fS*(FLOAT)_haze_pixSize*255.4999f-128);
   const PIX pixS1 = Clamp( (PIX)((pixSH>>8)+0), 0L, _haze_pixSize-1L);
   const PIX pixS2 = Clamp( (PIX)((pixSH>>8)+1), 0L, _haze_pixSize-1L);
   const ULONG ulH  = pixSH & 255;

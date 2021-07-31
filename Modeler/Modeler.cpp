@@ -14,53 +14,53 @@ static char THIS_FILE[] = __FILE__;
 
 // Macros used for ini i/o operations
 #define INI_READ( strname, def)                               \
-  wcscpy( strIni, theApp.GetProfileString( L"Modeler prefs", CString(strname), CString(def)))
+  strcpy( strIni, theApp.GetProfileString( "Modeler prefs", strname, def))
 #define GET_FLAG( var)                                        \
-  if( wcscmp( strIni, L"YES") == 0)   var = TRUE;              \
+  if( strcmp( strIni, "YES") == 0)   var = TRUE;              \
   else                          var = FALSE;
 #define GET_COLOR( var)                                       \
-  swscanf( strIni, L"0X%08x", &var);
+  sscanf( strIni, "0X%08x", &var);
 #define GET_INDEX( var)                                       \
-  swscanf( strIni, L"%d", &var);
+  sscanf( strIni, "%d", &var);
 #define GET_FLOAT( var)                                       \
-  swscanf( strIni, L"%f", &var);
+  sscanf( strIni, "%f", &var);
 
 #define SET_FLAG( var)                                        \
-  if( var) wcscpy( strIni, L"YES");                            \
-  else     wcscpy( strIni, L"NO");
+  if( var) strcpy( strIni, "YES");                            \
+  else     strcpy( strIni, "NO");
 #define SET_COLOR( var)                                       \
-  swprintf( strIni, L"0x%08x", var);                            \
-  _wcsupr( strIni);
+  sprintf( strIni, "0x%08x", var);                            \
+  _strupr( strIni);
 #define SET_INDEX( var)                                       \
-  swprintf( strIni, L"%d", var);                                \
-  _wcsupr( strIni);
+  sprintf( strIni, "%d", var);                                \
+  _strupr( strIni);
 #define SET_FLOAT( var)                                       \
-  swprintf( strIni, L"%f", var);                                \
-  _wcsupr( strIni);
+  sprintf( strIni, "%f", var);                                \
+  _strupr( strIni);
 #define INI_WRITE( strname)                                   \
-  theApp.WriteProfileString( L"Modeler prefs", CString(strname), strIni)
+  theApp.WriteProfileString( "Modeler prefs", strname, strIni)
 
 BOOL GetFlagFromProfile( CTString strVarName, BOOL bDefault)
 {
   CTString strDefault;
   if( bDefault) strDefault = "YES";
   else          strDefault = "NO";
-  CTString strTemp = CStringA(theApp.GetProfileString( L"Modeler prefs", CString(strVarName), CString(strDefault)));
+  CTString strTemp = theApp.GetProfileString( "Modeler prefs", strVarName, strDefault);
   if( strTemp == "YES") return TRUE;
   return FALSE;
 };
 
 void SetFlagToProfile( CTString strVarName, BOOL bValue)
 {
-  if( bValue) theApp.WriteProfileString( L"Modeler prefs", CString(strVarName), L"YES");
-  else        theApp.WriteProfileString( L"Modeler prefs", CString(strVarName), L"NO");
+  if( bValue) theApp.WriteProfileString( "Modeler prefs", strVarName, "YES");
+  else        theApp.WriteProfileString( "Modeler prefs", strVarName, "NO");
 };
 
 INDEX GetIndexFromProfile( CTString strVarName, INDEX iDefault)
 {
   CTString strDefault;
   strDefault.PrintF("%d", iDefault);
-  CTString strTemp = CStringA(theApp.GetProfileString( L"Modeler prefs", CString(strVarName), CString(strDefault)));
+  CTString strTemp = theApp.GetProfileString( "Modeler prefs", strVarName, strDefault);
   INDEX iValue;
   sscanf( strTemp, "%d", &iValue);
   return iValue;
@@ -70,14 +70,14 @@ void SetIndexToProfile( CTString strVarName, INDEX iValue)
 {
   CTString strTemp;
   strTemp.PrintF("%d", iValue);
-  theApp.WriteProfileString( L"Modeler prefs", CString(strVarName), CString(strTemp));
+  theApp.WriteProfileString( "Modeler prefs", strVarName, strTemp);
 };
 
 COLOR GetColorFromProfile( CTString strVarName, COLOR colDefault)
 {
   CTString strDefault;
   strDefault.PrintF("0x%08x", colDefault);
-  CTString strTemp = CStringA(theApp.GetProfileString( L"Modeler prefs", CString(strVarName), CString(strDefault)));
+  CTString strTemp = theApp.GetProfileString( "Modeler prefs", strVarName, strDefault);
   COLOR colValue;
   sscanf( strTemp, "0x%08x", &colValue);
   return colValue;
@@ -87,7 +87,7 @@ void SetColorToProfile( CTString strVarName, COLOR colValue)
 {
   CTString strTemp;
   strTemp.PrintF("0x%08x", colValue);
-  theApp.WriteProfileString( L"Modeler prefs", CString(strVarName), CString(strTemp));
+  theApp.WriteProfileString( "Modeler prefs", strVarName, strTemp);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -154,64 +154,6 @@ CBcgTexture::~CBcgTexture()
 {
 }
 
-CModelerApp::~CModelerApp()
-{
-  if( m_pLampModelData != NULL)
-  {
-    _pModelStock->Release( m_pLampModelData);
-    delete m_LampModelObject;
-  }
-  
-  if( m_pCollisionBoxModelData != NULL)
-  {
-    _pModelStock->Release( m_pCollisionBoxModelData);
-    delete m_pCollisionBoxModelObject;
-    m_pCollisionBoxModelObject = NULL;
-  }
-
-  if( m_pFloorModelData != NULL)
-  {
-    _pModelStock->Release( m_pFloorModelData);
-    delete m_pFloorModelObject;
-    m_pFloorModelObject = NULL;
-  }
-  
-  if( m_ptdCollisionBoxTexture != NULL)
-  {
-    _pTextureStock->Release( m_ptdCollisionBoxTexture);
-    m_ptdCollisionBoxTexture = NULL;
-  }
-
-  if( m_ptdLamp != NULL)
-  {
-    _pTextureStock->Release( m_ptdLamp);
-    m_ptdLamp = NULL;
-  }
-  
-  if( m_ptdFloorTexture != NULL)
-  {
-    _pTextureStock->Release( m_ptdFloorTexture);
-    m_ptdFloorTexture = NULL;
-  }
-  
-
-  FORDELETELIST( CBcgTexture, wt_ListNode, m_WorkingTextures, litTex)
-  {
-    ASSERT( litTex->wt_TextureData != NULL);
-    _pTextureStock->Release( litTex->wt_TextureData);
-    delete &litTex.Current();
-  }
-
-  FORDELETELIST( CWorkingPatch, wp_ListNode, m_WorkingPatches, litPatch)
-  {
-    CTextureData *pTD = litPatch->wp_TextureData;
-    _pTextureStock->Release( litPatch->wp_TextureData);
-    delete &litPatch.Current();
-  }
-
-  SE_EndEngine();
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 // The one and only CModelerApp object
@@ -232,7 +174,7 @@ BOOL CModelerApp::InitInstance()
 
 BOOL CModelerApp::SubInitInstance()
 {
-  wchar_t strIni[ 128];
+  char strIni[ 128];
 	// Standard initialization
 	// If you are not using these features and wish to reduce the size
 	//  of your final executable, you should remove from the following
@@ -245,7 +187,7 @@ BOOL CModelerApp::SubInitInstance()
 #endif
 
   // settings will be saved into registry instead of ini file
-  SetRegistryKey( L"CroTeam");
+  SetRegistryKey( "CroTeam");
 
 	LoadStdProfileSettings(8);  // Load standard INI file options (including MRU)
 
@@ -286,90 +228,85 @@ BOOL CModelerApp::SubInitInstance()
 	EnableShellOpen();
 	RegisterShellFileTypes(TRUE);
 
-	// Parse command line for standard shell commands, DDE, file open
-	CCommandLineInfo cmdInfo;
-	ParseCommandLine(cmdInfo);
-
   // load startup script
   _pShell->Execute( "include \"Scripts\\Modeler_startup.ini\"");
   
-  m_iApi=GAT_OGL;
-  m_iApi=GetProfileInt(L"Display modes", L"SED Gfx API", GAT_OGL);
+//안태훈 수정 시작	//(Modify Default API to D3D)(0.1)
+  m_iApi=GAT_D3D;
+  m_iApi=GetProfileInt("Display modes", "SED Gfx API", GAT_D3D);
+//안태훈 수정 끝	//(Modify Default API to D3D)(0.1)
   // (re)set default display mode
   _pGfx->ResetDisplayMode((enum GfxAPIType) m_iApi);
 
   m_Preferences.ReadFromIniFile();
 
   // load background textures
-  INDEX iWorkingTexturesCt = theApp.GetProfileInt( L"Modeler prefs", 
-                                                   L"Modeler working textures count", -1);
+  INDEX iWorkingTexturesCt = theApp.GetProfileInt( "Modeler prefs", 
+                                                   "Modeler working textures count", -1);
   if( iWorkingTexturesCt != -1) {
     char strWTName[ 128];
     for( INDEX i=0; i<iWorkingTexturesCt; i++) {
       sprintf( strWTName, "Working texture %02d", i);
       INI_READ( strWTName, "Error in INI .file!");
-      AddModelerWorkingTexture( CTString(CStringA(strIni)));
+      AddModelerWorkingTexture( CTString(strIni));
     }
   }
   // load working patches
-  INDEX iWorkingPatchesCt = theApp.GetProfileInt( L"Modeler prefs", 
-                                                 L"Modeler working patches count", -1);
+  INDEX iWorkingPatchesCt = theApp.GetProfileInt( "Modeler prefs", 
+                                                 "Modeler working patches count", -1);
   char strWPName[ 128];
   for( INDEX i=0; i<iWorkingPatchesCt; i++) {
     sprintf( strWPName, "Working patch %02d", i);
     INI_READ( strWPName, "Error in INI .file!");
-    AddModelerWorkingPatch( CTString(CStringA(strIni)));
+    AddModelerWorkingPatch( CTString(strIni));
   }
   pMainFrame->m_StainsComboBox.Refresh();
 
-  // don't start new document automatically
-  cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
-  
   // create temporary directory to contain copy/paste mapping all
-  CreateDirectoryA( _fnmApplicationPath + "Temp\\", NULL);
+  CreateDirectory( _fnmApplicationPath + "Temp\\", NULL);
   
   // try to
   try
   { // load lamp model
-    DECLARE_CTFILENAME( fnLampName, "Models\\Editor\\Lamp.mdl");
+    DECLARE_CTFILENAME( fnLampName, "Data\\Models\\Editor\\Lamp.mdl");
     m_pLampModelData = _pModelStock->Obtain_t( fnLampName);
     m_LampModelObject = new CModelObject;
     m_LampModelObject->SetData(m_pLampModelData);
     m_LampModelObject->SetAnim( 0);
     // load lamp's texture
-    DECLARE_CTFILENAME( fnLampTex, "Models\\Editor\\SpotLight.tex");
+    DECLARE_CTFILENAME( fnLampTex, "Data\\Models\\Editor\\SpotLight.tex");
     m_ptdLamp = _pTextureStock->Obtain_t( fnLampTex);
     m_LampModelObject->mo_toTexture.SetData( m_ptdLamp); 
 
     // load collision box model
-    DECLARE_CTFILENAME( fnCollisionBox, "Models\\Editor\\CollisionBox.mdl");
+    DECLARE_CTFILENAME( fnCollisionBox, "Data\\Models\\Editor\\CollisionBox.mdl");
     m_pCollisionBoxModelData = _pModelStock->Obtain_t( fnCollisionBox);
     m_pCollisionBoxModelObject = new CModelObject;
     m_pCollisionBoxModelObject->SetData(m_pCollisionBoxModelData);
     m_pCollisionBoxModelObject->SetAnim( 0);
     // load collision box's texture
-    DECLARE_CTFILENAME( fnCollisionBoxTex, "Models\\Editor\\CollisionBox.tex");
+    DECLARE_CTFILENAME( fnCollisionBoxTex, "Data\\Models\\Editor\\CollisionBox.tex");
     m_ptdCollisionBoxTexture = _pTextureStock->Obtain_t( fnCollisionBoxTex);
     m_pCollisionBoxModelObject->mo_toTexture.SetData( m_ptdCollisionBoxTexture); 
 
     // load floor model
-    DECLARE_CTFILENAME( fnFloor, "Models\\Editor\\Floor.mdl");
+    DECLARE_CTFILENAME( fnFloor, "Data\\Models\\Editor\\Floor.mdl");
     m_pFloorModelData = _pModelStock->Obtain_t( fnFloor);
     m_pFloorModelObject = new CModelObject;
     m_pFloorModelObject->SetData(m_pFloorModelData);
     m_pFloorModelObject->SetAnim( 0);
     // load collision box's texture
-    DECLARE_CTFILENAME( fnFloorTex, "Models\\Editor\\Floor.tex");
+    DECLARE_CTFILENAME( fnFloorTex, "Data\\Models\\Editor\\Floor.tex");
     m_ptdFloorTexture = _pTextureStock->Obtain_t( fnFloorTex);
     m_pFloorModelObject->mo_toTexture.SetData( m_ptdFloorTexture); 
 
-    DECLARE_CTFILENAME( fnShadowTex, "Textures\\Effects\\Shadow\\SimpleModelShadow.tex");
+    DECLARE_CTFILENAME( fnShadowTex, "Data\\Textures\\Effects\\Shadow\\SimpleModelShadow.tex");
     // setup simple model shadow texture
     _toSimpleModelShadow.SetData_t( fnShadowTex);
   }
   catch( char *err_str)
   { // report error and continue without models
-    AfxMessageBox( CString(err_str));
+    AfxMessageBox( err_str);
 
     // if we allocated model object for collision box
     if( m_pCollisionBoxModelObject != NULL) {
@@ -408,6 +345,18 @@ BOOL CModelerApp::SubInitInstance()
   // assign system font
   m_pfntFont = _pfdDisplayFont;
 
+	// Parse command line for standard shell commands, DDE, file open
+	CCommandLineInfo cmdInfo;
+	ParseCommandLine(cmdInfo);
+
+  if(CTString("")==CTString(cmdInfo.m_strFileName))
+  {
+    cmdInfo.m_nShellCommand = CCommandLineInfo::FileNothing;
+  }
+  else
+  {
+    cmdInfo.m_nShellCommand = CCommandLineInfo::FileOpen;
+  }
   // Dispatch commands specified on the command line
 	if( !ProcessShellCommand(cmdInfo)) return FALSE;
 
@@ -522,14 +471,14 @@ void CModelerApp::CreateNewDocument( CTFileName fnRequestedFile)
   
   if( fnRequestedFile.FileExt() != ".scr")
   {
-    if( GetFileAttributesA( _fnmApplicationPath + fnScriptFile) != -1)
+    if( GetFileAttributes( _fnmApplicationPath + fnScriptFile) != -1)
     {
-      if( MessageBoxA( m_pMainWnd->m_hWnd, "Script file allready exists, "
+      if( MessageBox( m_pMainWnd->m_hWnd, "Script file allready exists, "
                                           "do you want to overwrite it?",
                  "Warning !", MB_YESNO | MB_ICONWARNING |
                  MB_DEFBUTTON1| MB_SYSTEMMODAL | MB_TOPMOST) == IDYES)
       {
-        DeleteFileA( _fnmApplicationPath + fnScriptFile);
+        DeleteFile( _fnmApplicationPath + fnScriptFile);
       }
       else
       {
@@ -544,13 +493,13 @@ void CModelerApp::CreateNewDocument( CTFileName fnRequestedFile)
     }
     catch( char *err_str)
     {
-      AfxMessageBox( CString(err_str));
+      AfxMessageBox( err_str);
       return;
     }
   }
-  else if( GetFileAttributesA( _fnmApplicationPath + fnMdlFile) != -1)
+  else if( GetFileAttributes( _fnmApplicationPath + fnMdlFile) != -1)
   {
-    if( MessageBoxA( m_pMainWnd->m_hWnd, "Model file allready exists, do you want to "
+    if( MessageBox( m_pMainWnd->m_hWnd, "Model file allready exists, do you want to "
                     "overwrite it and loose all possible data describing mapping, "
                     "colored polygons, patch positions, ... ?",
                     "Warning !", MB_YESNO | MB_ICONWARNING | 
@@ -581,14 +530,14 @@ void CModelerApp::CreateNewDocument( CTFileName fnRequestedFile)
 	ASSERT_VALID(pFrame);
 
   pDocument->SetModifiedFlag();
-  pDocument->SetPathName( CString(_fnmApplicationPath + fnMdlFile), FALSE);
-  pDocument->SetTitle( CString(fnMdlFile.FileName() + ".mdl"));       
+  pDocument->SetPathName( _fnmApplicationPath + fnMdlFile, FALSE);
+  pDocument->SetTitle( fnMdlFile.FileName() + ".mdl");       
 
   char strError[ 256];
   if( !((CModelerDoc *)pDocument)->CreateModelFromScriptFile( fnScriptFile, strError))
   {
   	pDocument->OnCloseDocument();       // explicit delete on error
-    AfxMessageBox( CString(strError));
+    AfxMessageBox( strError);
 		return;
   }
 	m_pdtModelDocTemplate->InitialUpdateFrame(pFrame, pDocument, TRUE);
@@ -601,7 +550,7 @@ void CModelerApp::OnFileNew()
   _EngineGUI.FileRequester( "Create new model from 3D or script file",
     "3D objects and scripts\0*.lwo;*.obj;*.3ds;*.scr\0"
     FILTER_3DOBJ FILTER_LWO FILTER_OBJ FILTER_3DS FILTER_SCR FILTER_ALL FILTER_END,
-    "Create model directory", "Models\\", "", &afnCreateModel);
+    "Create model directory", "Data\\Models\\", "", &afnCreateModel);
   // create new models
   FOREACHINDYNAMICARRAY( afnCreateModel, CTFileName, itModel)
   {
@@ -619,7 +568,7 @@ void CModelerApp::OnFileOpen()
     "Script files (*.scr)\0*.scr\0"
     "Model or script files (*.mdl; *.scr)\0*.mdl;*.scr\0"
     "All files (*.*)\0*.*\0\0",
-    "Open model directory", "Models\\", "", &afnOpenModel);
+    "Open model directory", "Data\\Models\\", "", &afnOpenModel);
 
   // create new models
   FOREACHINDYNAMICARRAY( afnOpenModel, CTFileName, itModel)
@@ -648,7 +597,7 @@ void CModelerApp::OnFileOpen()
     // Model documents must be opened before view creation
     if( !bScriptDocument)
     {
-      if( !pDocument->OnOpenDocument( CString(fnFullRequestedFile)))
+      if( !pDocument->OnOpenDocument( fnFullRequestedFile))
       {
 		    AfxMessageBox(AFX_IDP_FAILED_TO_CREATE_DOC);
 		    //delete pDocument;       // explicit delete on error
@@ -672,7 +621,7 @@ void CModelerApp::OnFileOpen()
     // Script documents must be opened after view creation
     if( bScriptDocument)
     {
-      if( !pDocument->OnOpenDocument( CString(fnFullRequestedFile)))
+      if( !pDocument->OnOpenDocument( fnFullRequestedFile))
       {
 		    AfxMessageBox(AFX_IDP_FAILED_TO_CREATE_DOC);
 		    delete pDocument;       // explicit delete on error
@@ -681,8 +630,8 @@ void CModelerApp::OnFileOpen()
     }
 
     pDocument->SetModifiedFlag( FALSE);
-    pDocument->SetPathName( CString(fnFullRequestedFile), TRUE);
-    pDocument->SetTitle( CString(fnFullRequestedFile.FileName() + fnFullRequestedFile.FileExt()));
+    pDocument->SetPathName( fnFullRequestedFile, TRUE);
+    pDocument->SetTitle( fnFullRequestedFile.FileName() + fnFullRequestedFile.FileExt());
 	  pDocTemplate->InitialUpdateFrame(pFrame, pDocument, TRUE);
   }
 }
@@ -710,8 +659,64 @@ void CModelerApp::OnFilePreferences()
 int CModelerApp::ExitInstance() 
 {
   m_Preferences.WriteToIniFile();
-  WriteProfileInt(L"Display modes", L"SED Gfx API", m_iApi);
-	return CWinApp::ExitInstance();
+  WriteProfileInt("Display modes", "SED Gfx API", m_iApi);
+
+  if( m_pLampModelData != NULL)
+  {
+    _pModelStock->Release( m_pLampModelData);
+    delete m_LampModelObject;
+  }
+  
+  if( m_pCollisionBoxModelData != NULL)
+  {
+    _pModelStock->Release( m_pCollisionBoxModelData);
+    delete m_pCollisionBoxModelObject;
+    m_pCollisionBoxModelObject = NULL;
+  }
+
+  if( m_pFloorModelData != NULL)
+  {
+    _pModelStock->Release( m_pFloorModelData);
+    delete m_pFloorModelObject;
+    m_pFloorModelObject = NULL;
+  }
+  
+  if( m_ptdCollisionBoxTexture != NULL)
+  {
+    _pTextureStock->Release( m_ptdCollisionBoxTexture);
+    m_ptdCollisionBoxTexture = NULL;
+  }
+
+  if( m_ptdLamp != NULL)
+  {
+    _pTextureStock->Release( m_ptdLamp);
+    m_ptdLamp = NULL;
+  }
+  
+  if( m_ptdFloorTexture != NULL)
+  {
+    _pTextureStock->Release( m_ptdFloorTexture);
+    m_ptdFloorTexture = NULL;
+  }
+  
+
+  FORDELETELIST( CBcgTexture, wt_ListNode, m_WorkingTextures, litTex)
+  {
+    ASSERT( litTex->wt_TextureData != NULL);
+    _pTextureStock->Release( litTex->wt_TextureData);
+    delete &litTex.Current();
+  }
+
+  FORDELETELIST( CWorkingPatch, wp_ListNode, m_WorkingPatches, litPatch)
+  {
+    CTextureData *pTD = litPatch->wp_TextureData;
+    _pTextureStock->Release( litPatch->wp_TextureData);
+    delete &litPatch.Current();
+  }
+
+  SE_EndEngine();
+
+  return CWinApp::ExitInstance();
 }
 
 BOOL CModelerApp::AddModelerWorkingTexture( CTFileName fnTexName)
@@ -742,8 +747,8 @@ BOOL CModelerApp::AddModelerWorkingPatch( CTFileName fnPatchName)
     if( itPatch->wp_FileName == fnPatchName)
     {
       char achrMessage[ 256];
-      sprintf( achrMessage, "Working patch \"%s\" already exists.", (CTString&)fnPatchName);
-      AfxMessageBox( CString(achrMessage));
+      sprintf( achrMessage, "Working patch \"%s\" allready exists.", (CTString&)fnPatchName);
+      AfxMessageBox( achrMessage);
       return FALSE;
     }
   }
@@ -817,7 +822,7 @@ CAppPrefs::~CAppPrefs()
 // Modeler ini read function for preferences
 void CAppPrefs::ReadFromIniFile()
 {
-  wchar_t strIni[ 128];
+  char strIni[ 128];
   
   INI_READ( "Copy existing window preferences", "NO");
   GET_FLAG( ap_CopyExistingWindowPrefs);
@@ -862,7 +867,7 @@ void CAppPrefs::ReadFromIniFile()
   GET_COLOR( ap_MappingWinBcgColor);
 
   INI_READ( "Default background texture", "");
-  ap_DefaultWinBcgTexture = CTString(CStringA(strIni));
+  ap_DefaultWinBcgTexture = CTString(strIni);
   
   CMainFrame* pMainFrame = STATIC_DOWNCAST(CMainFrame, AfxGetMainWnd());
 }
@@ -870,7 +875,7 @@ void CAppPrefs::ReadFromIniFile()
 // Modeler ini write function for preferences
 void CAppPrefs::WriteToIniFile()
 {
-  wchar_t strIni[ 128];
+  char strIni[ 128];
   
   SET_FLAG( ap_CopyExistingWindowPrefs);
   INI_WRITE( "Copy existing window preferences");
@@ -914,32 +919,32 @@ void CAppPrefs::WriteToIniFile()
   SET_COLOR( ap_MappingWinBcgColor);
   INI_WRITE( "Mapping view win bcg color");
 
-  wcscpy( strIni, CString(ap_DefaultWinBcgTexture));
+  strcpy( strIni, ap_DefaultWinBcgTexture);
   INI_WRITE( "Default background texture");
   
   // Now for working textures
   INDEX iWorkingTexturesCt = theApp.m_WorkingTextures.Count();
-  theApp.WriteProfileInt( L"Modeler prefs", L"Modeler working textures count",
+  theApp.WriteProfileInt( "Modeler prefs", "Modeler working textures count",
                          iWorkingTexturesCt);
   INDEX iWTCt = 0;
   FOREACHINLIST( CBcgTexture, wt_ListNode, theApp.m_WorkingTextures, it_wt)
   {
     char strWTName[ 128];
     sprintf( strWTName, "Working texture %02d", iWTCt);
-    theApp.WriteProfileString( L"Modeler prefs", CString(strWTName), CString(it_wt->wt_FileName));
+    theApp.WriteProfileString( "Modeler prefs", strWTName, it_wt->wt_FileName);
     iWTCt++;
   }
   
   // And now for patches....
   INDEX iWorkingPatchesCt = theApp.m_WorkingPatches.Count();
-  theApp.WriteProfileInt( L"Modeler prefs", L"Modeler working patches count",
+  theApp.WriteProfileInt( "Modeler prefs", "Modeler working patches count",
                          iWorkingPatchesCt);
   INDEX iWPCt = 0;
   FOREACHINLIST( CWorkingPatch, wp_ListNode, theApp.m_WorkingPatches, it_wp)
   {
     char strWPName[ 128];
     sprintf( strWPName, "Working patch %02d", iWPCt);
-    theApp.WriteProfileString( L"Modeler prefs", CString(strWPName), CString(it_wp->wp_FileName));
+    theApp.WriteProfileString( "Modeler prefs", strWPName, it_wp->wp_FileName);
     iWPCt++;
   }
 }
@@ -950,7 +955,7 @@ int CModelerApp::Run()
   CTSTREAM_BEGIN {
     iResult=CWinApp::Run();
   } CTSTREAM_END;
-	return CWinApp::Run();
+	return iResult;
 }
 
 CModelerView* CModelerApp::GetActiveView(void)

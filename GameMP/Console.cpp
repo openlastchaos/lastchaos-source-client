@@ -4,7 +4,7 @@
 extern CGame *_pGame;
 
 // console variables
-static const FLOAT tmConsoleFade   = 0.0f;  // how many seconds it takes console to fade in/out
+static const FLOAT tmConsoleFade   = 0.5f;  // how many seconds it takes console to fade in/out
 static FLOAT fConsoleFadeValue     = 0.0f;  // faded value of console (0..1)
 static CTimerValue tvConsoleLast;
 
@@ -117,16 +117,21 @@ void CGame::ConsoleRender(CDrawPort *pdp)
     }
   }
 
-  if (_pGame->gm_csConsoleState==CS_TALK) {
+  /*if (_pGame->gm_csConsoleState==CS_TALK) {		// yjpark
     fHeightFactor = 0.1f;
     fConsoleFadeValue = 1.0f;
-  }
+  }*/
 
   // calculate size of console box so that it covers upper half of the screen
-  FLOAT fHeight = ClampUp( fHeightFactor*fConsoleFadeValue*2, fHeightFactor);
-  CDrawPort dpConsole( pdp, 0.0f, 0.0f, 1.0f, fHeight);
-  // lock drawport
-  if( !dpConsole.Lock()) return;
+  FLOAT fPosX  = 0.0f;
+  FLOAT fWidth = 1.0f;
+  const FLOAT fHeight = ClampUp( fHeightFactor*fConsoleFadeValue*2, fHeightFactor);
+  if( pdp->IsTripleHead()) {
+    fPosX  = 1.0f / 3.0f;
+    fWidth = 1.0f / 3.0f;
+  } else if( pdp->IsDualHead()) fWidth = 0.5f;
+  CDrawPort dpConsole( pdp, fPosX, 0.0f, fWidth, fHeight);
+  dpConsole.SetAsCurrent();
 
   LCDPrepare(fConsoleFadeValue);
   LCDSetDrawport(&dpConsole);
@@ -144,7 +149,7 @@ void CGame::ConsoleRender(CDrawPort *pdp)
   //LCDRenderGrid();
   LCDRenderClouds2();
   dpConsole.DrawLine( 0, pixSizeJ-1, pixSizeI, pixSizeJ-1, LCDFadedColor(SE_COL_BLUE_NEUTRAL|255));
-  const COLOR colFill = (colDark & ~CT_AMASK) | 0x2F;
+  const colFill = (colDark & ~CT_AMASK) | 0x2F;
   dpConsole.Fill( 0, pixSizeJ-pixLineSpacing*1.6f, pixSizeI, pixLineSpacing*1.6f, colFill);
 
   // setup font
@@ -155,9 +160,9 @@ void CGame::ConsoleRender(CDrawPort *pdp)
   // print editing line of text
   dpConsole.SetTextMode(-1);
   CTString strPrompt;
-  if (_pGame->gm_csConsoleState == CS_TALK) {
+  /*if (_pGame->gm_csConsoleState == CS_TALK) {		// yjpark
     strPrompt = TRANS("say: ");
-  } else {
+  } else*/ {
     strPrompt = "=> ";
   }
   CTString strLineOnScreen = strPrompt + strEditingLine;
@@ -183,9 +188,6 @@ void CGame::ConsoleRender(CDrawPort *pdp)
     iBackwardLine++;
     pixYLine -= pixLineSpacing;
   }
-
-  // all done
-  dpConsole.Unlock();
 }
 
 
@@ -318,7 +320,7 @@ static void Key_Return(void)
   #define CHEAT_PREFIX "please"
   if (strEditingLine.HasPrefix(CHEAT_PREFIX) || strEditingLine.HasPrefix("/" CHEAT_PREFIX)) {
     strEditingLine.RemovePrefix(CHEAT_PREFIX);
-    strEditingLine.RemovePrefix("/ " CHEAT_PREFIX );
+    strEditingLine.RemovePrefix("/ "CHEAT_PREFIX);
     strEditingLine.TrimSpacesLeft();
     if (strEditingLine=="god") {
       DoCheat(strEditingLine, "cht_bGod");
@@ -539,7 +541,7 @@ void CGame::ConsoleChar( MSG msg)
   if( msg.wParam!=VK_TAB && msg.wParam!=VK_SHIFT) strLastExpanded = "";
 
   // if key with letter pressed
-  if( isprint(chrKey) && chrKey!='`') {
+  if( _pfdConsoleFont->IsCharDefined(chrKey) && chrKey!='`') { //isprint(chrKey)
     // insert it to editing line
     strEditingLine.InsertChar( iCursorPos, chrKey);
     iCursorPos++;

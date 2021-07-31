@@ -2,6 +2,7 @@
 
 #include <Engine/Base/Timer.h>
 #include <Engine/Base/Console.h>
+#include <Engine/Base/Stream.h>
 #include <Engine/Base/Translation.h>
 
 #include <Engine/Base/Registry.h>
@@ -11,6 +12,9 @@
 
 #include <Engine/Base/ListIterator.inl>
 #include <Engine/Base/Priority.inl>
+
+
+#define TEST_GETTIME
 
 // Read the Pentium TimeStampCounter
 static inline __int64 ReadTSC(void)
@@ -29,14 +33,21 @@ static inline __int64 ReadTSC(void)
 #pragma comment(lib, "winmm.lib")
 
 // current game time always valid for the currently active task
-static _declspec(thread) TIME _CurrentTickTimer = 0.0f;
+TIME _CurrentTickTimer = 0.0f;
 
 // CTimer implementation
 
 // pointer to global timer object
 CTimer *_pTimer = NULL;
+//! 
+//안태훈 수정 시작	//(Adjust Time Tick)(0.1)
+const TIME	CTimer::TickQuantum = TIME(1/20.0);		// 원래 20 ticks per second
+//안태훈 수정 끝	//(Adjust Time Tick)(0.1)
 
-const TIME CTimer::TickQuantum = TIME(1/20.0);    // 20 ticks per second
+//안태훈 수정 시작	//(Add Sun Moon Entity and etc)(0.2)
+float g_fGWTime = 0.0f;
+float g_fGWTimeMul = 1.0f;
+//안태훈 수정 끝	//(Add Sun Moon Entity and etc)(0.2)
 
 /*
  * Timer interrupt callback function.
@@ -72,7 +83,7 @@ void CTimer_TimerFunc_internal(void)
 // Access to stream operations might be invoked in timer handlers, but
 // this is disabled for now. Should also synchronize access to list of
 // streams and to group file before enabling that!
-//  CTSTREAM_BEGIN {
+  CTSTREAM_BEGIN {
 
     // increment the 'real time' timer
     _pTimer->tm_RealTimeTimer += _pTimer->TickQuantum;
@@ -81,8 +92,15 @@ void CTimer_TimerFunc_internal(void)
     CTimerValue tvTimeNow = _pTimer->GetHighPrecisionTimer();
     TIME        tmTickNow = _pTimer->tm_RealTimeTimer;
     // calculate how long has passed since we have last been on time
-    TIME tmTimeDelay = (TIME)(tvTimeNow - _pTimer->tm_tvLastTimeOnTime).GetSeconds();
-    TIME tmTickDelay =       (tmTickNow - _pTimer->tm_tmLastTickOnTime);
+/*    TIME tmTimeDelay = (TIME)(tvTimeNow - _pTimer->tm_tvLastTimeOnTime).GetSeconds();
+    TIME tmTickDelay = (tmTickNow - _pTimer->tm_tmLastTickOnTime);*/
+	_pTimer->tmTimeDelay = (TIME)(tvTimeNow - _pTimer->tm_tvLastTimeOnTime).GetSeconds();
+	_pTimer->tmTickDelay = (tmTickNow - _pTimer->tm_tmLastTickOnTime);
+
+/*	if (_pTimer->tmTimeDelay > 0.05f)
+	{
+		CPrintF("tmTimeDelay : %f || tmTickDelay : %f \n", _pTimer->tmTimeDelay, _pTimer->tmTickDelay);
+	}*/
 
     _sfStats.StartTimer(CStatForm::STI_TIMER);
     // if we are keeping up to time (more or less)
@@ -100,7 +118,7 @@ void CTimer_TimerFunc_internal(void)
     _pTimer->tm_tvLastTimeOnTime = tvTimeNow;
     _pTimer->tm_tmLastTickOnTime = tmTickNow;
 
-//  } CTSTREAM_END;
+  } CTSTREAM_END;
 }
 void __stdcall CTimer_TimerFunc(UINT uID, UINT uMsg, ULONG dwUser, ULONG dw1, ULONG dw2)
 {
@@ -113,7 +131,8 @@ void __stdcall CTimer_TimerFunc(UINT uID, UINT uMsg, ULONG dwUser, ULONG dw1, UL
 
 #pragma inline_depth()
 
-#define MAX_MEASURE_TRIES 5
+#define MAX_MEASURES 5
+#define MAX_MEASURE_TRIES 4
 static INDEX _aiTries[MAX_MEASURE_TRIES];
 
 // Get processor speed in Hertz
@@ -135,9 +154,8 @@ static __int64 GetCPUSpeedHz(void)
   __int64 llTimeBefore, llTimeAfter;
   __int64 llSpeedMeasured;
 
-  // try to measure 10 times
-  INDEX iSet=0;
-  for( ; iSet<10; iSet++)
+  // try to measure
+  for( INDEX iSet=0; iSet<MAX_MEASURES; iSet++)
   { // one time has several tries
     for( iTry=0; iTry<MAX_MEASURE_TRIES; iTry++)
     { // wait the state change on the timer
@@ -161,17 +179,17 @@ static __int64 GetCPUSpeedHz(void)
     // see if we had good measurement
     INDEX ctFaults = 0;
     iSpeed = _aiTries[0];
-    const INDEX iTolerance = iSpeed *1/100; // %1 tolerance should be enough
+    const INDEX iTolerance = iSpeed *1/200; // should be enough
     for( iTry=1; iTry<MAX_MEASURE_TRIES; iTry++) {
       if( abs(iSpeed-_aiTries[iTry]) > iTolerance) ctFaults++;
     }
     // done if no faults
     if( ctFaults==0) break;
-    Sleep(1000);
+    Sleep(500);
   }
 
   // fail if couldn't readout CPU speed
-  if( iSet==10) {
+  if( iSet==MAX_MEASURES) {
     CPrintF( TRANS("PerformanceTimer is not vaild!\n"));
     //return 1; 
     // NOTE: this function must never fail, or the engine will crash! 
@@ -191,7 +209,7 @@ static __int64 GetCPUSpeedHz(void)
   // if found in registry
   } else {
     // if different than measured
-    const INDEX iTolerance = slSpeedRead *1/100; // %1 tolerance should be enough
+    const INDEX iTolerance = slSpeedRead *1/200; // should be enough
     if( abs(slSpeedRead-slSpeedReg) > iTolerance) {
       // report warning and use registry value
       CPrintF(TRANS("  WARNING: calculated CPU speed different than stored in registry!\n\n"));
@@ -200,6 +218,7 @@ static __int64 GetCPUSpeedHz(void)
     // use measured value
     return (__int64)slSpeedRead*1000000;
   }
+//#endif
 }
 
 
@@ -229,9 +248,14 @@ CTimer::CTimer(BOOL bInterrupt /*=TRUE*/)
 
   tm_tmLastTickOnTime = TIME(0);
   tm_tvLastTimeOnTime = GetHighPrecisionTimer();
+  tmTimeDelay = TIME(0.05f);
+  tmTickDelay = TIME(0);
   // disable lerping by default
   tm_fLerpFactor = 1.0f;
   tm_fLerpFactor2 = 1.0f;
+
+  //0216
+  tm_tvStartTime = GetHighPrecisionTimer();
 
   // start interrupt (eventually)
   if( tm_bInterrupt)
@@ -247,8 +271,7 @@ CTimer::CTimer(BOOL bInterrupt /*=TRUE*/)
     if( tm_TimerID==NULL) FatalError(TRANS("Cannot initialize multimedia timer!"));
 
     // make sure that timer interrupt is ticking
-    INDEX iTry=1;
-    for( ; iTry<=3; iTry++) {
+    for( INDEX iTry=1; iTry<=3; iTry++) {
       const TIME tmTickBefore = GetRealTimeTick();
       Sleep(1000* iTry*3 *TickQuantum);
       const TIME tmTickAfter = GetRealTimeTick();
@@ -278,6 +301,7 @@ CTimer::~CTimer(void)
 
   // clear global pointer
   _pTimer = NULL;
+  
 }
 
 /*
@@ -343,14 +367,7 @@ void CTimer::SetCurrentTick(TIME tNewCurrentTick) {
 /*
  * Get current game time, always valid for the currently active task.
  */
-const TIME CTimer::CurrentTick(void) const {
-  ASSERT(this!=NULL);
-  return _CurrentTickTimer;
-}
-const TIME CTimer::GetLerpedCurrentTick(void) const {
-  ASSERT(this!=NULL);
-  return _CurrentTickTimer+tm_fLerpFactor*TickQuantum;
-}
+
 // Set factor for lerping between ticks.
 void CTimer::SetLerp(FLOAT fFactor) // sets both primary and secondary
 {
@@ -371,6 +388,24 @@ void CTimer::DisableLerp(void)
   tm_fLerpFactor2=1.0f;
 }
 
+#ifdef TEST_GETTIME
+CTimerValue CTimer::GetHighPrecisionTimer()
+{
+   __int64 mmRet;
+   mmRet = (__int64)timeGetTime();;
+   return mmRet;
+};
+#else
+CTimerValue CTimer::GetHighPrecisionTimer()
+{
+   __int64 mmRet;
+    _asm rdtsc
+    _asm mov dword ptr [mmRet+0],eax
+    _asm mov dword ptr [mmRet+4],edx
+    return mmRet;
+};
+#endif
+
 // convert a time value to a printable string (hh:mm:ss)
 CTString TimeToString(FLOAT fTime)
 {
@@ -383,3 +418,4 @@ CTString TimeToString(FLOAT fTime)
   strTime.PrintF("%02d:%02d:%02d", iHou, iMin, iSec);
   return strTime;
 }
+

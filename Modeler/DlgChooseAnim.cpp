@@ -36,7 +36,7 @@ void CDChooseAnim::DoDataExchange(CDataExchange* pDX)
     for( INDEX i=0; i<m_pAnimObject->GetAnimsCt(); i++)
     {
       m_pAnimObject->GetAnimInfo( i, aiInfo);
-      m_ListBox.AddString(CString(aiInfo.ai_AnimName));
+      m_ListBox.AddString(aiInfo.ai_AnimName);
     }
   }
   else

@@ -338,6 +338,112 @@ static void ogl_DisableBlend(void)
 }
 
 
+static void ogl_SetVertexProgram(const ULONG ulHandle)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+static void ogl_SetPixelProgram(const ULONG ulHandle)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+static void ogl_DeleteVertexProgram(ULONG ulHandle)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+static void ogl_DeletePixelProgram(ULONG ulHandle)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+static ULONG ogl_CreateVertexProgram(const char *strVertexProgram, ULONG ulStreamMasks)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+  return NONE;
+}
+
+
+static ULONG ogl_CreatePixelProgram(const char *strPixelProgram)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+  return NONE;
+}
+
+
+// Set value of constant register for vertex shader
+static void ogl_SetVertexProgramConst(INDEX iRegister, const void *pData, INDEX ctRegisters)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+// Set value of constant register for vertex shader
+static void ogl_SetPixelProgramConst(INDEX iRegister, const void *pData, INDEX ctRegisters)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERTALWAYS("Not implemented yet");
+}
+
+
+static void ogl_EnableLighting(void)
+{
+  // check consistency
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+#ifndef NDEBUG
+  BOOL bRes;
+  bRes = pglIsEnabled(GL_LIGHTING);
+  OGL_CHECKERROR;
+  ASSERT( !bRes == !GFX_bLighting);
+#endif
+  // cached?
+  if( GFX_bLighting && gap_bOptimizeStateChanges) return;
+  GFX_bLighting = TRUE;
+
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
+  pglEnable(GL_LIGHTING);
+  OGL_CHECKERROR;
+
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
+static void ogl_DisableLighting(void)
+{
+  // check consistency
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+#ifndef NDEBUG
+  BOOL bRes;
+  bRes = pglIsEnabled(GL_LIGHTING);
+  OGL_CHECKERROR;
+  ASSERT( !bRes == !GFX_bLighting);
+#endif
+  // cached?
+  if( !GFX_bLighting && gap_bOptimizeStateChanges) return;
+  GFX_bLighting = FALSE;
+
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
+  pglDisable(GL_LIGHTING);
+  OGL_CHECKERROR;
+
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
 
 static void ogl_EnableClipping(void)
 {
@@ -620,8 +726,11 @@ static void ogl_BlendFunc( GfxBlend eSrc, GfxBlend eDst)
 // color buffer writing enable
 static void ogl_SetColorMask( ULONG ulColorMask)
 {
+  // skip if the same as last time
+  if( GFX_ulCurrentColorMask==ulColorMask) return;
+  GFX_ulCurrentColorMask = ulColorMask; // keep for Get...()
+
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
-  _ulCurrentColorMask = ulColorMask; // keep for Get...()
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
 
   const BOOL bR = (ulColorMask&CT_RMASK) == CT_RMASK;
@@ -851,8 +960,7 @@ static void ogl_SetViewMatrix( const FLOAT *pfMatrix/*=NULL*/)
 
 
 // set orthographic matrix
-static void ogl_SetOrtho( const FLOAT fLeft,   const FLOAT fRight, const FLOAT fTop,
-                          const FLOAT fBottom, const FLOAT fNear,  const FLOAT fFar,
+static void ogl_SetOrtho( FLOAT fLeft, FLOAT fRight, FLOAT fTop, FLOAT fBottom, FLOAT fNear, FLOAT fFar,
                           const BOOL bSubPixelAdjust/*=FALSE*/)
 {
   // check API and matrix type
@@ -869,7 +977,11 @@ static void ogl_SetOrtho( const FLOAT fLeft,   const FLOAT fRight, const FLOAT f
   // set matrix
   pglMatrixMode( GL_PROJECTION);
   pglLoadIdentity();
-  pglOrtho( fLeft, fRight, fBottom, fTop, fNear, fFar);
+  if( fRight!=fLeft && fTop!=fBottom) {
+    pglOrtho( fLeft, fRight, fBottom, fTop, fNear, fFar);
+  } else {
+    pglOrtho( 0, 1, 0, 1, fNear, fFar);
+  }
   OGL_CHECKERROR;
 
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
@@ -878,12 +990,15 @@ static void ogl_SetOrtho( const FLOAT fLeft,   const FLOAT fRight, const FLOAT f
 
 
 // set frustrum matrix
-static void ogl_SetFrustum( const FLOAT fLeft, const FLOAT fRight,
-                            const FLOAT fTop,  const FLOAT fBottom,
-                            const FLOAT fNear, const FLOAT fFar)
+static void ogl_SetFrustum( FLOAT fLeft, FLOAT fRight, FLOAT fTop, FLOAT fBottom, FLOAT fNear, FLOAT fFar)
 {
   // check API
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+
+  // fix for "out of screen" values
+  if( fRight ==fLeft) fRight  += 0.001f;
+  if( fBottom==fTop)  fBottom += 0.001f;
+  if( fFar   ==fNear) fFar    += 0.001f;
 
   // cached?
   if( GFX_fLastL==-fLeft  && GFX_fLastT==-fTop    && GFX_fLastN==-fNear
@@ -921,6 +1036,107 @@ static void ogl_PolygonMode( GfxPolyMode ePolyMode)
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
 }
 
+
+
+// LIGHTS MANAGEMENT
+
+
+// enable one light
+static void ogl_EnableLight( INDEX iLight)
+{
+  // check consistency
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERT( iLight>=0 && iLight<GFX_MAXLIGHTS);
+#ifndef NDEBUG
+  BOOL bRes;
+  bRes = pglIsEnabled( (GLenum)(GL_LIGHT0+iLight));
+  OGL_CHECKERROR;
+  ASSERT( !bRes == !GFX_abLights[iLight]);
+#endif
+  // cached?
+  if( GFX_abLights[iLight] && gap_bOptimizeStateChanges) return;
+  GFX_abLights[iLight] = TRUE;
+
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
+  pglEnable( (GLenum)(GL_LIGHT0+iLight));
+  OGL_CHECKERROR;
+
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
+// disable one light
+static void ogl_DisableLight( INDEX iLight)
+{
+  // check consistency
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERT( iLight>=0 && iLight<GFX_MAXLIGHTS);
+#ifndef NDEBUG
+  BOOL bRes;
+  bRes = pglIsEnabled( (GLenum)(GL_LIGHT0+iLight));
+  OGL_CHECKERROR;
+  ASSERT( !bRes == !GFX_abLights[iLight]);
+#endif
+  // cached?
+  if( !GFX_abLights[iLight] && gap_bOptimizeStateChanges) return;
+  GFX_abLights[iLight] = FALSE;
+
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
+  pglDisable( (GLenum)(GL_LIGHT0+iLight));
+  OGL_CHECKERROR;
+
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
+
+// set color components of a light
+static void ogl_SetLightColor( INDEX iLight, COLOR colLight, COLOR colAmbient, COLOR colSpecular/*=0*/)
+{
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+  FLOAT afColor[4];
+
+  // set diffuse
+  afColor[0] = NormByteToFloat( (colLight&CT_RMASK)>>CT_RSHIFT);
+  afColor[1] = NormByteToFloat( (colLight&CT_GMASK)>>CT_GSHIFT);
+  afColor[2] = NormByteToFloat( (colLight&CT_BMASK)>>CT_BSHIFT);
+  afColor[3] = NormByteToFloat( (colLight&CT_AMASK)>>CT_ASHIFT);
+  pglLightfv( (GLenum)(GL_LIGHT0+iLight), GL_DIFFUSE, &afColor[0]);
+  OGL_CHECKERROR;
+
+  // set ambient
+  afColor[0] = NormByteToFloat( (colAmbient&CT_RMASK)>>CT_RSHIFT);
+  afColor[1] = NormByteToFloat( (colAmbient&CT_GMASK)>>CT_GSHIFT);
+  afColor[2] = NormByteToFloat( (colAmbient&CT_BMASK)>>CT_BSHIFT);
+  afColor[3] = NormByteToFloat( (colAmbient&CT_AMASK)>>CT_ASHIFT);
+  pglLightfv( (GLenum)(GL_LIGHT0+iLight), GL_AMBIENT, &afColor[0]);
+  OGL_CHECKERROR;
+
+  // set specular
+  afColor[0] = NormByteToFloat( (colSpecular&CT_RMASK)>>CT_RSHIFT);
+  afColor[1] = NormByteToFloat( (colSpecular&CT_GMASK)>>CT_GSHIFT);
+  afColor[2] = NormByteToFloat( (colSpecular&CT_BMASK)>>CT_BSHIFT);
+  afColor[3] = NormByteToFloat( (colSpecular&CT_AMASK)>>CT_ASHIFT);
+  pglLightfv( (GLenum)(GL_LIGHT0+iLight), GL_SPECULAR, &afColor[0]);
+  OGL_CHECKERROR;
+  
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
+// set light direction (only directional light are supported for now - they're the fastest!)
+static void ogl_SetLightDirection( INDEX iLight, const FLOAT3D &vLightDir)
+{
+  _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+
+  const FLOAT afDirection[4] = { vLightDir(1), vLightDir(2), vLightDir(3), 0.0f };
+  pglLightfv( (GLenum)(GL_LIGHT0+iLight), GL_POSITION, &afDirection[0]);
+  OGL_CHECKERROR;
+
+  _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
 
 
 
@@ -1006,6 +1222,7 @@ static void ogl_DeleteTexture( ULONG &ulTexObject)
   _sfStats.StartTimer(CStatForm::STI_BINDTEXTURE);
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
 
+  MEMTRACK_FREE( (void*)(ulTexObject^0x80000000));
   pglDeleteTextures( 1, (GLuint*)&ulTexObject);
   ulTexObject = NONE;
 
@@ -1019,12 +1236,12 @@ static void ogl_DeleteTexture( ULONG &ulTexObject)
 
 
 // prepare vertex array for API
-static void ogl_SetVertexArray( GFXVertex4 *pvtx, INDEX ctVtx)
+static void ogl_SetVertexArray( GFXVertex *pvtx, INDEX ctVtx)
 {
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
   ASSERT( ctVtx>0 && pvtx!=NULL && GFX_iActiveTexUnit==0);
-  GFX_ctVertices = ctVtx;
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
+  GFX_ctVertices = ctVtx;
 
   pglDisableClientState( GL_TEXTURE_COORD_ARRAY);
   pglDisableClientState( GL_COLOR_ARRAY); 
@@ -1033,7 +1250,7 @@ static void ogl_SetVertexArray( GFXVertex4 *pvtx, INDEX ctVtx)
   ASSERT( !pglIsEnabled( GL_COLOR_ARRAY));
   ASSERT( !pglIsEnabled( GL_NORMAL_ARRAY));
   ASSERT(  pglIsEnabled( GL_VERTEX_ARRAY));
-  pglVertexPointer( 3, GL_FLOAT, 16, pvtx);
+  pglVertexPointer( 3, GL_FLOAT, 0, pvtx);
   OGL_CHECKERROR;
   GFX_bColorArray = FALSE; // mark that color array has been disabled (because of potential LockArrays)
 
@@ -1051,12 +1268,20 @@ static void ogl_SetNormalArray( GFXNormal *pnor)
 
   pglEnableClientState(GL_NORMAL_ARRAY);
   ASSERT( pglIsEnabled(GL_NORMAL_ARRAY));
-  pglNormalPointer( GL_FLOAT, 16, pnor);
+  pglNormalPointer( GL_FLOAT, 0, pnor);
   OGL_CHECKERROR;
 
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
 }
 
+
+// prepare normal array for API
+static void ogl_SetWeightArray( GFXWeight *pwgh)
+{
+  ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
+  ASSERT( pwgh!=NULL);
+  ASSERTALWAYS("Not implemented yet");
+}
 
 
 // prepare color array for API (and force rendering with color array!)
@@ -1076,7 +1301,7 @@ static void ogl_SetColorArray( GFXColor *pcol)
 
 
 // prepare texture coordinates array for API
-static void ogl_SetTexCoordArray( GFXTexCoord *ptex, BOOL b4/*=FALSE*/)
+static void ogl_SetTexCoordArray( GFXTexCoord *ptex, BOOL bProjectiveMapping=FALSE)
 {
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
   ASSERT( ptex!=NULL);
@@ -1084,7 +1309,7 @@ static void ogl_SetTexCoordArray( GFXTexCoord *ptex, BOOL b4/*=FALSE*/)
 
   pglEnableClientState(GL_TEXTURE_COORD_ARRAY);
   ASSERT( pglIsEnabled(GL_TEXTURE_COORD_ARRAY));
-  pglTexCoordPointer( b4?4:2, GL_FLOAT, 0, ptex);
+  pglTexCoordPointer( bProjectiveMapping?4:2, GL_FLOAT, 0, ptex);
   OGL_CHECKERROR;
 
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
@@ -1106,41 +1331,169 @@ static void ogl_SetConstantColor( COLOR col)
 }
 
 
-
 // draw prepared arrays
-static void ogl_DrawElements( INDEX ctElem, INDEX *pidx)
+static void ogl_DrawElements( const INDEX ctIndices, const UWORD *puwIndices)
 {
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
 #ifndef NDEBUG
   // check if all indices are inside lock count (or smaller than 65536)
-  if( pidx!=NULL) for( INDEX i=0; i<ctElem; i++) ASSERT( pidx[i] < GFX_ctVertices);
+  if( puwIndices!=NULL) for( INDEX i=0; i<ctIndices; i++) ASSERT( puwIndices[i] < GFX_ctVertices);
 #endif
 
+  _sfStats.IncrementCounter( CStatForm::SCI_GFXVERTICES, ctIndices);
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
-  _pGfx->gl_ctTotalTriangles += ctElem/3;  // for profiling
+  _pGfx->gl_ctTotalElements += ctIndices;  // for profiling
 
   // arrays or elements
-  if( pidx==NULL) pglDrawArrays( GL_QUADS, 0, ctElem);
-  else pglDrawElements( GL_TRIANGLES, ctElem, GL_UNSIGNED_INT, pidx);
+  if( puwIndices==NULL) pglDrawArrays( GL_QUADS, 0, ctIndices);
+  else pglDrawElements( GL_TRIANGLES, ctIndices, GL_UNSIGNED_SHORT, puwIndices);
   OGL_CHECKERROR;
 
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
+}
+
+
+
+// lock one vertex buffer for reading or writing
+static void *ogl_LockSubBuffer( const INDEX iID, const INDEX i1stVertex, const INDEX ctVertices,
+                                const enum GfxLockType eLockType/*=GFX_WRITE*/)
+{
+  // determine bind, type and mask
+  const INDEX iBind = iID >> 4;
+  const INDEX iType = iID & 15;
+  const ULONG ulTypeMask = 1L << iType;
+  // must be created and not already locked
+  const INDEX ctBuffers = _avbVertexBuffers.Count();
+  ASSERT( ctBuffers>0 && iBind<ctBuffers && iType<GFX_MAX_VBA);
+  VertexBuffer &vb = _avbVertexBuffers[iBind];
+  ASSERT( (vb.vb_ulLockMask&ulTypeMask)==0 && (vb.vb_ulArrayMask&ulTypeMask));
+  void *pRet;
+
+  // dynamic buffer?
+  if( iBind==0) {
+    ASSERT( eLockType==GFX_WRITE);  // dynamic vertex buffer can be locked only for writing
+    switch( iType) {
+    case GFX_VBA_POS:  _avtxCommon.PopAll();  pRet=(void*)_avtxCommon.Push(ctVertices);  GFX_ctVertices=ctVertices;  break;
+    case GFX_VBA_NOR:  _anorCommon.PopAll();  pRet=(void*)_anorCommon.Push(GFX_ctVertices);  break;
+    case GFX_VBA_COL:  _acolCommon.PopAll();  pRet=(void*)_acolCommon.Push(GFX_ctVertices);  break;
+    case GFX_VBA_TEX:  _atexCommon[GFX_iActiveTexUnit].PopAll();  pRet=(void*)_atexCommon[GFX_iActiveTexUnit].Push(GFX_ctVertices);  break;
+    default: ASSERT(FALSE);
+    } // check
+    ASSERT( GFX_ctVertices==ctVertices);
+  }
+  // static buffer?
+  else {
+    const SLONG slTypeSize = GetVBTypeSize(iType);
+    pRet = (UBYTE*)vb.vb_paWriteArray[iType] + slTypeSize*i1stVertex;
+  }
+
+  // mark that buffer has been locked
+  vb.vb_ulLockMask |= ulTypeMask;
+  return pRet;
+}
+
+
+
+// unlocks vertex buffer
+static void ogl_UnlockSubBuffer( const INDEX iID, const INDEX ctVertices/*=0*/)
+{
+  // determine bind, type and mask
+  const INDEX iBind = iID >> 4;
+  const INDEX iType = iID & 15;
+  const ULONG ulTypeMask = 1L << iType;
+  // must be created and locked
+  const INDEX ctBuffers = _avbVertexBuffers.Count();
+  ASSERT( ctBuffers>0 && iBind<ctBuffers && iType<GFX_MAX_VBA);
+  VertexBuffer &vb = _avbVertexBuffers[iBind];
+  ASSERT( (vb.vb_ulLockMask&ulTypeMask)!=0 && (vb.vb_ulArrayMask&ulTypeMask));
+
+  // dynamic buffer?
+  if( iBind==0) {
+    if( ctVertices>0) GFX_ctVertices = ctVertices;  // eventually adjust number of locked vertices
+    switch( iType) {
+    case GFX_VBA_POS: ogl_SetVertexArray(  &_avtxCommon[0], GFX_ctVertices);      break;
+    case GFX_VBA_NOR: ogl_SetNormalArray(  &_anorCommon[0]);                      break;
+    case GFX_VBA_COL: ogl_SetColorArray(   &_acolCommon[0]);                      break;
+    case GFX_VBA_TEX: ogl_SetTexCoordArray(&_atexCommon[GFX_iActiveTexUnit][0]);  break;
+    default: ASSERT(FALSE);
+    }
+  }
+  // static buffer?
+  else {
+    ASSERT( ctVertices==0); // cannot adjust size of static buffer
+    // when real video-memory buffers will get implemented, at this point we'll copy read buffer
+    // (that one that acctually got 'locked') to write one to keep 'em synchronized
+    // (if lock was for writing, of course)
+  }
+
+  // mark that buffer has been unlocked
+  vb.vb_ulLockMask &= ~ulTypeMask;
+}
+
+
+
+static INDEX _iCurrent1stVertex = 0;
+
+// set vertex sub-buffer to be the current one for rendering
+static void ogl_SetVertexSubBuffer( const INDEX iID,  const INDEX i1stVertex/*=0*/,
+                                    const INDEX ctVertices/*=0*/)
+{
+  // determine bind, type and mask
+  const INDEX iBind = iID >> 4;
+  const INDEX iType = iID & 15;
+  ASSERT( iType==GFX_VBA_POS && iBind<_avbVertexBuffers.Count());
+  VertexBuffer &vb = _avbVertexBuffers[iBind];
+  GFX_ctVertices = (ctVertices>0) ? ctVertices : vb.vb_ctVertices;
+  ogl_SetVertexArray( &((GFXVertex*)vb.vb_paWriteArray[0])[i1stVertex], GFX_ctVertices);
+  _iCurrent1stVertex = i1stVertex; 
+}
+
+
+
+// set a sub-buffer to be the current one for rendering
+static void ogl_SetSubBuffer( const INDEX iID, const INDEX iUnit/*=-1*/)
+{
+  // determine bind, type and mask
+  const INDEX iBind = iID >> 4;
+  const INDEX iType = iID & 15;
+  ASSERT( iType>GFX_VBA_POS && iType<GFX_MAX_VBA && iBind<_avbVertexBuffers.Count());
+  VertexBuffer &vb = _avbVertexBuffers[iBind];
+  // normal or color array?
+  switch( iType) {
+  case GFX_VBA_NOR:  ogl_SetNormalArray( &((GFXNormal*)vb.vb_paWriteArray[1])[_iCurrent1stVertex]);  break;
+  case GFX_VBA_COL:  ogl_SetColorArray(  &((GFXColor*) vb.vb_paWriteArray[3])[_iCurrent1stVertex]);  break;
+  default:
+    // tex coord array
+    ASSERT( iType>=GFX_VBA_TEX);
+    const BOOL bSetUnit = (iUnit>=0) && (iUnit!=GFX_iActiveTexUnit);
+    if( bSetUnit) pglActiveTexture(iUnit);
+    ogl_SetTexCoordArray( &((GFXTexCoord*)vb.vb_paWriteArray[iType])[_iCurrent1stVertex]);
+    if( bSetUnit) pglActiveTexture(GFX_iActiveTexUnit);
+  }
 }
 
 
 
 // force finish of API rendering queue
-static void ogl_Finish(void)
+static void ogl_Finish( BOOL bReadBack)
 {
+  CDisableAsyncProgress dap;
   ASSERT( _pGfx->gl_eCurrentAPI==GAT_OGL);
   _sfStats.StartTimer(CStatForm::STI_GFXAPI);
 
+  // signal to OpenGL
   pglFinish();
   OGL_CHECKERROR;
 
+  // make sure everything got rendered
+  if( bReadBack) {
+    FLOAT fPoint;
+    pglReadPixels( 0, 0, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &fPoint);
+    OGL_CHECKERROR;
+  }
+
   _sfStats.StopTimer(CStatForm::STI_GFXAPI);
 }
-
 
 
 

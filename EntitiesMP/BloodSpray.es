@@ -9,7 +9,7 @@ event ESpawnSpray {
   FLOAT fDamagePower,              // factor saying how powerfull damage has been
   FLOAT fSizeMultiplier,           // stretch factor
   FLOAT3D vDirection,              // dammage direction  
-  CEntityPointer penOwner,         // who spawned the spray
+  CEntityID eidOwner,              // who spawned the spray
   COLOR colCentralColor,           // central color of particles that is randomized a little
   FLOAT fLaunchPower,
   COLOR colBurnColor,              // burn color
@@ -18,33 +18,59 @@ event ESpawnSpray {
 class CBloodSpray: CRationalEntity {
 name      "Blood Spray";
 thumbnail "";
-features  "CanBePredictable";
+features  "CanBePredictable", "NotSentOverNet";
 
 properties:
 
-  1 enum SprayParticlesType m_sptType = SPT_NONE,                    // type of particles
-  2 FLOAT m_tmStarted = 0.0f,                                        // time when spawned
-  3 FLOAT3D m_vDirection = FLOAT3D(0,0,0),                           // dammage direction
-  5 CEntityPointer m_penOwner,                                       // who spawned the spray
-  6 FLOAT m_fDamagePower = 1.0f,                                     // power of inflicted damage
-  8 FLOATaabbox3D m_boxSizedOwner = FLOATaabbox3D(FLOAT3D(0,0,0), 0.01f), // bounding box of blood spray's owner
-  9 FLOAT3D m_vGDir = FLOAT3D(0,0,0),                                // gravity direction
-  10 FLOAT m_fGA = 0.0f,                                             // gravity strength
-  11 FLOAT m_fLaunchPower = 1.0f,
-  12 COLOR m_colCentralColor = COLOR(C_WHITE|CT_OPAQUE),
+  1 enum SprayParticlesType m_sptType = SPT_NONE features(EPROPF_NETSEND),     // type of particles
+  2 FLOAT m_tmStarted = 0.0f features(EPROPF_NETSEND),                         // time when spawned
+  3 FLOAT3D m_vDirection = FLOAT3D(0,0,0) features(EPROPF_NETSEND),            // dammage direction
+  5 CEntityPointer m_penOwner,                                                     // who spawned the spray
+  6 FLOAT m_fDamagePower = 1.0f features(EPROPF_NETSEND),                      // power of inflicted damage
+  8 FLOATaabbox3D m_boxSizedOwner = FLOATaabbox3D(FLOAT3D(0,0,0), 0.01f),          // bounding box of blood spray's owner
+  9 FLOAT3D m_vGDir = FLOAT3D(0,0,0),                                              // gravity direction
+  10 FLOAT m_fGA = 0.0f,                                                           // gravity strength
+  11 FLOAT m_fLaunchPower = 1.0f features(EPROPF_NETSEND),
+  12 COLOR m_colCentralColor = COLOR(C_WHITE|CT_OPAQUE) features(EPROPF_NETSEND),
   13 FLOATaabbox3D m_boxOriginalOwner = FLOATaabbox3D(FLOAT3D(0,0,0), 0.01f),
-  14 COLOR m_colBurnColor = COLOR(C_WHITE|CT_OPAQUE),
+  14 COLOR m_colBurnColor = COLOR(C_WHITE|CT_OPAQUE) features(EPROPF_NETSEND),
+
+  15 INDEX m_iOwner = -1 features(EPROPF_NETSEND), // owner's id
 
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\Axis.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Axis.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Vector.tex"
 
 functions:
+
+  void InitializeFromNet()
+  {
+    ESpawnSpray eSpawn;
+    eSpawn.sptType = m_sptType;
+    eSpawn.vDirection = m_vDirection;
+    
+    eSpawn.fDamagePower = m_fDamagePower;
+    eSpawn.fLaunchPower = m_fLaunchPower;
+    eSpawn.colBurnColor = m_colBurnColor;
+    
+    eSpawn.colCentralColor = m_colCentralColor;
+
+    CEntity* penEntity;
+    if (m_iOwner == -1) {
+      eSpawn.eidOwner = (CEntity*)NULL; 
+    } else {
+      _pNetwork->ga_World.EntityExists(m_iOwner,penEntity);
+      eSpawn.eidOwner = penEntity;
+    }
+
+    Initialize(eSpawn);
+  }
 
   // particles
   void RenderParticles(void)
   {
+/*
     switch( m_sptType)
     {
     case SPT_BLOOD:
@@ -98,6 +124,7 @@ functions:
         Particles_ElectricitySparks( this, m_tmStarted, 5.0f, 0.0f, 32);        
       }
     }
+	*/
   };
 
 /************************************************************
@@ -111,40 +138,53 @@ procedures:
     InitAsEditorModel();
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL);
     SetCollisionFlags(ECF_IMMATERIAL);
-    SetPredictable(TRUE);
 
     // set appearance
     SetModel(MODEL_MARKER);
     SetModelMainTexture(TEXTURE_MARKER);
-
-    // setup variables
-    m_sptType = eSpawn.sptType;
-    m_vDirection = eSpawn.vDirection;
-    m_penOwner = eSpawn.penOwner;
-    m_fDamagePower = eSpawn.fDamagePower;
-    m_fLaunchPower = eSpawn.fLaunchPower;
-    m_colBurnColor = eSpawn.colBurnColor;
-    m_tmStarted = _pTimer->CurrentTick();
-    m_colCentralColor = eSpawn.colCentralColor;
-
+    
     // if owner doesn't exist (could be destroyed in initialization)
-    if( eSpawn.penOwner==NULL || eSpawn.penOwner->en_pmoModelObject == NULL)
+    if( ((CEntity*)eSpawn.eidOwner)==NULL || ((CEntity*)eSpawn.eidOwner)->en_pmoModelObject == NULL)
     {
       // don't do anything
       Destroy();
       return;
     }
 
-    if(eSpawn.penOwner->en_RenderType == RT_SKAMODEL) {
-      eSpawn.penOwner->GetModelInstance()->GetCurrentColisionBox( m_boxSizedOwner);
-    } else {
-      eSpawn.penOwner->en_pmoModelObject->GetCurrentFrameBBox( m_boxSizedOwner);
+    // setup variables
+    m_sptType = eSpawn.sptType;
+    m_vDirection = eSpawn.vDirection;
+    m_penOwner = eSpawn.eidOwner;
+    m_fDamagePower = eSpawn.fDamagePower;
+    m_fLaunchPower = eSpawn.fLaunchPower;
+    m_colBurnColor = eSpawn.colBurnColor;
+    m_tmStarted = _pTimer->CurrentTick();
+    m_colCentralColor = eSpawn.colCentralColor;
+
+    m_iOwner = m_penOwner->en_ulID;
+
+    if(((CEntity*)eSpawn.eidOwner)->en_RenderType == RT_SKAMODEL ||
+       ((CEntity*)eSpawn.eidOwner)->en_RenderType == RT_SKAEDITORMODEL)
+    {
+      ((CEntity*)eSpawn.eidOwner)->GetSize( m_boxOriginalOwner);
+      m_boxSizedOwner=m_boxOriginalOwner;
+      FLOAT3D vStretchVector=FLOAT3D(eSpawn.fSizeMultiplier,eSpawn.fSizeMultiplier,eSpawn.fSizeMultiplier);
+      m_boxSizedOwner.StretchByVector(vStretchVector);
+    }
+    else 
+    {
+      ((CEntity*)eSpawn.eidOwner)->en_pmoModelObject->GetCurrentFrameBBox( m_boxSizedOwner);
       m_boxOriginalOwner=m_boxSizedOwner;
-      m_boxSizedOwner.StretchByVector(eSpawn.penOwner->en_pmoModelObject->mo_Stretch*eSpawn.fSizeMultiplier);
-      m_boxOriginalOwner.StretchByVector(eSpawn.penOwner->en_pmoModelObject->mo_Stretch);
+      m_boxSizedOwner.StretchByVector(((CEntity*)eSpawn.eidOwner)->en_pmoModelObject->mo_Stretch*eSpawn.fSizeMultiplier);
+      m_boxOriginalOwner.StretchByVector(((CEntity*)eSpawn.eidOwner)->en_pmoModelObject->mo_Stretch);
     }
 
-      if (m_penOwner->GetPhysicsFlags()&EPF_MOVABLE) {
+    if (!_pNetwork->IsServer() && (m_penOwner->GetPhysicsFlags()&EPF_MOVABLE) && (m_penOwner->en_pciCollisionInfo!=NULL)) {
+      CMovableEntity *penMovable = (CMovableEntity *)((CEntity*)m_penOwner);
+      penMovable->TestFields(penMovable->en_iUpContent,penMovable->en_iDnContent,penMovable->en_fImmersionFactor);
+    }
+
+    if (m_penOwner->GetPhysicsFlags()&EPF_MOVABLE) {
       m_vGDir = ((CMovableEntity *)&*m_penOwner)->en_vGravityDir;
       m_fGA = ((CMovableEntity *)&*m_penOwner)->en_fGravityA;
     } else {

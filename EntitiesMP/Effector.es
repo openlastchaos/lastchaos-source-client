@@ -30,8 +30,11 @@ event ESpawnEffector {
   FLOAT tmLifeTime,                // FX's life period
   FLOAT fSize,                     // misc size
   INDEX ctCount,                   // misc count
-  CEntityPointer penModel,         // ptr to model object used in this effect
-  CEntityPointer penModel2,        // ptr to second model object used in this effect
+  CEntityID eidModel,         // ptr to model object used in this effect
+  CEntityID eidModel2,        // ptr to second model object used in this effect
+};
+
+event ETriggerEffector{
 };
 
 %{
@@ -72,13 +75,13 @@ thumbnail "";
 features "ImplementsOnPrecache";
 properties:
 
-  1 enum EffectorEffectType m_eetType = ET_NONE,                     // type of effect
+  1 enum EffectorEffectType m_eetType = ET_NONE features(EPROPF_NETSEND), // type of effect
   2 FLOAT m_tmStarted = 0.0f,                                        // time when spawned
-  3 FLOAT3D m_vDamageDir = FLOAT3D(0,0,0),                           // direction of damage
-  4 FLOAT3D m_vFXDestination = FLOAT3D(0,0,0),                       // FX destination
-  5 FLOAT m_tmLifeTime = 5.0f,                                       // how long effect lives
-  6 FLOAT m_fSize = 1.0f,                                            // effect's stretcher
-  8 INDEX m_ctCount = 0,                                             // misc count
+  3 FLOAT3D m_vDamageDir = FLOAT3D(0,0,0)  features(EPROPF_NETSEND),     // direction of damage
+  4 FLOAT3D m_vFXDestination = FLOAT3D(0,0,0) features(EPROPF_NETSEND),  // FX destination
+  5 FLOAT m_tmLifeTime = 5.0f features(EPROPF_NETSEND),                 // how long effect lives
+  6 FLOAT m_fSize = 1.0f features(EPROPF_NETSEND),                      // effect's stretcher
+  8 INDEX m_ctCount = 0 features(EPROPF_NETSEND),                                             // misc count
  10 BOOL m_bLightSource = FALSE,                                     // effect is also light source
  11 CAnimObject m_aoLightAnimation,                                  // light animation object
  12 INDEX m_iLightAnimation = -1,                                    // light animation index
@@ -86,19 +89,43 @@ properties:
  14 CEntityPointer m_penModel,                                       // ptr to model object used in this effect
  15 CEntityPointer m_penModel2,                                      // ptr to second model object used in this effect
  16 BOOL m_bWaitTrigger = FALSE,                                     // if effect is activated using trigger
-
+ 
+ 20 INDEX m_iModel1ID = -1 features(EPROPF_NETSEND),
+ 21 INDEX m_iModel2ID = -1 features(EPROPF_NETSEND),
 
 {
   CLightSource m_lsLightSource;
 }
 
 components:
-  1 model   MODEL_MARKER              "Models\\Editor\\Axis.mdl",
-  2 texture TEXTURE_MARKER            "Models\\Editor\\Vector.tex",
-  3 model   MODEL_POWER_RING          "Models\\CutSequences\\SpaceShip\\PowerRing.mdl",
-  4 texture TEXTURE_POWER_RING        "Models\\CutSequences\\SpaceShip\\PowerRing.tex"
+  1 editor model   MODEL_MARKER              "Data\\Models\\Editor\\Axis.mdl",
+  2 editor texture TEXTURE_MARKER            "Data\\Models\\Editor\\Vector.tex",
+  3 model   MODEL_POWER_RING          "Data\\Models\\CutSequences\\SpaceShip\\PowerRing.mdl",
+  4 texture TEXTURE_POWER_RING        "Data\\Models\\CutSequences\\SpaceShip\\PowerRing.tex"
 
 functions:
+
+  void InitializeFromNet() 
+  {
+    ESpawnEffector ese;
+    ese.eetType = m_eetType;
+    ese.vDamageDir = m_vDamageDir;
+    ese.vDestination = m_vFXDestination;;
+    ese.tmLifeTime = m_tmLifeTime;
+    ese.fSize = m_fSize;
+    ese.ctCount = m_ctCount;
+    if (m_iModel1ID == -1) {
+      ese.eidModel = (CEntity*)NULL;
+    } else {
+      ese.eidModel = _pNetwork->ga_World.EntityFromID(m_iModel1ID);      
+    }
+    if (m_iModel2ID == -1) {
+      ese.eidModel2 = (CEntity*)NULL;
+    } else {
+      ese.eidModel2 = _pNetwork->ga_World.EntityFromID(m_iModel2ID);      
+    }
+    Initialize(ese);
+  }
 
   // calculate life ratio
   FLOAT CalculateLifeRatio(FLOAT fFadeInRatio, FLOAT fFadeOutRatio)
@@ -154,8 +181,6 @@ functions:
     }
     if (m_eetType==ET_MORPH_MODELS && m_penModel!=NULL && m_penModel2!=NULL)
     {
-      CModelObject *pmo1 = m_penModel->GetModelObject();
-      CModelObject *pmo2 = m_penModel2->GetModelObject();
       TIME tmDelta = _pTimer->GetLerpedCurrentTick()-m_tmStarted;
       FLOAT fLifeRatio;
       if( m_tmStarted == -1)
@@ -174,8 +199,20 @@ functions:
       UBYTE ubAlpha2 = 255-ubAlpha1;
       COLOR col1 = C_WHITE|ubAlpha1;
       COLOR col2 = C_WHITE|ubAlpha2;
-      pmo1->mo_colBlendColor = col1;
-      pmo2->mo_colBlendColor = col2;
+      if (m_penModel->en_RenderType==RT_MODEL || m_penModel->en_RenderType==RT_EDITORMODEL) {
+        CModelObject *pmo = m_penModel->GetModelObject();
+        pmo->mo_colBlendColor = col1;
+      } else if (m_penModel->en_RenderType==RT_SKAMODEL || m_penModel->en_RenderType==RT_SKAEDITORMODEL) {
+        CModelInstance *pmi = m_penModel->GetModelInstance();
+        pmi->mi_colModelColor = col1;
+      }
+      if (m_penModel2->en_RenderType==RT_MODEL || m_penModel2->en_RenderType==RT_EDITORMODEL) {
+        CModelObject *pmo = m_penModel2->GetModelObject();
+        pmo->mo_colBlendColor = col2;
+      } else if (m_penModel->en_RenderType==RT_SKAMODEL || m_penModel->en_RenderType==RT_SKAEDITORMODEL) {
+        CModelInstance *pmi = m_penModel2->GetModelInstance();
+        pmi->mi_colModelColor = col2;
+      }    
     }
   }
 
@@ -291,9 +328,9 @@ functions:
   };
 
   /* Read from stream. */
-  void Read_t( CTStream *istr) // throw char *
+  void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CMovableModelEntity::Read_t(istr);
+    CMovableModelEntity::Read_t(istr,bNetwork);
     // setup light source
     if( m_bLightSource) {
       SetupLightSource();
@@ -303,7 +340,7 @@ functions:
   /* Get static light source information. */
   CLightSource *GetLightSource(void)
   {
-    if( m_bLightSource && !IsPredictor()) {
+    if( m_bLightSource) {
       return &m_lsLightSource;
     } else {
       return NULL;
@@ -316,9 +353,9 @@ functions:
     if( m_iLightAnimation>=0)
     { // set light animation if available
       try {
-        m_aoLightAnimation.SetData_t(CTFILENAME("Animations\\Effector.ani"));
+        m_aoLightAnimation.SetData_t(CTFILENAME("Data\\Animations\\Effector.ani"));
       } catch (char *strError) {
-        WarningMessage(TRANS("Cannot load Animations\\Effector.ani: %s"), strError);
+        WarningMessage(TRANS("Cannot load Data\\Animations\\Effector.ani: %s"), strError);
       }
       // play light animation
       if (m_aoLightAnimation.GetData()!=NULL) {
@@ -374,6 +411,7 @@ procedures:
     SetPhysicsFlags(EPF_MODEL_IMMATERIAL|EPF_MOVABLE);
     SetCollisionFlags(ECF_TOUCHMODEL);
     SetFlags( GetFlags()|ENF_SEETHROUGH);
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     SetModel(MODEL_MARKER);
     SetModelMainTexture(TEXTURE_MARKER);
@@ -387,9 +425,21 @@ procedures:
     m_fSize = eSpawn.fSize;
     m_ctCount = eSpawn.ctCount;
     m_bAlive = TRUE;
-    m_penModel = eSpawn.penModel;
-    m_penModel2 = eSpawn.penModel2;
+    m_penModel  = (CEntity*)eSpawn.eidModel;
+    m_penModel2 = (CEntity*)eSpawn.eidModel2;
     m_bWaitTrigger = FALSE;
+
+    if ((CEntity*)m_penModel != NULL) {
+      m_iModel1ID = ((CEntity*)m_penModel)->en_ulID;
+    } else {
+      m_iModel1ID = -1;
+    }
+
+    if ((CEntity*)m_penModel2 != NULL) {
+      m_iModel2ID = ((CEntity*)m_penModel2)->en_ulID;
+    } else {
+      m_iModel2ID = -1;
+    }
 
     autowait(0.1f);
 
@@ -440,6 +490,13 @@ procedures:
       {
         on( EBegin):{ resume;}
         on( ETrigger):
+        { 
+          if (_pNetwork->IsServer()) {
+              SendEvent(ETriggerEffector());
+            }
+          resume;
+        }
+        on (ETriggerEffector):
         {
           if(m_eetType==ET_MORPH_MODELS || m_eetType==ET_DISAPPEAR_MODEL || m_eetType==ET_APPEAR_MODEL)
           {
@@ -462,7 +519,7 @@ procedures:
       }
     }
 
-    Destroy();
+    Destroy(FALSE);
     return;
   }
 };

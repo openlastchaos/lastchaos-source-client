@@ -34,6 +34,12 @@ static BOOL EntityIsInside(CEntity *pen)
     if (boxEntity.HasContactWith(FLOATobbox3D(_pbsc->bsc_boxBoundingBox)) &&
       _pbsc->bsc_bspBSPTree.TestBox(boxdEntity)<=0) {
 
+      // if collision info is not valid for the entity
+      if (pen->en_pciCollisionInfo == NULL) {
+        // it cannot be inside
+        return FALSE;
+      }
+
       // for each collision sphere
       CStaticArray<CMovingSphere> &absSpheres = pen->en_pciCollisionInfo->ci_absSpheres;
       for(INDEX iSphere=0; iSphere<absSpheres.Count(); iSphere++) {

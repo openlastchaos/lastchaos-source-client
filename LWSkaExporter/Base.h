@@ -1,4 +1,8 @@
 #pragma once
+/*
+Copyright (C) 2001-2002 Croteam, Ltd.
+See COPYING (GNU Library General Public License 2) for license
+*/
 
 #include <stdio.h>
 #include <stdlib.h>

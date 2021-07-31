@@ -15,7 +15,6 @@ class CRaster {
 public:
   CViewPort *ra_pvpViewPort;        // viewport if existing
   CDrawPort ra_MainDrawPort;		    // initial drawport for entire raster
-  CListHead ra_DrawPortList;	      // list of drawports
 
   PIX    ra_Width;								  // number of pixels in one row
   PIX    ra_Height;							    // number of pixels in one column

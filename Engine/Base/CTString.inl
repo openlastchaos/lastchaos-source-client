@@ -37,6 +37,17 @@ ENGINE_API CTString::CTString( const char *strCharString)
   str_String = StringDuplicate( strCharString);
 }
 
+/*
+ * Constructor from wide character string.
+ */
+ENGINE_API CTString::CTString( const UWORD *strwCharString)
+{
+  ASSERT(strwCharString!=NULL);
+
+  // make string duplicate from wide chars
+  str_String = StringDuplicate(strwCharString);
+}
+
 /* Constructor with formatting. */
 ENGINE_API CTString::CTString(INDEX iDummy, const char *strFormat, ...)
 {
@@ -54,7 +65,7 @@ ENGINE_API CTString::~CTString()
   // check that it is valid
   ASSERT(IsValid());
   // free memory
-  FreeMemory(str_String);
+  StringFree(str_String);
 }
 
 /*
@@ -89,7 +100,7 @@ ENGINE_API CTString &CTString::operator=(const char *strCharString)
   // make a copy of character string
   char *strCopy = StringDuplicate(strCharString);
   // empty this string
-  FreeMemory(str_String);
+  StringFree(str_String);
   // assign it the copy of the character string
   str_String = strCopy;
 
@@ -106,7 +117,7 @@ ENGINE_API CTString &CTString::operator=(const CTString &strOther)
   // make a copy of character string
   char *strCopy = StringDuplicate(strOther.str_String);
   // empty this string
-  FreeMemory(str_String);
+  StringFree(str_String);
   // assign it the copy of the character string
   str_String = strCopy;
 

@@ -30,9 +30,9 @@ properties:
  19 CEntityPointer m_pen9  "Bit 9" COLOR(C_RED|0x30),
 
 components:
- 0 sound   SOUND_TICK       "Sounds\\Menu\\Select.wav",
- 1 model   MODEL_MARKER     "Models\\Editor\\Axis.mdl",
- 2 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex"
+ 0 sound   SOUND_TICK       "data\\sounds\\Default.wav",
+ 1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Axis.mdl",
+ 2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Vector.tex"
 
 functions:
   void Precache(void)

@@ -7,7 +7,7 @@
 /* Default constructor */
 inline CListNode::CListNode(void)
 {
-  // make a non-linked node
+  // make an non-linked node
   ln_Succ = NULL;
   ln_Pred = NULL;
 }
@@ -15,7 +15,7 @@ inline CListNode::CListNode(void)
 inline CListNode::CListNode(const CListNode &lnOriginal)
 {
   (void) lnOriginal;
-  // make a non-linked node
+  // make an non-linked node
   ln_Succ = NULL;
   ln_Pred = NULL;
 }
@@ -32,7 +32,7 @@ inline CListNode::~CListNode(void)
 inline CListNode &CListNode::operator=(const CListNode &lnOriginal)
 {
   (void) lnOriginal;
-  // make a non-linked node
+  // make an non-linked node
   ln_Succ = NULL;
   ln_Pred = NULL;
   return *this;

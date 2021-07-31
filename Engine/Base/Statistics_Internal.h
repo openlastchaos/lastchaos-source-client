@@ -24,9 +24,9 @@ public:
 class CStatCounter : public CStatEntry {
 public:
   CTString sc_strFormat;  // printing format (must contain one %f or %g or %e)
-  FLOAT sc_fCount;        // the counter itself
+  FLOAT sc_iCount;        // the counter itself
   FLOAT sc_fFactor;       // printout factor
-  inline void Clear(void) {};
+  __forceinline void Clear(void) {};
   virtual CTString Report(void);
 };
 
@@ -39,7 +39,7 @@ public:
   CTimerValue st_tvStarted; // time when the timer was started last time
   CTimerValue st_tvElapsed; // total elapsed time of the timer
   FLOAT st_fFactor;       // printout factor
-  inline void Clear(void) {};
+  __forceinline void Clear(void) {};
   virtual CTString Report(void);
 };
 
@@ -49,7 +49,7 @@ public:
 class CStatLabel : public CStatEntry {
 public:
   CTString sl_strFormat;  // printing format
-  inline void Clear(void) {};
+  __forceinline void Clear(void) {};
   virtual CTString Report(void);
 };
 
@@ -77,7 +77,16 @@ public:
     STI_MODELRENDERING,
     STI_PARTICLERENDERING,
     STI_FLARESRENDERING,
-
+//강동민 수정 시작			03.04
+	STI_SHADOWRENDERING,
+//강동민 수정 끝			03.04
+//강동민 수정 시작 Water 구현		04.22
+	STI_WATERRENDERING,
+//강동민 수정 끝 Water 구현			04.22
+//안태훈 수정 시작	//(Add & Modify SSSE Effect)(0.1)
+    STI_EFFECT,			//Effect Process and Render
+//안태훈 수정 끝	//(Add & Modify SSSE Effect)(0.1)
+    STI_EFFECTRENDER,	//Effect Texture Render
     STI_SOUNDUPDATE,
     STI_SOUNDMIXING,
     STI_TIMER,
@@ -85,7 +94,6 @@ public:
     STI_RAYCAST,
 
     STI_SHADOWUPDATE,
-    STI_EFFECTRENDER,
     STI_BINDTEXTURE, 
 
     STI_GFXAPI,
@@ -103,8 +111,12 @@ public:
     SCI_POLYGONEDGES,
     SCI_EDGETRANSITIONS,
 
-    SCI_SOUNDSMIXING,
-    SCI_SOUNDSACTIVE,
+//강동민 수정 시작 테스트 클라이언트 작업	06.29
+	SCI_REFLECTION_TRI,
+//강동민 수정 끝 테스트 클라이언트 작업		06.29
+
+    SCI_SOUNDSPLAYING,
+    SCI_SOUNDSPENDING,
 
     SCI_CACHEDSHADOWS,
     SCI_FLATSHADOWS,
@@ -120,40 +132,61 @@ public:
     SCI_TEXTUREUPLOADBYTES,
 
     SCI_PARTICLES,
-    SCI_MODELS,
+    SCI_OLDMODELS_QUEUED,
+    SCI_OLDMODELS_RENDERED,
+    SCI_SKAMODELS_QUEUED,
+    SCI_SKAMODELS_RENDERED,
+    SCI_SKAMESHES_RENDERED,
+    SCI_SKELETONS,
+    SCI_BONES,
     SCI_MODELSHADOWS,
-    SCI_TRIANGLES_USEDMIP,
-    SCI_TRIANGLES_FIRSTMIP,
-    SCI_SHADOWTRIANGLES_USEDMIP,
-    SCI_SHADOWTRIANGLES_FIRSTMIP,
+    SCI_MDLTRIANGLES_USEDMIP,
+    SCI_MDLTRIANGLES_FIRSTMIP,
+    SCI_SKATRIANGLES_USEDMIP,
+    SCI_SKATRIANGLES_FIRSTMIP,
+    SCI_GFXVERTICES,
+//강동민 수정 시작 테스트 클라이언트 작업	06.29
+	SCI_REFLECTION_VERTICE,
+	SCI_REFLECTION_SKATRI,
+//강동민 수정 끝 테스트 클라이언트 작업		06.29
 
+//안태훈 수정 시작	//(For Performance)(0.2)
+	SCI_DPCOUNT,
+//안태훈 수정 끝	//(For Performance)(0.2)
     SCI_COUNT
   };
 
   CStatForm(void);
   void Clear(void);
 
+  /* Increment counter by one. */
+  __forceinline void IncrementCounter(INDEX iCounter) {
+    sf_ascCounters[iCounter].sc_iCount++;
+  };
+
   /* Increment counter by given count. */
-  inline void IncrementCounter(INDEX iCounter, FLOAT fAdd=1) {
-    sf_ascCounters[iCounter].sc_fCount += fAdd;
+  __forceinline void IncrementCounter(INDEX iCounter, INDEX iCount) {
+    sf_ascCounters[iCounter].sc_iCount += iCount;
   };
 
   /* Start a timer. */
-  inline void StartTimer(INDEX iTimer) {
+  __forceinline void StartTimer(INDEX iTimer) {
+    extern INDEX _iStatsMode;
+    if( _iStatsMode<2) return;
     CStatTimer &st = sf_astTimers[iTimer];
-    ASSERT( sf_astTimers[iTimer].st_tvStarted.tv_llValue == -1);
     st.st_tvStarted = _pTimer->GetHighPrecisionTimer();
   };
   /* Stop a timer. */
-  inline void StopTimer(INDEX iTimer) {
+  __forceinline void StopTimer(INDEX iTimer) {
+    extern INDEX _iStatsMode;
+    if( _iStatsMode<2) return;
     CStatTimer &st = sf_astTimers[iTimer];
-    ASSERT( sf_astTimers[iTimer].st_tvStarted.tv_llValue != -1);
     st.st_tvElapsed += _pTimer->GetHighPrecisionTimer()-st.st_tvStarted;
     st.st_tvStarted.tv_llValue = -1;
   };
 
   /* Check whether the timer is counting. */
-  inline BOOL CheckTimer(INDEX iTimer) { 
+  __forceinline BOOL CheckTimer(INDEX iTimer) { 
     CStatTimer &st = sf_astTimers[iTimer];
     return (st.st_tvStarted.tv_llValue != -1);
   };

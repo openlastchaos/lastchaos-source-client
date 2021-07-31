@@ -6,6 +6,7 @@
 #include <Engine/Graphics/Color.h>
 #include <Engine/Templates/Stock_CTextureData.h>
 
+#define FONT_VERSION 2
 
 // some default fonts
 CFontData *_pfdDisplayFont;
@@ -17,7 +18,7 @@ CFontCharData::CFontCharData(void)
 {
   fcd_pixXOffset = 0;
   fcd_pixYOffset = 0;
-  fcd_pixStart   = 0;
+  fcd_pixStart = 0;
   fcd_pixEnd   = 0;
 }
 
@@ -42,6 +43,10 @@ CFontData::CFontData()
 {
   fd_ptdTextureData = NULL;
   fd_fnTexture = CTString("");
+  fd_pixShadowSpacing = 0;
+  fd_ulFlags = FNF_CELLBASED; // old font by default
+  fd_bSmallCaps=FALSE;
+  fd_fSmallCapsStretch=0.6f;
 }
 
 CFontData::~CFontData()
@@ -64,34 +69,63 @@ void CFontData::Read_t( CTStream *inFile) // throw char *
   // clear current font data (if needed)
   Clear();
 
-  // read the filename of the corresponding texture file.
-  inFile->ExpectID_t( CChunkID("FTTF"));
+  INDEX iFontVersion=-1;
+  // if old format
+  if(inFile->PeekID_t()==CChunkID("FTTF")) {
+    // read the filename of the corresponding texture file.
+    inFile->ExpectID_t( CChunkID("FTTF"));
+  // else read new format
+  } else {
+    // read the filename of the corresponding texture file.
+    inFile->ExpectID_t( CChunkID("FONN"));
+    *inFile >> iFontVersion;
+    // if version 2
+    if(iFontVersion==2) {
+      // read shadow spacing and flags
+      *inFile >> fd_pixShadowSpacing;
+      *inFile >> fd_ulFlags;
+    } else {
+		  ThrowF_t(TRANS("File '%s'.\nInvalid Font file version.\nExpected Ver \"%d\" but found \"%d\"\n"),
+        (const char*)inFile->GetDescription(),FONT_VERSION,iFontVersion);
+    }
+  }
   *inFile >> fd_fnTexture;
   // read maximum width and height of all letters
   *inFile >> fd_pixCharWidth;
   *inFile >> fd_pixCharHeight;
   // read entire letter data table
-  for( INDEX iLetterData=0; iLetterData<256; iLetterData ++) {
-    fd_fcdFontCharData[ iLetterData].Read_t( inFile);
+  for( INDEX iLetterData=0; iLetterData<256; iLetterData++) {
+    fd_fcdFontCharData[iLetterData].Read_t( inFile);
   }
-  // load corresponding texture file
+
+  // load corresponding texture file (don't allow any filters, mipmap removal and stuff)
   fd_ptdTextureData = _pTextureStock->Obtain_t(fd_fnTexture);
-  // reload corresponding texture if not loaded in largest mip-map
-  fd_ptdTextureData->Force( TEX_CONSTANT);
+  fd_ptdTextureData->Force(TEX_CONSTANT);
 
   // initialize default font variables
   SetVariableWidth();
-  SetCharSpacing(+1);
-  SetLineSpacing(+1);
-  SetSpaceWidth(0.5f);
-  fd_fcdFontCharData[' '].fcd_pixStart = 0;
+  if(iFontVersion==-1)
+  {
+    SetCharSpacing(+1);
+    SetLineSpacing(+1);
+    SetSpaceWidth(0.5f);
+    fd_fcdFontCharData[' '].fcd_pixStart = 0;
+  } else {
+    SetCharSpacing(0);
+    SetLineSpacing(0);
+  }
 }
+
 
 void CFontData::Write_t( CTStream *outFile) // throw char *
 {
   ASSERT( fd_ptdTextureData != NULL);
   // write the filename of the corresponding texture file
-  outFile->WriteID_t( CChunkID("FTTF"));
+  outFile->WriteID_t( CChunkID("FONN"));
+  *outFile << FONT_VERSION;
+  *outFile << fd_pixShadowSpacing;
+  *outFile << fd_ulFlags;
+
   *outFile << fd_fnTexture;
   // write max letter width and height of all letters
   *outFile << fd_pixCharWidth;
@@ -116,7 +150,7 @@ void CFontData::Make_t( const CTFileName &fnTexture, PIX pixCharWidth, PIX pixCh
   fd_fnTexture = fnTexture;
   // load texture and cache width
   fd_ptdTextureData = _pTextureStock->Obtain_t(fd_fnTexture);
-  fd_ptdTextureData->Force( TEX_STATIC|TEX_CONSTANT);
+  fd_ptdTextureData->Force(TEX_STATIC|TEX_CONSTANT);
   PIX pixTexWidth = fd_ptdTextureData->GetPixWidth();
 
   // load ascii order file (no application path necessary)

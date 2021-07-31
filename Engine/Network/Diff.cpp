@@ -43,7 +43,9 @@ void EmitXor_t(SLONG slOffsetOld, SLONG slSizeOld, SLONG slOffsetNew, SLONG slSi
   SLONG slSizeXor = Min(slSizeOld, slSizeNew);
   UBYTE *pub0 = _pubOld+slOffsetOld;
   UBYTE *pub1 = _pubNew+slOffsetNew;
-  for (INDEX i=0; i<slSizeXor; i++) {
+  INDEX i;
+
+  for (i=0; i<slSizeXor; i++) {
     *pub1++ ^= *pub0++;
   }
 
@@ -141,12 +143,14 @@ void MakeDiff_t(void)
   // emit chunk before entities by xor
   EmitXor_t(0, pubOldEnts-_pubOld, 0, pubNewEnts-_pubNew);
 
+  INDEX ieibNew;
   // for each entity in new
-  for(INDEX ieibNew = 0; ieibNew<_aebiNew.Count(); ieibNew++) {
+  for(ieibNew = 0; ieibNew<_aebiNew.Count(); ieibNew++) {
     EntityBlockInfo &ebiNew = _aebiNew[ieibNew];
     // find same in old file
     INDEX ieibOld = -1;
-    for(INDEX i=0; i<_aebiOld.Count(); i++) {
+	INDEX i;
+    for(i=0; i<_aebiOld.Count(); i++) {
       if (_aebiOld[i].ebi_ulID==ebiNew.ebi_ulID) {
         ieibOld = i;
         break;
@@ -252,7 +256,8 @@ void UnDiff_t(void)
       SLONG slSizeXor = Min(slSizeOld, slSizeNew);
       UBYTE *pub0 = _pubOld+slOffsetOld;
       UBYTE *pub1 = pubNew;
-      for (INDEX i=0; i<slSizeXor; i++) {
+	  INDEX i;
+      for (i=0; i<slSizeXor; i++) {
         *pub1++ ^= *pub0++;
       }
 

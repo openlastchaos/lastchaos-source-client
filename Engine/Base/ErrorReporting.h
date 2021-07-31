@@ -17,6 +17,8 @@ ENGINE_API extern BOOL YesNoMessage(const char *strFormat, ...);
 /* Get the description string for windows error code. */
 ENGINE_API extern const CTString GetWindowsError(DWORD dwWindowsErrorCode);
 
+// Set callback function that will be called on fatal error
+ENGINE_API extern void SetErrorFatalErrorCallback(void(*pErrorFatalErrorCallback)(const CTString &strMessage));
 
 #endif  /* include-once check. */
 

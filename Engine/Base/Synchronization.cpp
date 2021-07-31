@@ -187,7 +187,7 @@ INDEX OPTEX_Leave (POPTEX poptex)
 CTCriticalSection::CTCriticalSection(void)
 {
   // index must be set before using the mutex
-  cs_iIndex = -2;
+  cs_iIndex = -1;
   cs_pvObject = new OPTEX;
   OPTEX_Initialize((OPTEX*)cs_pvObject);
 }
@@ -215,7 +215,7 @@ CTSingleLock::CTSingleLock(CTCriticalSection *pcs, BOOL bLock) : sl_cs(*pcs)
   sl_bLocked = FALSE;
   sl_iLastLockedIndex = -2;
   // critical section must have index assigned
-  ASSERT(sl_cs.cs_iIndex>=1||sl_cs.cs_iIndex==-1);
+  ASSERT(!bLock||sl_cs.cs_iIndex>=1||sl_cs.cs_iIndex==-1);
   // if should lock immediately
   if (bLock) {
     Lock();

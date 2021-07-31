@@ -31,14 +31,14 @@ functions:
     return *this;
   }*/
   /* Read from stream. */
-  export void Read_t( CTStream *istr) // throw char *
+  export void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CMovableEntity::Read_t(istr);
+    CMovableEntity::Read_t(istr,bNetwork);
   }
   /* Write to stream. */
-  export void Write_t( CTStream *ostr) // throw char *
+  export void Write_t( CTStream *ostr,BOOL bNetwork) // throw char *
   {
-    CMovableEntity::Write_t(ostr);
+    CMovableEntity::Write_t(ostr,bNetwork);
   }
 
 procedures:

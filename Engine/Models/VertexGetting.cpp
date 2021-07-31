@@ -14,8 +14,6 @@
 
 extern FLOAT mdl_fLODMul;
 extern FLOAT mdl_fLODAdd;
-extern const FLOAT *pfSinTable;
-extern const FLOAT *pfCosTable;
 
 
 static BOOL _b16Bit;
@@ -103,7 +101,7 @@ void CModelObject::GetModelVertices( CStaticStackArray<FLOAT3D> &avVertices, FLO
 
   // allocate space for vertices
   FLOAT3D *pvFirstVtx = avVertices.Push( pmmiMip->mmpi_ctMipVx);
-
+  FLOAT fSinH,fCosH,fSinP,fCosP;
   // Transform a vertex in model with lerping
   if( pmd->md_Flags & MF_COMPRESSED_16BIT) {
     // for each vertex in mip
@@ -117,32 +115,34 @@ void CModelObject::GetModelVertices( CStaticStackArray<FLOAT3D> &avVertices, FLO
       v(2) = (Lerp((FLOAT)mfv0.mfv_SWPoint(2), (FLOAT)mfv1.mfv_SWPoint(2), fLerpRatio)-vOffset(2))*vStretch(2);
       v(3) = (Lerp((FLOAT)mfv0.mfv_SWPoint(3), (FLOAT)mfv1.mfv_SWPoint(3), fLerpRatio)-vOffset(3))*vStretch(3);
 
+      extern const FLOAT *_pfSinTable;
+      extern const FLOAT *_pfCosTable;
+      fSinH = _pfSinTable[mfv0.mfv_ubNormH];
+      fCosH = _pfCosTable[mfv0.mfv_ubNormH];
+      fSinP = _pfSinTable[mfv0.mfv_ubNormP];
+      fCosP = _pfCosTable[mfv0.mfv_ubNormP];
+      const FLOAT fX0 = -fSinH*fCosP;
+      const FLOAT fY0 = -fSinP;
+      const FLOAT fZ0 = -fCosH*fCosP;
 
-      FLOAT fSinH = pfSinTable[mfv0.mfv_ubNormH];
-      FLOAT fCosH = pfCosTable[mfv0.mfv_ubNormH];
-      FLOAT fSinP = pfSinTable[mfv0.mfv_ubNormP];
-      FLOAT fCosP = pfCosTable[mfv0.mfv_ubNormP];
-      FLOAT fX0 = -fSinH*fCosP;
-      FLOAT fY0 = +fSinP;
-      FLOAT fZ0 = -fCosH*fCosP;
-
-      fSinH = pfSinTable[mfv1.mfv_ubNormH];
-      fCosH = pfCosTable[mfv1.mfv_ubNormH];
-      fSinP = pfSinTable[mfv1.mfv_ubNormP];
-      fCosP = pfCosTable[mfv1.mfv_ubNormP];
-      FLOAT fX1 = -fSinH*fCosP;
-      FLOAT fY1 = +fSinP;
-      FLOAT fZ1 = -fCosH*fCosP;
+      fSinH = _pfSinTable[mfv1.mfv_ubNormH];
+      fCosH = _pfCosTable[mfv1.mfv_ubNormH];
+      fSinP = _pfSinTable[mfv1.mfv_ubNormP];
+      fCosP = _pfCosTable[mfv1.mfv_ubNormP];
+      const FLOAT fX1 = -fSinH*fCosP;
+      const FLOAT fY1 = -fSinP;
+      const FLOAT fZ1 = -fCosH*fCosP;
 
       FLOAT3D vNor;
-      vNor(1) = Lerp(fX0, fX1, fLerpRatio);
-      vNor(2) = Lerp(fY0, fY1, fLerpRatio);
-      vNor(3) = Lerp(fZ0, fZ1, fLerpRatio);
+      vNor(1) = Lerp( fX0, fX1, fLerpRatio);
+      vNor(2) = Lerp( fY0, fY1, fLerpRatio);
+      vNor(3) = Lerp( fZ0, fZ1, fLerpRatio);
 
       v=(v+vNor*fNormalOffset)*mRotation+vPosition;
       pvFirstVtx++;
     }
-  } else {
+  }
+  else {
     // for each vertex in mip
     for( INDEX iMipVx=0; iMipVx<pmmiMip->mmpi_ctMipVx; iMipVx++) {
       // get destination for unpacking

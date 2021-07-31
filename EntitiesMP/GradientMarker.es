@@ -18,8 +18,8 @@ properties:
   4 COLOR m_colColor1      "Color 1" 'A' = (C_WHITE|CT_OPAQUE),
 
 components:
-  1 model   MODEL_MARKER     "Models\\Editor\\GradientMarker.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\GradientMarker.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\GradientMarker.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\GradientMarker.tex"
 
 functions:
 
@@ -51,16 +51,16 @@ functions:
     // for all entities in world
     FOREACHINDYNAMICCONTAINER(GetWorld()->wo_cenEntities, CEntity, iten) {
       // if it is world base entity
-      if( IsOfClass(&*iten, "WorldBase")) {
+      if( IsOfClass( &*iten, &CWorldBase_DLLClass)) {
         // uncache shadows for gradient
         ((CWorldBase *)&*iten)->UncacheShadowsForGradient(this);
       }
     }
   }
 
-  void SetPlacement_internal(const CPlacement3D &plNew, const FLOATmatrix3D &mRotation, BOOL bNear)
+    void SetPlacement_special(const CPlacement3D &plNew, const FLOATmatrix3D &mRotation, ULONG ulFlags)
   {
-    CEntity::SetPlacement_internal(plNew, mRotation, bNear);
+    CEntity::SetPlacement_special(plNew, mRotation, ulFlags);
     UncacheShadowsForGradient();
   }
 

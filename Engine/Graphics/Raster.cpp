@@ -23,40 +23,23 @@ CRaster::CRaster(PIX ulWidth, PIX ulHeight, ULONG ulFlags) : ra_MainDrawPort()
   ra_Flags = ulFlags;
 
   // add main drawport to list
-  ASSERT( ra_DrawPortList.IsEmpty());
-  ra_DrawPortList.AddTail(ra_MainDrawPort.dp_NodeInRaster);
   ra_MainDrawPort.dp_Raster = this;
   ra_pvpViewPort = NULL;
 
-	// when all is initialized correct the drawport dimensions
-	RecalculateDrawPortsDimensions();
+	// when all is initialized, correct the drawport dimensions
+  ra_MainDrawPort.dp_ScissorMinI = ra_MainDrawPort.dp_MinI = 0;
+	ra_MainDrawPort.dp_ScissorMinJ = ra_MainDrawPort.dp_MinJ = 0;
+  ra_MainDrawPort.dp_ScissorMaxI = ra_MainDrawPort.dp_MaxI = ra_Width;
+	ra_MainDrawPort.dp_ScissorMaxJ = ra_MainDrawPort.dp_MaxJ = ra_Height;
 }
 
 
 CRaster::~CRaster(void)
 {
-	// remove main drawport from list of drawports
-	ra_MainDrawPort.dp_NodeInRaster.Remove();
-  // remove all other drawports in this raster
-  FORDELETELIST(CDrawPort, dp_NodeInRaster, ra_DrawPortList, litdp) {
-		// and delete each one
-    delete &litdp.Current();
-  }
-
   // raster must be unlocked before destroying it
 	ASSERT(ra_LockCount==0);
 }
 
-
-/* Recalculate dimensions for all drawports. */
-void CRaster::RecalculateDrawPortsDimensions(void)
-{
-  // for all drawports in this raster
-  FOREACHINLIST(CDrawPort, dp_NodeInRaster, ra_DrawPortList, litdp) {
-    // recalculate dimensions to fit new size of raster
-    litdp.Current().RecalculateDimensions();
-  }
-}
 
 
 /*
@@ -66,13 +49,7 @@ BOOL CRaster::Lock()
 {
   ASSERT( this!=NULL);
   ASSERT( ra_LockCount>=0);
-
-  // if raster size is too small in some axis
-  if( ra_Width<1 || ra_Height<1) {
-    // do not allow locking
-    ASSERTALWAYS( "Raster size to small to be locked!");
-    return FALSE;
-  }
+  ASSERT(ra_Width>0 && ra_Height>0);
 
   // if allready locked
   if( ra_LockCount>0) {
@@ -102,7 +79,11 @@ BOOL CRaster::Lock()
 void CRaster::Unlock()
 {
   ASSERT( this!=NULL);
-  ASSERT( ra_LockCount>0);
+  // if not locked
+  if (ra_LockCount<=0) {
+    // do nothing
+    return;
+  }
 
   // decrement counter
   ra_LockCount--;
@@ -124,5 +105,10 @@ void CRaster::Resize( PIX pixWidth, PIX pixHeight)
   if( pixHeight<=0) pixHeight = 1;
   ra_Width  = pixWidth;
   ra_Height = pixHeight;
-  RecalculateDrawPortsDimensions();
+
+  // correct the drawport dimensions
+  ra_MainDrawPort.dp_ScissorMinI = ra_MainDrawPort.dp_MinI = 0;
+	ra_MainDrawPort.dp_ScissorMinJ = ra_MainDrawPort.dp_MinJ = 0;
+  ra_MainDrawPort.dp_ScissorMaxI = ra_MainDrawPort.dp_MaxI = ra_Width;
+	ra_MainDrawPort.dp_ScissorMaxJ = ra_MainDrawPort.dp_MaxJ = ra_Height;
 }

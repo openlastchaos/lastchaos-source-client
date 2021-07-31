@@ -4,6 +4,7 @@
   #pragma once
 #endif
 
+
 #undef ALIGNED_NEW_AND_DELETE
 #ifdef NDEBUG
 #define ALIGNED_NEW_AND_DELETE(align) \

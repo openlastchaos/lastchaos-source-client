@@ -10,6 +10,11 @@ enum SwitchType {
   1 SWT_ONOFF   "On/Off",
 };
 
+event EFlipTheSwitch {
+  INDEX iState,
+  INDEX iUseable,
+};
+
 class CSwitch: CModelHolder2 {
 name      "Switch";
 thumbnail "Thumbnails\\Switch.tbn";
@@ -32,16 +37,42 @@ properties:
  19 CTString m_strMessage       "Message" 'M' = "",
 
  // internal -> do not use
- 20 BOOL m_bSwitchON = FALSE,
+ 20 BOOL m_bSwitchON = FALSE features(EPROPF_NETSEND),
  21 CEntityPointer m_penCaused,   // who triggered it last time
- 22 BOOL m_bUseable = FALSE,      // set while the switch can be triggered
- 23 BOOL m_bInvisible "Invisible" = FALSE,    // make it editor model
+ 22 BOOL m_bUseable = FALSE  features(EPROPF_NETSEND),      // set while the switch can be triggered
+ 23 BOOL m_bInvisible "Invisible" = FALSE  features(EPROPF_NETSEND),    // make it editor model
 
 
 components:
 
 
 functions:                                        
+  /* Handle an event, return false if the event is not handled. */
+  BOOL HandleEvent(const CEntityEvent &ee)
+  {
+    if (ee.ee_slEvent==EVENTCODE_EFlipTheSwitch) {
+      if (!_pNetwork->IsServer()) {
+        EFlipTheSwitch &efts = (EFlipTheSwitch&)ee;
+        m_bUseable = efts.iUseable;
+        if (efts.iState != m_bSwitchON) {
+          if (efts.iState) {
+            // switch ON
+            GetModelObject()->PlayAnim(m_iModelONAnimation, 0);
+            GetModelObject()->mo_toTexture.PlayAnim(m_iTextureONAnimation, 0);
+            m_bSwitchON = TRUE;
+          } else {
+            // switch off
+            GetModelObject()->PlayAnim(m_iModelOFFAnimation, 0);
+            GetModelObject()->mo_toTexture.PlayAnim(m_iTextureOFFAnimation, 0);
+            m_bSwitchON = FALSE;
+          }
+        }
+      }
+      return TRUE;
+    }
+
+    return CModelHolder2::HandleEvent(ee);
+  }
 
   /* Get anim data for given animation property - return NULL for none. */
   CAnimData *GetAnimData(SLONG slPropertyOffset) 
@@ -94,6 +125,12 @@ procedures:
       // do nothing
       return;
     }
+    if (_pNetwork->IsServer()) {
+      EFlipTheSwitch efts;
+      efts.iState = TRUE;
+      efts.iUseable = m_bUseable;
+      SendEvent(efts,TRUE);
+    }
     // switch ON
     GetModelObject()->PlayAnim(m_iModelONAnimation, 0);
     GetModelObject()->mo_toTexture.PlayAnim(m_iTextureONAnimation, 0);
@@ -114,6 +151,12 @@ procedures:
     if (!m_bSwitchON) {
       // do nothing
       return;
+    }
+    if (_pNetwork->IsServer()) {
+      EFlipTheSwitch efts;
+      efts.iState = FALSE;
+      efts.iUseable = m_bUseable;
+      SendEvent(efts,TRUE);
     }
     // switch off
     GetModelObject()->PlayAnim(m_iModelOFFAnimation, 0);
@@ -162,6 +205,12 @@ procedures:
       }
       on (EReturn) : {
         m_bUseable = !m_bSwitchON;
+        if (_pNetwork->IsServer()) {
+          EFlipTheSwitch efts;
+          efts.iState = m_bSwitchON;
+          efts.iUseable = m_bUseable;
+          SendEvent(efts,TRUE);
+        }
         resume;
       }
     }
@@ -185,6 +234,7 @@ procedures:
             call SwitchON();
           }
         }
+        resume;
       }
       // start -> switch ON
       on (EStart) : {
@@ -205,6 +255,12 @@ procedures:
       }
       on (EReturn) : {
         m_bUseable = TRUE;
+        if (_pNetwork->IsServer()) {
+          EFlipTheSwitch efts;
+          efts.iState = m_bSwitchON;
+          efts.iUseable = m_bUseable;
+          SendEvent(efts,TRUE);
+        }
         resume;
       }
     }

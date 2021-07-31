@@ -1,9 +1,9 @@
 #include "StdAfx.h"
 #include "LCDDrawing.h"
 
-static CTextureObject _toPointer;
-static CTextureObject _toBcgClouds;
-static CTextureObject _toBcgGrid;
+//static CTextureObject _toPointer;
+//static CTextureObject _toBcgClouds;
+//static CTextureObject _toBcgGrid;
 CDrawPort *_pdp = NULL;
 static PIX _pixSizeI;
 static PIX _pixSizeJ;
@@ -14,9 +14,9 @@ static ULONG _ulA;
 extern void LCDInit(void)
 {
   try {
-    _toBcgClouds.SetData_t(CTFILENAME("Textures\\General\\Background6.tex"));
-    _toBcgGrid.SetData_t(CTFILENAME("Textures\\General\\Grid16x16-dot.tex"));
-    _toPointer.SetData_t(CTFILENAME("Textures\\General\\Pointer.tex"));
+    //_toBcgClouds.SetData_t(CTFILENAME("Textures\\General\\Background6.tex"));
+    //_toBcgGrid.SetData_t(CTFILENAME("Textures\\General\\Grid16x16-dot.tex"));
+    //_toPointer.SetData_t(CTFILENAME("Textures\\General\\Pointer.tex",));
   } catch (char *strError) {
     FatalError("%s\n", strError);
   }
@@ -24,9 +24,9 @@ extern void LCDInit(void)
 
 extern void LCDEnd(void)
 {
-  _toBcgClouds.SetData(NULL);
-  _toBcgGrid.SetData(NULL);
-  _toPointer.SetData(NULL);
+  //_toBcgClouds.SetData(NULL);
+  //_toBcgGrid.SetData(NULL);
+  //_toPointer.SetData(NULL);
 }
 
 extern void LCDPrepare(FLOAT fFade)
@@ -111,36 +111,36 @@ extern void LCDScreenBox(COLOR col)
 
 extern void LCDRenderClouds1(void)
 {
-  MEXaabbox2D boxBcgClouds1;
-  TiledTexture(_boxScreen, 1.3f*_pdp->GetWidth()/640.0f, 
-    MEX2D(sin(_tmNow*0.75f)*50,sin(_tmNow*0.9f)*40),   boxBcgClouds1);
-  _pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds1, C_dGREEN|_ulA>>1);
-  TiledTexture(_boxScreen, 0.8f*_pdp->GetWidth()/640.0f, 
-    MEX2D(sin(_tmNow*0.95f)*50,sin(_tmNow*0.8f)*40),   boxBcgClouds1);
-  _pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds1, C_dGREEN|_ulA>>1);
+  //MEXaabbox2D boxBcgClouds1;
+  //TiledTexture(_boxScreen, 1.3f*_pdp->GetWidth()/640.0f, 
+  //MEX2D(sin(_tmNow*0.75f)*50,sin(_tmNow*0.9f)*40),   boxBcgClouds1);
+  //_pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds1, C_dGREEN|_ulA>>1);
+  //TiledTexture(_boxScreen, 0.8f*_pdp->GetWidth()/640.0f, 
+  //MEX2D(sin(_tmNow*0.95f)*50,sin(_tmNow*0.8f)*40),   boxBcgClouds1);
+  //_pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds1, C_dGREEN|_ulA>>1);
 }
 
 extern void LCDRenderClouds2(void)
 {
-  MEXaabbox2D boxBcgClouds2;
-  TiledTexture(_boxScreen, 0.5f*_pdp->GetWidth()/640.0f,
-    MEX2D(2,10), boxBcgClouds2);
-  _pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds2, C_BLACK|(_ulA>>1));
+  //MEXaabbox2D boxBcgClouds2;
+  //TiledTexture(_boxScreen, 0.5f*_pdp->GetWidth()/640.0f,
+  //MEX2D(2,10), boxBcgClouds2);
+  //_pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds2, C_BLACK|(_ulA>>1));
 }
 
 extern void LCDRenderClouds2Light(void)
 {
-  MEXaabbox2D boxBcgClouds2;
-  TiledTexture(_boxScreen, 1.7f*_pdp->GetWidth()/640.0f,
-    MEX2D(2,10), boxBcgClouds2);
-  _pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds2, C_BLACK|(_ulA>>1));
+  //MEXaabbox2D boxBcgClouds2;
+  //TiledTexture(_boxScreen, 1.7f*_pdp->GetWidth()/640.0f,
+  //MEX2D(2,10), boxBcgClouds2);
+  //_pdp->PutTexture(&_toBcgClouds, _boxScreen, boxBcgClouds2, C_BLACK|(_ulA>>1));
 }
 
 extern void LCDRenderGrid(void)
 {
-  MEXaabbox2D boxBcgGrid;
-  TiledTexture(_boxScreen, 1.0f, MEX2D(0,0),   boxBcgGrid);
-  _pdp->PutTexture(&_toBcgGrid,   _boxScreen, boxBcgGrid, C_dGREEN|_ulA);
+  //MEXaabbox2D boxBcgGrid;
+  //TiledTexture(_boxScreen, 1.0f, MEX2D(0,0),   boxBcgGrid);
+  //_pdp->PutTexture(&_toBcgGrid,   _boxScreen, boxBcgGrid, C_dGREEN|_ulA);
 }
 
 /*
@@ -193,7 +193,7 @@ extern COLOR LCDBlinkingColor(COLOR col0, COLOR col1)
 
 extern void LCDDrawPointer(PIX pixI, PIX pixJ)
 {
-  CDisplayMode dmCurrent;
+  /*CDisplayMode dmCurrent;
   _pGfx->GetCurrentDisplayMode(dmCurrent);
   if (dmCurrent.IsFullScreen()) {
     while (ShowCursor(FALSE) >= 0);
@@ -208,5 +208,5 @@ extern void LCDDrawPointer(PIX pixI, PIX pixJ)
   pixI-=1;
   pixJ-=1;
   _pdp->PutTexture( &_toPointer, PIXaabbox2D( PIX2D(pixI, pixJ), PIX2D(pixI+pixSizeI, pixJ+pixSizeJ)),
-                    LCDFadedColor(C_WHITE|255));
+                    LCDFadedColor(C_WHITE|255));*/
 }

@@ -2,17 +2,30 @@
 %{
 #include "StdH.h"
 #include "Models/Items/ItemHolder/ItemHolder.h"
+#include "EntitiesMP/Player.h"
 %}
+
+event EReceiveItem {
+};
+
+event EMarkPicked {
+  CEntityID eidPlayer,
+};
+
+event ESetType {
+  INDEX iType,
+};
 
 %{
 // used to render certain entities only for certain players (like picked items, etc.)
 extern ULONG _ulPlayerRenderingMask;
 %}
 
+
 class export CItem : CMovableModelEntity {
 name      "Item";
 thumbnail "";
-features  "HasName", "HasDescription", "IsTargetable", "CanBePredictable";
+features  "HasName", "HasDescription", "IsTargetable";
 
 properties:
   1 CTString m_strName            "Name" 'N' = "Item",
@@ -28,14 +41,20 @@ properties:
  10 CSoundObject m_soPick,      // sound channel
  12 FLOAT m_fPickSoundLen = 0.0f,
  14 BOOL m_bDropped = FALSE,    // dropped by a player during a deathmatch game
- 15 INDEX m_ulPickedMask = 0,   // mask for which players picked this item
+ 15 INDEX m_ulPickedMask = 0 features(EPROPF_NETSEND),   // mask for which players picked this item
  16 BOOL m_bFloating "Floating" 'F' = FALSE,
 
+ 40 INDEX m_ulRecentlyPickedMask = 0 features(EPROPF_NETSEND),   // prevents false reporting
+
 components:
-  1 model   MODEL_ITEM      "Models\\Items\\ItemHolder\\ItemHolder.mdl",
+  1 model   MODEL_ITEM      "Data\\Models\\Items\\ItemHolder\\ItemHolder.mdl",
 
 functions:
   virtual void AdjustDifficulty(void)
+  {
+  }
+
+  virtual void SetItemType(INDEX iType)
   {
   }
 
@@ -93,11 +112,35 @@ functions:
     // otherwise, render
     return TRUE;
   }
+  
+  
+  // check if given player recently picked this item, and mark if not
+  BOOL MarkRecentlyPickedBy(CEntity *pen)
+  {
+    if( !IsOfClass( pen, &CPlayer_DLLClass)) {
+      return FALSE;
+    }
+    INDEX iPlayer = ((CPlayerEntity*)pen)->GetMyPlayerIndex();
+    BOOL bPickedAlready = (1<<iPlayer)&m_ulRecentlyPickedMask;
+    m_ulRecentlyPickedMask |= (1<<iPlayer);
+    return bPickedAlready;
+  }
+
+  // check if given player already picked this item, and mark if not
+  BOOL WasRecentlyPickedBy(CEntity *pen)
+  {
+    if( !IsOfClass( pen, &CPlayer_DLLClass)) {
+      return FALSE;
+    }
+    INDEX iPlayer = ((CPlayerEntity*)pen)->GetMyPlayerIndex();
+    BOOL bPickedAlready = (1<<iPlayer)&m_ulRecentlyPickedMask;
+    return bPickedAlready;
+  }
 
   // check if given player already picked this item, and mark if not
   BOOL MarkPickedBy(CEntity *pen)
   {
-    if (!IsOfClass(pen, "Player")) {
+    if( !IsOfClass( pen, &CPlayer_DLLClass)) {
       return FALSE;
     }
     INDEX iPlayer = ((CPlayerEntity*)pen)->GetMyPlayerIndex();
@@ -106,11 +149,15 @@ functions:
     return bPickedAlready;
   }
 
-  // get maximum allowed range for predicting this entity
-  FLOAT GetPredictionRange(void)
+  // check if given player already picked this item, and mark if not
+  BOOL WasPickedBy(CEntity *pen)
   {
-    extern FLOAT cli_fPredictItemsRange;
-    return cli_fPredictItemsRange;
+    if( !IsOfClass( pen, &CPlayer_DLLClass)) {
+      return FALSE;
+    }
+    INDEX iPlayer = ((CPlayerEntity*)pen)->GetMyPlayerIndex();
+    BOOL bPickedAlready = (1<<iPlayer)&m_ulPickedMask;
+    return bPickedAlready;
   }
 
   /* Adjust model shading parameters if needed. */
@@ -144,7 +191,7 @@ functions:
 /************************************************************
  *                      INITALIZATION                       *
  ************************************************************/
-  void Initialize(void) {
+  void InitializeItem(void) {
     InitAsModel();
     SetFlags(GetFlags()|ENF_SEETHROUGH);
 
@@ -155,6 +202,7 @@ functions:
     }
 
     SetCollisionFlags(ECF_ITEM);
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     // make items not slide that much
     en_fDeceleration = 60.0f;
@@ -250,16 +298,24 @@ procedures:
 
   ItemLoop(EVoid)
   {
+    SetFlagOn(ENF_CLIENTHANDLING);
     m_fCustomRespawnTime = ClampDn( m_fCustomRespawnTime, 0.0f);
-    autowait(0.1f);
+    //autowait(0.1f);
+    wait(0.1f) {
+      on (EBegin) : { resume; }
+      on (ESetType eSetType) : {
+        SetItemType(eSetType.iType);
+        resume;
+      }
+      on (ETimer) : { stop; }
+    };
 
-    SetPredictable(TRUE);
     AdjustDifficulty();
 
     wait() {
       on (EBegin) : { resume; }
       on (EPass epass) : { 
-        if (!IsOfClass(epass.penOther, "Player")) {
+        if( !IsOfClass( epass.penOther, &CPlayer_DLLClass)) {
           pass;
         }
         if (!(m_bPickupOnce||m_bRespawn)) {
@@ -267,13 +323,32 @@ procedures:
           m_penTarget = NULL;
         }
         call ItemCollected(epass); 
+        resume;
+      }
+      on (EMarkPicked eMark) : {
+        MarkPickedBy((CEntity*)eMark.eidPlayer);
+        resume;
+      }
+      on (EReceiveItem) : {
+        if (!_pNetwork->IsServer()) {
+          call ItemReceived(EVoid()); 
+        }
+        resume;
+      }
+      on (ESetType eSetType) : {
+        SetItemType(eSetType.iType);
+        resume;
       }
       on (EEnd) : { stop; }
     }
     // wait for sound to end
     autowait(m_fPickSoundLen+0.5f);
     // cease to exist
-    Destroy();
+    if (m_bDropped) {
+      Destroy();
+    } else {
+      Destroy(FALSE);
+    }
     return;
   };
 
@@ -298,7 +373,7 @@ procedures:
       }
       // show yourself
       SwitchToModel();
-    
+      m_ulRecentlyPickedMask = 0;    
     // cease to exist
     } else {
       return EEnd();

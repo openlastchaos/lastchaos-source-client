@@ -1,6 +1,7 @@
 #include "stdh.h"
 
 #include <Engine/Base/Serial.h>
+#include <Engine/Base/MemoryTracking.h>
 
 #include <Engine/Base/Stream.h>
 #include <Engine/Base/CRCTable.h>
@@ -42,7 +43,9 @@ CTString CSerial::GetDescription(void)
 /*
  * Load from file.
  */
-void CSerial::Load_t(const CTFileName fnFileName)  // throw char *
+//안태훈 수정 시작	//(Bug FIx)(0.1)
+void CSerial::Load_t(const CTFileName &fnFileName)  // throw char *
+//안태훈 수정 끝	//(Bug FIx)(0.1)
 {
   ASSERT(!IsUsed());
   // mark that you have changed
@@ -63,13 +66,16 @@ void CSerial::Load_t(const CTFileName fnFileName)  // throw char *
  */
 void CSerial::Reload(void)
 {
+  /* if not found, */
+  TRACKMEM(Mem, strrchr((const char*)ser_FileName, '.'));
+
   // mark that you have changed
   MarkChanged();
 
   CTFileName fnmOldName = ser_FileName;
   Clear();
   // try to
-  //try {
+  try {
     // open a stream
     CTFileStream istrFile;
     istrFile.Open_t(fnmOldName);
@@ -77,10 +83,10 @@ void CSerial::Reload(void)
     Read_t(&istrFile);
 
   // if there is some error while reloading
-  //} catch (char *strError) {
+  } catch (char *strError) {
     // quit the application with error explanation
-    //FatalError(TRANS("Cannot reload file '%s':\n%s"), (CTString&)fnmOldName, strError);
-  //}
+    FatalError(TRANS("Cannot reload file '%s':\n%s"), (CTString&)fnmOldName, strError);
+  }
 
   // if still here (no exceptions raised)
   // remember filename
@@ -90,7 +96,9 @@ void CSerial::Reload(void)
 /*
  * Save to file.
  */
-void CSerial::Save_t(const CTFileName fnFileName)  // throw char *
+//안태훈 수정 시작	//(Bug FIx)(0.1)
+void CSerial::Save_t(const CTFileName &fnFileName)  // throw char *
+//안태훈 수정 끝	//(Bug FIx)(0.1)
 {
   // open a stream
   CTFileStream ostrFile;
@@ -100,6 +108,8 @@ void CSerial::Save_t(const CTFileName fnFileName)  // throw char *
   // if still here (no exceptions raised)
   // remember new filename
   ser_FileName = fnFileName;
+
+  ostrFile.Close();
 }
 
 /*

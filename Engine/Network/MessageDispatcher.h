@@ -69,6 +69,13 @@ public:
   /* Send/receive broadcast messages. */
   void SendBroadcast(const CNetworkMessage &nmMessage, ULONG ulAddr, UWORD uwPort);
   BOOL ReceiveBroadcast(CNetworkMessage &nmMessage, ULONG &ulAddr, UWORD &uwPort);
+  
+  void SendToServerNew(const CNetworkMessage &nmMessage, BOOL bLogin = FALSE);
+  BOOL ReceiveFromServerNew(CNetworkMessage &nmMessage);
+
+
+  // TCP server şŻĽö		// by seo-40225
+  BOOL IsTcpServer;			// by seo-40225
 };
 
 

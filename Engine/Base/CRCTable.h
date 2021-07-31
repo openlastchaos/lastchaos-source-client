@@ -12,6 +12,10 @@ void CRCT_Init(void);
 void CRCT_AddFile_t(const CTFileName &fnm, ULONG ulCRC=0);// throw char *
 // check if a file is added
 BOOL CRCT_IsFileAdded(const CTFileName &fnm);
+// find the file's index in the CRC table
+INDEX CRCT_GetFileIndex(const CTFileName &fnm);
+// find the filename for a given index in the CRC table
+const CTString CRCT_GetNameFromIndex(INDEX iIndex);
 // reset all files to not active
 void CRCT_ResetActiveList(void);
 // free all memory used by the crc cache

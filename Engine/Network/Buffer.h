@@ -23,14 +23,18 @@ public:
   CBuffer(void);
   // destructor
   ~CBuffer(void);
+
+  // how many bytes of data is in the buffer
+  SLONG GetUsedSize();
+
   // free buffer
-  void Clear(void);
+  virtual void Clear(void);
   // expand buffer to be given number of bytes in size
-  void Expand(SLONG slNewSize);
+  virtual void Expand(SLONG slNewSize);
   // set how many bytes to add when buffer overflows
   void SetAllocationStep(SLONG slStep);
   // read bytes from buffer
-  SLONG ReadBytes(void *pv, SLONG slSize);
+  virtual SLONG ReadBytes(void *pv, SLONG slSize);
   // skip bytes from buffer (read without actually reading)
   SLONG SkipBytes(SLONG slSize);
   // read bytes from buffer to stream
@@ -40,7 +44,7 @@ public:
   // check how many bytes are there to read
   SLONG QueryReadBytes(void);
   // write bytes to buffer
-  void WriteBytes(const void *pv, SLONG slSize);
+  virtual void WriteBytes(const void *pv, SLONG slSize);
   // move all data from another buffer to this one
   void MoveBuffer(CBuffer &buFrom);
 };

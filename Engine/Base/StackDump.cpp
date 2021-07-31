@@ -1,370 +1,560 @@
 #include "stdh.h"
 
-#include <Engine/Base/Console_Internal.h>
-
+#include <tchar.h>
 #include <Engine/Build.h>
+#include <Engine/Base/Stream.h>
+#include <Engine/Base/StackDump.h>
+#include <Engine/Base/Console_Internal.h>
+#include <Engine/Base/MemoryTracking.h>
+#include <Engine/Base/ErrorReporting.h>
+#include <Engine/Network/Web.h>
+#include <wininet.h>
 
-extern ULONG _ulEngineBuildMajor;
-extern ULONG _ulEngineBuildMinor;
+static LPTOP_LEVEL_EXCEPTION_FILTER _efPreviousFilter; // Previous filter
+static char _fnReportFileName[MAX_PATH] = ""; // Report file name
+static CTString strSendErrorData = "";  // 전송할 에러 데이터 
+//extern ULONG _ulEngineBuildMajor;
+//extern ULONG _ulEngineBuildMinor;
+extern void FCPrintF(CTFileStream *pstrm,const char *strFormat, ...);
+extern UINT g_uiEngineVersion;
+extern int g_iLocalVersion;
+extern SLONG	g_slZone;
 
-//==========================================
-// Matt Pietrek
-// Microsoft Systems Journal, May 1997
-// FILE: MSJEXHND.CPP
+// <-- ErrorLog.txt에 디스플레이 정보를 기록하기 위한 부분
+extern CTString _strDisplayDriver;
+extern CTString _strDisplayDriverVersion;
+extern CTString	_strSoundDriver;
+extern CTString _strTotalMemory;
+extern INDEX g_iCountry;
+// -->
 
-class MSJExceptionHandler
+#define DUMP_LOGICAL_ADDR 1
+
+// dummy function for converting abs addressess to logical ones
+extern volatile ULONG __RefFuncAtAbsAddr(void)
 {
-      public:
+	return -1;
+}
 
-      MSJExceptionHandler( );
-      ~MSJExceptionHandler( );
-
-      void SetLogFileName(const char* pszLogFileName );
-
-      private:
-
-      // entry point where control comes on an unhandled exception
-      static LONG WINAPI MSJUnhandledExceptionFilter(
-                                           PEXCEPTION_POINTERS pExceptionInfo );
-
-      // where report info is extracted and generated
-      static void GenerateExceptionReport( PEXCEPTION_POINTERS pExceptionInfo );
-
-      // Helper functions
-      static const char* GetExceptionString( DWORD dwCode );
-      static BOOL GetLogicalAddress(PVOID addr, char* szModule, DWORD len,
-                                    DWORD& section, DWORD& offset );
-      static void IntelStackWalk( PCONTEXT pContext );
-      static int __cdecl _tprintf(const char * format, ...);
-
-      // Variables used by the class
-      static char m_szLogFileName[MAX_PATH];
-      static LPTOP_LEVEL_EXCEPTION_FILTER m_previousFilter;
-      static HANDLE m_hReportFile;
-
-};
-
-//extern MSJExceptionHandler g_MSJExceptionHandler;  // global instance of class
-
-MSJExceptionHandler g_MSJExceptionHandler;  // Declare global instance of class
-
-//============================== Global Variables =============================
-
-//
-// Declare the static variables of the MSJExceptionHandler class
-//
-char MSJExceptionHandler::m_szLogFileName[MAX_PATH];
-LPTOP_LEVEL_EXCEPTION_FILTER MSJExceptionHandler::m_previousFilter;
-HANDLE MSJExceptionHandler::m_hReportFile;
-
-//============================== Class Methods =============================
-
-//=============
-// Constructor
-//=============
-MSJExceptionHandler::MSJExceptionHandler( )
+static void _tprintf(HANDLE hFile, const char *format, ...)
 {
-    // Install the unhandled exception filter function
-    m_previousFilter = SetUnhandledExceptionFilter(MSJUnhandledExceptionFilter);
+	char achBuffer[1024];
+	
+	va_list argptr;
+	va_start(argptr, format);
+	wvsprintf(achBuffer, format, argptr);
+	va_end(argptr);
+	
+	INDEX iLength = strlen(achBuffer);
+	ULONG ulBytesWritten;
+	WriteFile(hFile,achBuffer,iLength, &ulBytesWritten, 0);
 
-    // Figure out what the report file will be named, and store it away
-    GetModuleFileNameA( 0, m_szLogFileName, MAX_PATH );
+	strSendErrorData += achBuffer;// 웹 전송 데이터
+}
 
-    // Look for the '.' before the "EXE" extension.  Replace the extension
-    // with "RPT"
-    char* pszDot = strrchr( m_szLogFileName, '.' );
-    if ( pszDot )
+static LPTSTR GetExceptionString(ULONG ulCode)
+{
+#define EXCEPTION( x ) case EXCEPTION_##x: return #x;
+	
+	switch(ulCode) {
+		EXCEPTION( ACCESS_VIOLATION )
+			EXCEPTION( DATATYPE_MISALIGNMENT )
+			EXCEPTION( BREAKPOINT )
+			EXCEPTION( SINGLE_STEP )
+			EXCEPTION( ARRAY_BOUNDS_EXCEEDED )
+			EXCEPTION( FLT_DENORMAL_OPERAND )
+			EXCEPTION( FLT_DIVIDE_BY_ZERO )
+			EXCEPTION( FLT_INEXACT_RESULT )
+			EXCEPTION( FLT_INVALID_OPERATION )
+			EXCEPTION( FLT_OVERFLOW )
+			EXCEPTION( FLT_STACK_CHECK )
+			EXCEPTION( FLT_UNDERFLOW )
+			EXCEPTION( INT_DIVIDE_BY_ZERO )
+			EXCEPTION( INT_OVERFLOW )
+			EXCEPTION( PRIV_INSTRUCTION )
+			EXCEPTION( IN_PAGE_ERROR )
+			EXCEPTION( ILLEGAL_INSTRUCTION )
+			EXCEPTION( NONCONTINUABLE_EXCEPTION )
+			EXCEPTION( STACK_OVERFLOW )
+			EXCEPTION( INVALID_DISPOSITION )
+			EXCEPTION( GUARD_PAGE )
+			EXCEPTION( INVALID_HANDLE )
+	}
+	// If not one of the "known" exceptions, try to get the string
+	// from NTDLL.DLL's message table.
+	
+	static TCHAR szBuffer[512] = { 0 };
+	FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_FROM_HMODULE,
+		GetModuleHandle("NTDLL.DLL"),
+		ulCode, 0, szBuffer, sizeof( szBuffer ), 0 );
+	
+	return szBuffer;
+}
+
+static void IntelStackWalk(HANDLE hFile, PCONTEXT pContext)
+{
+	_tprintf(hFile, "\nmanual stack frame walk begin:\r\n");
+	_tprintf(hFile, "\r\n");
+	_tprintf(hFile, "Address   Frame     Logical addr  Module\r\n");
+	
+	DWORD pc = pContext->Eip;
+	PDWORD pFrame, pPrevFrame;
+	pFrame = (PDWORD)pContext->Ebp;
+	
+	for(INDEX iDepth=0; iDepth<100; iDepth++) {
+		char szModule[MAX_PATH] = "";
+		DWORD section = 0, offset = 0;
+		_tprintf(hFile, "%08X %08X ", pc, pFrame);
+		DWORD symDisplacement = 0;  // Displacement of the input address, relative to the start of the symbol
+		
+#if DUMP_LOGICAL_ADDR
+		BOOL bSuccess = GetLogicalAddress((PVOID)pc, szModule,sizeof(szModule),section,offset );
+		ASSERT(bSuccess);
+		_tprintf(hFile, "$adr: %s %04X:%08X", szModule, section, offset);
+#else
+		// :(
+#if _DEBUG
+		strcpy(szModule,"SeriousSamXD.xbe");
+#else
+		strcpy(szModule,"SeriousSamX.xbe");
+#endif
+		
+		_tprintf(hFile, "@adr: %s 0x%08X", szModule, (ULONG*)pc);
+#endif
+		
+		_tprintf(hFile, "\r\n");
+		pc = pFrame[1];
+		pPrevFrame = pFrame;
+		pFrame = (PDWORD)pFrame[0]; // proceed to next higher frame on stack
+		if((DWORD)pFrame&3) { // Frame pointer must be aligned on a
+			break;            // DWORD boundary.  Bail if not so.
+		}
+		
+		if(pFrame<=pPrevFrame) {
+			break;
+		}
+		
+		// Can two DWORDs be read from the supposed frame address?
+		if(IsBadWritePtr(pFrame, sizeof(PVOID)*2)) {
+			break;
+		}
+	}
+	_tprintf(hFile, "\nmanual stack frame walk end:\r\n" );
+}
+
+static void SendErrorInfo( HANDLE hFile, CTString &csContents )
+{
+	HINTERNET hOpen, hConnect, hReq;
+
+	hOpen = InternetOpen( "Web Error Data Send",
+							INTERNET_OPEN_TYPE_PRECONFIG,
+							NULL,
+							NULL,
+							0 );
+
+	if( hOpen == NULL ) 
+	{
+		_tprintf( hFile, "Not InternetOpen\r\n" );
+		return;
+	}
+
+	hConnect = InternetConnect( hOpen, "lastchaos2.2pan4pan.com", INTERNET_DEFAULT_HTTP_PORT,
+		"", "", INTERNET_SERVICE_HTTP, 0, 0 );
+
+	if( !hConnect )
+	{
+		_tprintf( hFile, "Not InternetConnect \r\n" );
+		InternetCloseHandle( hOpen );
+		return;
+	}
+
+	hReq = HttpOpenRequest( hConnect, "POST", "/client/report_insert.asp", HTTP_VERSION, "", NULL,
+		INTERNET_FLAG_CACHE_IF_NET_FAIL | INTERNET_FLAG_MAKE_PERSISTENT | INTERNET_FLAG_KEEP_CONNECTION, 0 );
+	
+	if( !hReq )
+	{
+		_tprintf( hFile, "Not HttpOpenRequest\r\n" );
+		InternetCloseHandle( hConnect );
+		InternetCloseHandle( hOpen );
+		return;
+	}
+
+	if( !InternetCheckConnection( "http://lastchaos2.2pan4pan.com/client/report_insert.asp",
+		FLAG_ICC_FORCE_CONNECTION, 0 ) )
+	{
+		_tprintf( hFile, "Not InternetCheckConnection\r\n" );
+		InternetCloseHandle( hConnect );
+		InternetCloseHandle( hOpen );
+		return;
+	}
+
+	//post header
+	const TCHAR *pszHeader = TEXT("Content-Type: application/x-www-form-urlencoded");
+	std::string csConvert( "" );
+	csConvert = ConvertStringToWebParameter( csContents.str_String );
+	CTString csSendData = "";
+	csSendData.PrintF( "err_version=%d&err_log=%s&err_country=%d", g_uiEngineVersion, csConvert.c_str(), g_iCountry );
+	DWORD dwSize = csSendData.Length();
+
+	if( !HttpSendRequest( hReq, pszHeader, _tcslen(pszHeader), csSendData.str_String, dwSize ) )
+	{
+		_tprintf( hFile, "Not HttpSendRequest\r\n" );
+		InternetCloseHandle( hReq );
+		InternetCloseHandle( hConnect );
+		InternetCloseHandle( hOpen );
+		return;
+	}
+
+	InternetCloseHandle( hReq );
+	InternetCloseHandle( hConnect );
+	InternetCloseHandle( hOpen );
+}
+
+static void GenerateExceptionReport(HANDLE hFile, PEXCEPTION_POINTERS pExceptionInfo)
+{
+	char strTime[80];
+	char strDate[80];
+	_strtime(strTime);
+	_strdate(strDate);
+
+	PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
+
+#if DUMP_LOGICAL_ADDR
+	// Now print information about where the fault occured
+	TCHAR szFaultingModule[MAX_PATH];
+	DWORD section, offset;
+	BOOL bSuccess = GetLogicalAddress(pExceptionRecord->ExceptionAddress, szFaultingModule,
+		sizeof(szFaultingModule), section, offset);
+	ASSERT(bSuccess);
+	_tprintf(hFile, "[%08X][v.%d-%d][%d]\r\n", pExceptionRecord->ExceptionAddress, g_uiEngineVersion, g_iLocalVersion, g_slZone );
+#else 
+#define GETVARNAME(x) #x
+	_tprintf(hFile, "Referent variable: %s 0x%08X\r\n",GETVARNAME(__RefFuncAtAbsAddr),&__RefFuncAtAbsAddr);
+#endif
+	
+	/*
+	// Start out with a banner
+	_tprintf( hFile, "//===== %s %s Bug Report[v. %d - %d] Zone : %d=====\r\n", strDate,
+														strTime, g_uiEngineVersion, g_iLocalVersion, g_slZone );														
+	
+	  */
+	//--------------------OS Version----------------------------------
+	OSVERSIONINFO osv;
+	memset(&osv, 0, sizeof(osv));
+	osv.dwOSVersionInfoSize = sizeof(osv);
+	if (GetVersionEx(&osv)) 
+	{
+		switch (osv.dwPlatformId) 
+		{
+		case VER_PLATFORM_WIN32s:         _tprintf(hFile, "Type : Win32s\r\n");  break;
+		case VER_PLATFORM_WIN32_WINDOWS:  _tprintf(hFile, "Type : Win9x\r\n"); break;
+		case VER_PLATFORM_WIN32_NT:       _tprintf(hFile, "Type : WinNT\r\n"); break;
+		default: _tprintf(hFile, "Type : Unknown\r\n"); break;
+		}
+		_tprintf(hFile, "  Version: %d.%d, build %d\r\n", 
+			osv.dwMajorVersion, osv.dwMinorVersion, osv.dwBuildNumber & 0xFFFF);
+		_tprintf(hFile, "  Misc: %s\r\n", osv.szCSDVersion);
+	} 
+	else 
+	{
+		_tprintf(hFile, "Error getting OS info: %s\r\n", GetWindowsError(GetLastError()) );
+	}
+	_tprintf(hFile, "Total Memory : %s\r\n", _strTotalMemory);			// 물리적 메모리 크기
+	_tprintf(hFile, "\r\n");
+	
+	//--------------------Display Info----------------------------------
+	// NOTE : 아래 코드는 레지스트리에서 정보를 읽어오던 부분인데,
+	// NOTE : DX함수를 통해서 얻어온 디스플레이 정보를 사용하도록 수정했음.
+	/*
+	HKEY hKey;
+    long lResult;
+
+	lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\0000",
+			0, 
+			KEY_ALL_ACCESS,
+			&hKey
+			);
+
+    if( lResult == ERROR_SUCCESS ) 
     {
-        pszDot++;   // Advance past the '.'
-        if ( strlen(pszDot) >= 3 )
-            strcpy( pszDot, "RPT" );   // "RPT" -> "Report"
-    }
-}
-
-//============
-// Destructor
-//============
-MSJExceptionHandler::~MSJExceptionHandler( )
-{
-    SetUnhandledExceptionFilter( m_previousFilter );
-}
-
-//==============================================================
-// Lets user change the name of the report file to be generated
-//==============================================================
-void MSJExceptionHandler::SetLogFileName(const char* pszLogFileName )
-{
-    strcpy( m_szLogFileName, pszLogFileName );
-}
-
-//===========================================================
-// Entry point where control comes on an unhandled exception
-//===========================================================
-LONG WINAPI MSJExceptionHandler::MSJUnhandledExceptionFilter(
-                                             PEXCEPTION_POINTERS pExceptionInfo )
-{
-    m_hReportFile = CreateFileA( m_szLogFileName,
-                                GENERIC_WRITE,
-                                0,
-                                0,
-                                OPEN_ALWAYS,
-                                FILE_FLAG_WRITE_THROUGH,
-                                0 );
-
-    if ( m_hReportFile )
-    {
-        SetFilePointer( m_hReportFile, 0, 0, FILE_END );
-
-        GenerateExceptionReport( pExceptionInfo );
-
-        CloseHandle( m_hReportFile );
-        m_hReportFile = 0;
-    }
-
-    // make sure the console log was written safely
-    if (_pConsole!=NULL) {
-      _pConsole->CloseLog();
-    }
-    extern void EnableWindowsKeys(void);
-    EnableWindowsKeys();
-
-    if ( m_previousFilter )
-        return m_previousFilter( pExceptionInfo );
-    else
-        return EXCEPTION_CONTINUE_SEARCH;
-}
-
-//===========================================================================
-// Open the report file, and write the desired information to it.  Called by
-// MSJUnhandledExceptionFilter
-//===========================================================================
-void MSJExceptionHandler::GenerateExceptionReport(
-    PEXCEPTION_POINTERS pExceptionInfo )
-{
-    // Start out with a banner
-    _tprintf( "//=====================================================\n" );
-    char strTime[80];
-    _strtime(strTime);
-    char strDate[80];
-    _strdate(strDate);
-    _tprintf( "Crashed at: %s %s\n", strDate, strTime);
-    _tprintf( "Version: %d.%d%s%s\n", _ulEngineBuildMajor, _ulEngineBuildMinor, _SE_BUILD_EXTRA, _SE_DEMO?"-demo":"");
-
-    PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
-
-    // First print information about the type of fault
-    _tprintf(   "Exception code: %08X %s\n",
-                pExceptionRecord->ExceptionCode,
-                GetExceptionString(pExceptionRecord->ExceptionCode) );
-
-    // Now print information about where the fault occured
-    char szFaultingModule[MAX_PATH];
-    DWORD section, offset;
-    GetLogicalAddress(  pExceptionRecord->ExceptionAddress,
-                        szFaultingModule,
-                        sizeof( szFaultingModule ),
-                        section, offset );
-
-    _tprintf( "Fault address:  %08X %02X:%08X %s\n",
-              pExceptionRecord->ExceptionAddress,
-              section, offset, szFaultingModule );
-
-    PCONTEXT pCtx = pExceptionInfo->ContextRecord;
-
-    // Show the registers
-    #ifdef _M_IX86  // Intel Only!
-    _tprintf( "\nRegisters:\n" );
-
-    _tprintf("EAX:%08X\nEBX:%08X\nECX:%08X\nEDX:%08X\nESI:%08X\nEDI:%08X\n",
-             pCtx->Eax, pCtx->Ebx, pCtx->Ecx, pCtx->Edx, pCtx->Esi, pCtx->Edi );
-
-    _tprintf( "CS:EIP:%04X:%08X\n", pCtx->SegCs, pCtx->Eip );
-    _tprintf( "SS:ESP:%04X:%08X  EBP:%08X\n",
-              pCtx->SegSs, pCtx->Esp, pCtx->Ebp );
-    _tprintf( "DS:%04X  ES:%04X  FS:%04X  GS:%04X\n",
-              pCtx->SegDs, pCtx->SegEs, pCtx->SegFs, pCtx->SegGs );
-    _tprintf( "Flags:%08X\n", pCtx->EFlags );
-
-    #endif
-
-    #ifdef _M_IX86  // Intel Only!
-    // Walk the stack using x86 specific code
-    IntelStackWalk( pCtx );
-    #endif
-
-    _tprintf( "\n" );
-}
-
-//======================================================================
-// Given an exception code, returns a pointer to a static string with a
-// description of the exception
-//======================================================================
-const char* MSJExceptionHandler::GetExceptionString( DWORD dwCode )
-{
-    #define EXCEPTION( x ) case EXCEPTION_##x: return #x;
-
-    switch ( dwCode )
-    {
-        EXCEPTION( ACCESS_VIOLATION )
-        EXCEPTION( DATATYPE_MISALIGNMENT )
-    case EXCEPTION_BREAKPOINT: return "BREAKPOINT";
-        //EXCEPTION( BREAKPOINT )
-        EXCEPTION( SINGLE_STEP )
-        EXCEPTION( ARRAY_BOUNDS_EXCEEDED )
-        EXCEPTION( FLT_DENORMAL_OPERAND )
-        EXCEPTION( FLT_DIVIDE_BY_ZERO )
-        EXCEPTION( FLT_INEXACT_RESULT )
-        EXCEPTION( FLT_INVALID_OPERATION )
-        EXCEPTION( FLT_OVERFLOW )
-        EXCEPTION( FLT_STACK_CHECK )
-        EXCEPTION( FLT_UNDERFLOW )
-        EXCEPTION( INT_DIVIDE_BY_ZERO )
-        EXCEPTION( INT_OVERFLOW )
-        EXCEPTION( PRIV_INSTRUCTION )
-        EXCEPTION( IN_PAGE_ERROR )
-        EXCEPTION( ILLEGAL_INSTRUCTION )
-        EXCEPTION( NONCONTINUABLE_EXCEPTION )
-        EXCEPTION( STACK_OVERFLOW )
-        EXCEPTION( INVALID_DISPOSITION )
-        EXCEPTION( GUARD_PAGE )
-        EXCEPTION( INVALID_HANDLE )
-    }
-
-    // If not one of the "known" exceptions, try to get the string
-    // from NTDLL.DLL's message table.
-
-    static char szBuffer[512] = { 0 };
-
-    FormatMessageA(  FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_HMODULE,
-                    GetModuleHandleA( "NTDLL.DLL" ),
-                    dwCode, 0, szBuffer, sizeof( szBuffer ), 0 );
-
-    return szBuffer;
-}
-
-//==============================================================================
-// Given a linear address, locates the module, section, and offset containing
-// that address.
-//
-// Note: the szModule paramater buffer is an output buffer of length specified
-// by the len parameter (in characters!)
-//==============================================================================
-BOOL MSJExceptionHandler::GetLogicalAddress(
-        PVOID addr, char* szModule, DWORD len, DWORD& section, DWORD& offset )
-{
-    MEMORY_BASIC_INFORMATION mbi;
-
-    if ( !VirtualQuery( addr, &mbi, sizeof(mbi) ) )
-        return FALSE;
-
-    DWORD hMod = (DWORD)mbi.AllocationBase;
-
-    if ( !GetModuleFileNameA( (HMODULE)hMod, szModule, len ) )
-        return FALSE;
-
-    // Point to the DOS header in memory
-    PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)hMod;
-
-    // From the DOS header, find the NT (PE) header
-    PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)(hMod + pDosHdr->e_lfanew);
-
-    PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION( pNtHdr );
-
-    DWORD rva = (DWORD)addr - hMod; // RVA is offset from module load address
-
-    // Iterate through the section table, looking for the one that encompasses
-    // the linear address.
-    for (   unsigned i = 0;
-            i < pNtHdr->FileHeader.NumberOfSections;
-            i++, pSection++ )
-    {
-        DWORD sectionStart = pSection->VirtualAddress;
-        DWORD sectionEnd = sectionStart
-                    + max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
-
-        // Is the address in this section???
-        if ( (rva >= sectionStart) && (rva <= sectionEnd) )
-        {
-            // Yes, address is in the section.  Calculate section and offset,
-            // and store in the "section" & "offset" params, which were
-            // passed by reference.
-            section = i+1;
-            offset = rva - sectionStart;
-            return TRUE;
+        DWORD len = MAX_PATH;
+        BYTE buff[MAX_PATH] = {0};
+        DWORD type = 1;
+        int ecode = RegQueryValueEx(hKey, "DriverDesc", NULL, &type, buff, &len);
+        if(ERROR_SUCCESS == ecode)
+        {           
+			_tprintf(hFile, "Display : %s\r\n", buff);
         }
+        RegCloseKey(hKey);
     }
 
-    return FALSE;   // Should never get here!
-}
+	lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Service\\Class\\Display\\0000",
+			0, 
+			KEY_ALL_ACCESS,
+			&hKey
+			);
 
-//============================================================
-// Walks the stack, and writes the results to the report file
-//============================================================
-void MSJExceptionHandler::IntelStackWalk( PCONTEXT pContext )
-{
-    _tprintf( "\nmanual stack frame walk begin:\n" );
-
-    _tprintf( "Address   Frame     Logical addr  Module\n" );
-
-    DWORD pc = pContext->Eip;
-    PDWORD pFrame, pPrevFrame;
-
-    pFrame = (PDWORD)pContext->Ebp;
-
-
-    for(INDEX iDepth=0; iDepth<100; iDepth++)
+	if( lResult == ERROR_SUCCESS ) 
     {
-        char szModule[MAX_PATH] = "";
-        DWORD section = 0, offset = 0;
+        DWORD len = MAX_PATH;
+        BYTE buff[MAX_PATH] = {0};
+        DWORD type = 1;
+        int ecode = RegQueryValueEx(hKey, "DriverDesc", NULL, &type, buff, &len);
+        if(ERROR_SUCCESS == ecode)
+        {           
+			_tprintf(hFile, "Display : %s\r\n", buff);
+        }
+        RegCloseKey(hKey);
+    }
+	*/	
+	
+	_tprintf(hFile, "Display : %s\r\n", _strDisplayDriver);				// 그래픽 카드 종류
+	_tprintf(hFile, "Display Version : %s\r\n", _strDisplayDriverVersion);// 그래픽 드라이버 버젼
+	_tprintf(hFile, "Sound : %s\r\n", _strSoundDriver);					// 사운드 카드 종류
+	//_tprintf(hFile, "National-Code : %d\r\n", g_iCountry);				// 국가 코드
+	_tprintf(hFile, "\r\n");
+	
+	_tprintf(hFile, "Crashed at: %s %s\r\n", strDate, strTime);
+	//_tprintf(hFile, "Version: %d.%d%s%s\n", _ulEngineBuildMajor, _ulEngineBuildMinor, _SE_BUILD_EXTRA, _SE_DEMO?"-demo":"");
+	
+	// First print information about the type of fault
+	_tprintf(hFile, "Exception code: %08X %s\r\n", pExceptionRecord->ExceptionCode,
+		GetExceptionString(pExceptionRecord->ExceptionCode));
+	
+	
+#if DUMP_LOGICAL_ADDR
+	// Now print information about where the fault occured
+//	TCHAR szFaultingModule[MAX_PATH];
+//	DWORD section, offset;
+//	BOOL bSuccess = GetLogicalAddress(pExceptionRecord->ExceptionAddress, szFaultingModule,
+//		sizeof(szFaultingModule), section, offset);
+	ASSERT(bSuccess);
+	_tprintf(hFile, "Fault address:  %08X %02X:%08X %s\r\n", pExceptionRecord->ExceptionAddress,
+		section, offset, szFaultingModule);
+#else 
+#define GETVARNAME(x) #x
+	_tprintf(hFile, "Referent variable: %s 0x%08X\r\n",GETVARNAME(__RefFuncAtAbsAddr),&__RefFuncAtAbsAddr);
+#endif	
+	
+	PCONTEXT pCtx = pExceptionInfo->ContextRecord;
+	
+	// Show the registers
+#ifdef _M_IX86  // Intel Only!
+	_tprintf(hFile, "\nRegisters:\r\n");
+	
+	_tprintf(hFile, "EAX:%08X\nEBX:%08X\nECX:%08X\nEDX:%08X\nESI:%08X\nEDI:%08X\r\n",
+		pCtx->Eax, pCtx->Ebx, pCtx->Ecx, pCtx->Edx, pCtx->Esi, pCtx->Edi );
+	
+	_tprintf(hFile, "CS:EIP:%04X:%08X\r\n", pCtx->SegCs, pCtx->Eip );
+	_tprintf(hFile, "SS:ESP:%04X:%08X  EBP:%08X\r\n", pCtx->SegSs, pCtx->Esp, pCtx->Ebp );
+	_tprintf(hFile, "DS:%04X  ES:%04X  FS:%04X  GS:%04X\r\n", pCtx->SegDs, pCtx->SegEs, pCtx->SegFs, pCtx->SegGs );
+	_tprintf(hFile, "Flags:%08X\r\n", pCtx->EFlags );
+	
+#endif // #ifdef _M_IX86
+	
+#ifdef _M_IX86  // Intel Only!
+	// Walk the stack using x86 specific code
+	IntelStackWalk(hFile, pCtx);
+#endif // #ifdef _M_IX86
+	
+	// Done
+	_tprintf(hFile, "\r\n" );
 
-        _tprintf( "%08X %08X ", pc, pFrame);
-
-        DWORD symDisplacement = 0;  // Displacement of the input address,
-                                    // relative to the start of the symbol
-
-        GetLogicalAddress((PVOID)pc, szModule,sizeof(szModule),section,offset );
-
-        _tprintf( "$adr: %s %04X:%08X", szModule, section, offset);
-
-
-        _tprintf( "\n");
-
-        pc = pFrame[1];
-
-        pPrevFrame = pFrame;
-
-        pFrame = (PDWORD)pFrame[0]; // proceed to next higher frame on stack
-
-        if ( (DWORD)pFrame & 3 )    // Frame pointer must be aligned on a
-            break;                  // DWORD boundary.  Bail if not so.
-
-        if ( pFrame <= pPrevFrame )
-            break;
-
-        // Can two DWORDs be read from the supposed frame address?
-        if ( IsBadWritePtr(pFrame, sizeof(PVOID)*2) )
-            break;
-
-    };
-    _tprintf( "\nmanual stack frame walk end:\n" );
+	if( YesNoMessage( "Send Error Report?" ) )
+	{	// 웹으로 에러데이터 전송
+		SendErrorInfo( hFile, strSendErrorData );
+		// 전송후 초기화
+		strSendErrorData.Clear();
+	}
 }
 
-//============================================================================
-// Helper function that writes to the report file, and allows the user to use
-// printf style formating
-//============================================================================
-int __cdecl MSJExceptionHandler::_tprintf(const char * format, ...)
+static LONG WINAPI _UnhandledExceptionFilter(PEXCEPTION_POINTERS pExceptionInfo)
 {
-    char szBuff[1024];
-    int retValue;
-    DWORD cbWritten;
-    va_list argptr;
+#if 0
+	_asm int 3; // for debugging
+#endif
+	
+	extern INDEX dbg_bAtHome;
+	BOOL bDumpReportFile = TRUE;
+	
+	if(bDumpReportFile) 
+	{
+		HANDLE hFile = CreateFile(_fnReportFileName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_FLAG_WRITE_THROUGH, 0);
+		if(hFile!=INVALID_HANDLE_VALUE) 
+		{
+			// Dump report at eof
+			SetFilePointer(hFile, 0, 0, FILE_END);
+			// Dump report
+			GenerateExceptionReport(hFile, pExceptionInfo);
+			// Done
+			CloseHandle(hFile);
+		}
+	}
 
-    va_start( argptr, format );
-    retValue = wvsprintfA( szBuff, format, argptr );
-    va_end( argptr );
-
-    WriteFile( m_hReportFile, szBuff, retValue * sizeof(char), &cbWritten, 0 );
-
-    return retValue;
+	// 튕겼을때 소켓을 닫는다.
+	extern SOCKET g_hSocket;
+	if(g_hSocket != INVALID_SOCKET)
+	{
+		closesocket(g_hSocket);
+		int iResult = WSACleanup();
+		ASSERT(iResult==0);
+	}
+	
+	// Make sure the console log was written safely
+	if (_pConsole!=NULL) {
+		_pConsole->CloseLog();
+	}
+	extern void EnableWindowsKeys(void);
+	EnableWindowsKeys();
+	
+	if(_efPreviousFilter) {
+		return _efPreviousFilter(pExceptionInfo);
+	} else {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
 }
+
+extern void InitExceptionHandler(const char* FileName)
+{
+	// Set current exception filter function
+	_efPreviousFilter = SetUnhandledExceptionFilter(_UnhandledExceptionFilter);
+	
+    // Get name for report file
+    //GetModuleFileName(0, _fnReportFileName, MAX_PATH);
+	strcpy(_fnReportFileName, FileName);
+	
+	/*
+    // Add .txt extension
+    char *pchDot = strrchr(_fnReportFileName,'.');
+    if(pchDot!=NULL) {
+	// Skip dot
+	pchDot++;
+	if(strlen(pchDot)>=3) {
+	strcpy(pchDot,"TXT");
+	}
+    }
+	*/
+}
+
+extern void CloseExceptionHandler(void)
+{
+	// Return old exception filter
+	SetUnhandledExceptionFilter(_efPreviousFilter);
+}
+
+// Convert absolute address from logical address
+extern BOOL GetLogicalAddress(void *pAddr, char *szModule, ULONG ulLen, ULONG &ulSection, ULONG &ulOffset)
+{
+	MEMORY_BASIC_INFORMATION mbi;
+	
+	if(!VirtualQuery(pAddr, &mbi, sizeof(mbi))) {
+		return FALSE;
+	}
+	
+	DWORD hMod = (DWORD)mbi.AllocationBase;
+	if(!GetModuleFileName((HMODULE)hMod, szModule, ulLen)) {
+		return FALSE;
+	}
+	
+	// Point to the DOS header in memory
+	PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)hMod;
+	
+	// From the DOS header, find the NT (PE) header
+	PIMAGE_NT_HEADERS pNtHdr = (PIMAGE_NT_HEADERS)(hMod + pDosHdr->e_lfanew);
+	PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION( pNtHdr );
+	DWORD rva = (DWORD)pAddr - hMod; // RVA is offset from module load address
+	
+	// Iterate through the section table, looking for the one that encompasses
+	// the linear address.
+	for ( unsigned int i=0;i<pNtHdr->FileHeader.NumberOfSections;i++,pSection++) {
+		DWORD sectionStart = pSection->VirtualAddress;
+		DWORD sectionEnd = sectionStart + max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
+		
+		// Is the address in this section???
+		if((rva>=sectionStart) && (rva<=sectionEnd)) {
+			// Yes, address is in the section.  Calculate section and offset,
+			// and store in the "section" & "offset" params, which were
+			// passed by reference.
+			ulSection = i+1;
+			ulOffset = rva - sectionStart;
+			return TRUE;
+		}
+	}
+	return FALSE;   // Should never get here!
+}
+
+extern void DumpCurrentStack(CTFileStream *pstrm/*=NULL*/)
+{
+#define STACKTRACKDEPTH 32
+	
+	char strTime[12];
+	_strtime(strTime);
+	
+	FCPrintF(pstrm,"\n");
+	FCPrintF(pstrm,"Dumping stack at %s\n",strTime);
+	
+	ULONG aulStack[STACKTRACKDEPTH];
+	
+	ULONG ulFrame;
+	// Get current frame (ebp)
+	__asm mov dword ptr ulFrame, ebp;
+	// walk all frames
+	for(INDEX isd=0;isd<STACKTRACKDEPTH;isd++) {
+		// Get previous frame
+		ULONG ulPrevFrame = *(ULONG*)ulFrame;
+		// Get calling address
+		ULONG ulRetAddr = *(ULONG*)(ulFrame+4);
+		aulStack[isd] = ulRetAddr;
+		
+		// Frame pointer must be aligned on a ULONG boundary
+		if(ulFrame&3) {
+			break;
+		}
+		if(ulPrevFrame<=ulFrame) {
+			break;
+		}
+		
+		if(IsBadWritePtr((ULONG*)ulFrame,sizeof(ULONG)) || IsBadWritePtr((ULONG*)ulPrevFrame,sizeof(ULONG))) {
+			break;
+		}
+		ulFrame = ulPrevFrame; // go to next frame
+	}
+	
+	for(isd=0;isd<STACKTRACKDEPTH;isd++) {
+		ULONG ulAddress = aulStack[isd];
+		// if done
+		if(ulAddress==0) {
+			// bail out
+			break;
+		}
+		
+		// Get module for calling address
+		char strModule[MAX_PATH];
+		ULONG ulSection = 0;
+		ULONG ulOffset = 0;
+		
+#if DUMP_LOGICAL_ADDR
+		BOOL bSuccess = GetLogicalAddress((PVOID)ulAddress, strModule,sizeof(strModule),ulSection,ulOffset);
+		if(bSuccess) {
+			FCPrintF(pstrm, "$adr: %s %04X:%08X\n", strModule, ulSection, ulOffset);
+		}
+#else
+		// :(
+#if _DEBUG
+		strcpy(strModule,"SeriousSamXD.xbe");
+#else
+		strcpy(strModule,"SeriousSamX.xbe");
+#endif
+		
+		FCPrintF(pstrm,"@adr: %s 0x%08X\n", strModule, (ULONG*)ulAddress);
+#endif
+	}
+	FCPrintF(pstrm,"\n");
+}
+
+
+
+
+
+
+

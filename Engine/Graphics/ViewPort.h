@@ -5,9 +5,7 @@
 #endif
 
 #include <Engine/Graphics/Raster.h>
-#ifdef SE1_D3D
 #include <d3d8.h>
-#endif // SE1_D3D
 
 /*
  *  ViewPort
@@ -31,15 +29,13 @@ public:
   HWND vp_hWnd;                 // canvas (child) window
   HWND vp_hWndParent;           // window of the viewport
   CRaster vp_Raster;            // the used Raster
-#ifdef SE1_D3D
 	LPDIRECT3DSWAPCHAIN8 vp_pSwapChain;  // swap chain for D3D
 	LPDIRECT3DSURFACE8   vp_pSurfDepth;  // z-buffer for D3D
-#endif // SE1_D3D
   INDEX vp_ctDisplayChanges;    // number of display driver
 
   // open/close canvas window
   void OpenCanvas(void);
-  void CloseCanvas(BOOL bRelease=FALSE);
+  void CloseCanvas(void);
 
 // interface
   /* Constructor for given window. */
@@ -47,8 +43,8 @@ public:
 	/* Destructor. */
   ~CViewPort(void);
 
-	/* Display the back buffer on screen. */
-  void SwapBuffers(void);
+	// display the back buffer on screen (optionally wait for vertical retrace)
+  void SwapBuffers( const BOOL bWaitForRetrace=FALSE);
   // change size of this viewport, it's raster and all it's drawports to fit it window
   void Resize(void);
 };

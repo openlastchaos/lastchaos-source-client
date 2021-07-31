@@ -7,7 +7,7 @@
 class CHashTableSlot_TYPE {
 public:
   ULONG hts_ulKey;      // hashing key
-  TYPE *hts_ptElement;  // the element inhere
+  TYPE *hts_ptElement;  // the element contained
   CHashTableSlot_TYPE(void)  { hts_ptElement = NULL; };
   void Clear(void) { hts_ptElement = NULL; };
 };
@@ -52,9 +52,9 @@ public:
   void SetCallbacks(ULONG (*GetItemKey)(VALUE_TYPE &Item), VALUE_TYPE (*GetItemValue)(TYPE* Item));
 
   // find an object by value, return a pointer to it
-  TYPE* Find(VALUE_TYPE &Value);
+  __forceinline TYPE* Find(VALUE_TYPE &Value);
   // find an object by value, return it's index
-  INDEX FindIndex(VALUE_TYPE &Value);
+  __forceinline INDEX FindIndex(VALUE_TYPE &Value);
   // add a new object
   void Add(TYPE *ptNew);
   // remove an object
@@ -68,3 +68,22 @@ public:
   // get estimated efficiency of the hashtable
   void ReportEfficiency(void);
 };
+
+// find an object by name
+__forceinline TYPE *CHashTable_TYPE::Find(VALUE_TYPE &Value)
+{
+  ASSERT(ht_ctCompartments>0 && ht_ctSlotsPerComp>0);
+
+  CHashTableSlot_TYPE *phts = FindSlot(ht_GetItemKey(Value), Value);
+  if (phts==NULL) return NULL;
+  return phts->hts_ptElement;
+}
+
+
+// find an object by name, return it's index
+__forceinline INDEX CHashTable_TYPE::FindIndex(VALUE_TYPE &Value)
+{
+  ASSERT(ht_ctCompartments>0 && ht_ctSlotsPerComp>0);
+
+  return FindSlotIndex(ht_GetItemKey(Value), Value);
+}

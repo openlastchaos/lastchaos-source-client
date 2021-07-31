@@ -54,10 +54,10 @@
 #define YY_USE_PROTOS
 #endif
 
-#ifdef YY_USE_CONST
-#define yyconst const
-#else
-#define yyconst
+#ifndef YY_USE_CONST
+#ifndef const
+#define const
+#endif
 #endif
 
 

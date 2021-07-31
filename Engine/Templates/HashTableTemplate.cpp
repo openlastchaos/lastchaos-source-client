@@ -1,6 +1,4 @@
-#include <Engine\Base\Console.h>
 #include <math.h>
-#include <Engine\Base\Translation.h>
 
 // default constructor
 CHashTable_TYPE::CHashTable_TYPE()
@@ -128,24 +126,6 @@ void CHashTable_TYPE::SetCallbacks(ULONG (*GetItemKey)(VALUE_TYPE &Item), ULONG 
   ht_GetItemKey = GetItemKey;
   ht_GetItemValue = GetItemValue;
 }
-// find an object by name
-TYPE *CHashTable_TYPE::Find(VALUE_TYPE &Value)
-{
-  ASSERT(ht_ctCompartments>0 && ht_ctSlotsPerComp>0);
-
-  CHashTableSlot_TYPE *phts = FindSlot(ht_GetItemKey(Value), Value);
-  if (phts==NULL) return NULL;
-  return phts->hts_ptElement;
-}
-
-
-// find an object by name, return it's index
-INDEX CHashTable_TYPE::FindIndex(VALUE_TYPE &Value)
-{
-  ASSERT(ht_ctCompartments>0 && ht_ctSlotsPerComp>0);
-
-  return FindSlotIndex(ht_GetItemKey(Value), Value);
-}
 
 
 // expand the name table to next step
@@ -271,7 +251,16 @@ void CHashTable_TYPE::ReportEfficiency()
   DOUBLE dSum  = 0;
   DOUBLE dSum2 = 0;
   ULONG  ulCount = 0;
+  ULONG  ulMax = 0,ulMin= 0xFFFFFFFF;
+  UWORD  *puwCounts;
 
+  if (ht_ctCompartments<=0) {
+    CPrintF(TRANS("HashTable not initialized.\n"));
+    return;
+  }
+
+  puwCounts = (UWORD*) new UWORD[ht_ctSlotsPerComp];
+  memset(puwCounts,0,ht_ctSlotsPerComp*sizeof(UWORD));
   for (INDEX iComp=0;iComp<ht_ctCompartments;iComp++) {
     INDEX iCount = 0;
     for (INDEX iSlot=iComp*ht_ctSlotsPerComp;iSlot<(iComp+1)*ht_ctSlotsPerComp;iSlot++) {
@@ -280,17 +269,29 @@ void CHashTable_TYPE::ReportEfficiency()
         ulCount++;
       }
     }
+
+    if (iCount>ulMax) ulMax = iCount;
+    if (iCount<ulMin) ulMin = iCount;
+    puwCounts[iCount]++;
+ 
     dSum+=iCount;
     dSum2+=iCount*iCount;
   }
 
   DOUBLE dFullPercent,dAvg,dStDev;
   dFullPercent = (double) ulCount/(ht_ctCompartments*ht_ctSlotsPerComp); // percentage of full slots in the hash table
-  dAvg = dSum/ht_ctCompartments; // average number of full slots per compartement
+  dAvg = dSum/ht_ctCompartments; // average number of full slots per compartment
   dStDev = sqrt((dSum2-2*dSum*dAvg+ulCount*dAvg*dAvg)/(ulCount-1));
 
   CPrintF(TRANS("Hash table efficiency report:\n"));
-  CPrintF(TRANS("  Compartements: %ld,  Slots per compartement: %ld,  Full slots: %ld\n"),ht_ctCompartments,ht_ctSlotsPerComp,ulCount);
-  CPrintF(TRANS("  Percentage of full slots: %5.2f%%,  Average full slots per compartement: %5.2f \n"),dFullPercent*100,dAvg);
+  CPrintF(TRANS("  Compartments: %ld,  Slots per compartment: %ld,  Full slots: %ld\n"),ht_ctCompartments,ht_ctSlotsPerComp,ulCount);
+  CPrintF(TRANS("  Percentage of full slots: %5.2f%%,  Average full slots per compartment: %5.2f \n"),dFullPercent*100,dAvg);
+  CPrintF(TRANS("  Max slots full: %ld,  Min slots full: %ld\n"),ulMax,ulMin);
   CPrintF(TRANS("  Standard deviation is: %5.2f\n"),dStDev);
+  CPrintF(TRANS("  Distribution of number of full slots per compartment:\n"));
+  for (INDEX iEntry=0;iEntry<ht_ctSlotsPerComp;iEntry++) {
+    CPrintF(TRANS("    %d slots full in %4d (%5.2f%%)\n"),iEntry,puwCounts[iEntry],100*puwCounts[iEntry]/((float)ht_ctCompartments));
+  }
+
+  delete []puwCounts;
 }

@@ -1,6 +1,11 @@
 #include <Engine/Entities/Entity.h>
 #include <Engine/Brushes/Brush.h>
 /*
+ *  S-Cape3D 3D game engine library
+ *  Copyright (c) 1997, CroTeam. All rights reserved.
+ */
+
+/*
  * Preferences for rendering world (another class is used for rendering models).
  */
 class ENGINE_API CWorldRenderPrefs {

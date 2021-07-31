@@ -9,14 +9,16 @@
 #define DEATH_BURN_TIME 4.0f
 
 #include "EntitiesMP/MovingBrush.h"
+//#include "EntitiesMP/Santa.h"
+#include "EntitiesMP/Player.h"
 %}
 
 uses "EntitiesMP/Light";
 
 // input parameter for flame
 event EFlame {
-  CEntityPointer penOwner,        // entity which owns it
-  CEntityPointer penAttach,       // entity on which flame is attached (his parent)
+  CEntityID eidOwner,        // entity which owns it
+  CEntityID eidAttach,       // entity on which flame is attached (his parent)
 };
 
 // event for stop burning
@@ -31,12 +33,14 @@ void CFlame_OnPrecache(CDLLEntityClass *pdec, INDEX iUser)
   pdec->PrecacheTexture(TEXTURE_FLAME);
   pdec->PrecacheSound(SOUND_FLAME);
 }
+
+extern ULONG _ulPlayerRenderingMask;
 %}
 
 class CFlame : CMovableModelEntity {
 name      "Flame";
 thumbnail "";
-features "ImplementsOnPrecache", "CanBePredictable";
+features "ImplementsOnPrecache", "CanBePredictable","NotSentOverNet";
 
 properties:
   1 CEntityPointer m_penOwner,    // entity which owns it
@@ -77,16 +81,11 @@ components:
   1 class   CLASS_LIGHT         "Classes\\Light.ecl",
 
 // ********* FLAME *********
- 10 model   MODEL_FLAME         "ModelsMP\\Effects\\Flame\\Flame.mdl",
- 11 texture TEXTURE_FLAME       "ModelsMP\\Effects\\Flame\\Flame.tex",
- 12 sound   SOUND_FLAME         "SoundsMP\\Fire\\Burning.wav",
+ 10 model   MODEL_FLAME         "Data\\ModelsMP\\Effects\\Flame\\Flame.mdl",
+ 11 texture TEXTURE_FLAME       "Data\\ModelsMP\\Effects\\Flame\\Flame.tex",
+ 12 sound   SOUND_FLAME         "data\\sounds\\Default.wav",
 
 functions:
-  // add to prediction any entities that this entity depends on
-  void AddDependentsToPrediction(void)
-  {
-    m_penOwner->AddToPrediction();
-  }
   // postmoving
   void PostMoving(void) {
     CMovableModelEntity::PostMoving();
@@ -107,9 +106,9 @@ functions:
   };
 
   /* Read from stream. */
-  void Read_t( CTStream *istr) // throw char *
+  void Read_t( CTStream *istr,BOOL bNetwork) // throw char *
   {
-    CMovableModelEntity::Read_t(istr);
+    CMovableModelEntity::Read_t(istr,bNetwork);
     SetupLightSource();
   }
 
@@ -139,35 +138,43 @@ functions:
   /* Get static light source information. */
   CLightSource *GetLightSource(void)
   {
-    if (!IsPredictor()) {
-      return &m_lsLightSource;
-    } else {
-      return NULL;
-    }
+    return &m_lsLightSource;
   }
 
   // render particles
   void RenderParticles(void)
   {
+    CEntity *penParent= GetParent();
+    // do not render if it is burning on player that is rendering current game view
+    if( IsOfClass( penParent, &CPlayer_DLLClass)) {
+      INDEX iPlayer = ((CPlayerEntity*)penParent)->GetMyPlayerIndex();
+      if (_ulPlayerRenderingMask&(1<<iPlayer)) {
+        return;
+      }
+    }
+
     FLOAT fTimeFactor=CalculateRatio(_pTimer->CurrentTick(), m_tmFirstStart, m_tmStart+TM_APPLY_WHOLE_DAMAGE, 0.05f, 0.2f);
     FLOAT fDeathFactor=1.0f;
     if( _pTimer->CurrentTick()>m_tmDeathParticlesStart)
     {
       fDeathFactor=1.0f-Clamp((_pTimer->CurrentTick()-m_tmDeathParticlesStart)/DEATH_BURN_TIME, 0.0f, 1.0f);
     }
-    CEntity *penParent= GetParent();
+    
     FLOAT fPower=ClampUp(m_fDamageStep-MIN_DAMAGE_QUANTUM, MAX_DAMAGE_QUANTUM)/MAX_DAMAGE_QUANTUM;
-    if( penParent!= NULL)
-    {
-      if( (penParent->en_RenderType==CEntity::RT_MODEL || penParent->en_RenderType==CEntity::RT_EDITORMODEL ||
-           penParent->en_RenderType==CEntity::RT_SKAMODEL || penParent->en_RenderType==CEntity::RT_SKAEDITORMODEL) &&
-          (Particle_GetViewer()!=penParent) )
-      {
-        Particles_Burning(penParent, fPower, fTimeFactor*fDeathFactor);
-      }
-      else
-      {
-        Particles_BrushBurning(this, &m_vPos01, m_ctFlames, m_vPlaneNormal, fPower, fTimeFactor*fDeathFactor);
+    if(penParent!=NULL) {
+      // do not render burning particles on editor models
+      if(penParent->en_RenderType==CEntity::RT_EDITORMODEL || penParent->en_RenderType==CEntity::RT_SKAEDITORMODEL) {
+        return;
+      } else {
+        // if this is model
+        if(penParent->en_RenderType==CEntity::RT_MODEL || penParent->en_RenderType==CEntity::RT_SKAMODEL) {
+          // render model burning particles
+          Particles_Burning(penParent, fPower, fTimeFactor*fDeathFactor);
+        // else this is brush
+        } else {
+          // render brush burning particles
+          Particles_BrushBurning(this, &m_vPos01, m_ctFlames, m_vPlaneNormal, fPower, fTimeFactor*fDeathFactor);
+        }
       }
     }
   }
@@ -208,17 +215,32 @@ functions:
 procedures:
   // --->>> MAIN
   Main(EFlame ef) {
+//안태훈 수정 시작	//(Add & Modify SSSE Effect)(0.1)
+	  InitAsVoid();
+	  return;	//일단 불 발생 못하게 막음.
+//안태훈 수정 끝	//(Add & Modify SSSE Effect)(0.1)
+
     // attach to parent (another entity)
-    ASSERT(ef.penOwner!=NULL);
-    ASSERT(ef.penAttach!=NULL);
-    m_penOwner = ef.penOwner;
-    m_penAttach = ef.penAttach;
+    ASSERT(((CEntity*)ef.eidOwner)!=NULL);
+    ASSERT(((CEntity*)ef.eidAttach)!=NULL);
+    m_penOwner = ef.eidOwner;
+    m_penAttach = ef.eidAttach;
+
+	/*
+    // do not set Santa on fire!
+    if( IsOfClass( m_penAttach, &CSanta_DLLClass)) {
+      Destroy(FALSE);
+      return;
+    }
+	*/
+
+    SetFlagOn(ENF_CLIENTHANDLING);
 
     m_tmStart = _pTimer->CurrentTick();
     m_tmFirstStart=m_tmStart;
-    SetParent(ef.penAttach);
+    SetParent(ef.eidAttach);
     // initialization
-    InitAsEditorModel();
+    InitAsModel();
     SetPhysicsFlags(EPF_MODEL_FLYING);
     SetCollisionFlags(ECF_FLAME);
     SetFlags(GetFlags() | ENF_SEETHROUGH);
@@ -228,7 +250,7 @@ procedures:
     ModelChangeNotify();
 
     // play the burning sound
-    m_soEffect.Set3DParameters(10.0f, 1.0f, 1.0f, 1.0f);
+    m_soEffect.Set3DParameters( 20.0f, 2.0f, 0.7f, 1.0f);
     PlaySound(m_soEffect, SOUND_FLAME, SOF_3D|SOF_LOOP);
 
     // must always be in movers, to find sector content type
@@ -236,8 +258,8 @@ procedures:
 
     m_bBurningBrush=FALSE;
     BOOL bAllowFlame=TRUE;
-    if( !(ef.penAttach->en_RenderType==CEntity::RT_MODEL || ef.penAttach->en_RenderType==CEntity::RT_EDITORMODEL ||
-          ef.penAttach->en_RenderType==CEntity::RT_SKAMODEL || ef.penAttach->en_RenderType==CEntity::RT_SKAEDITORMODEL ))
+    if( !(((CEntity*)ef.eidAttach)->en_RenderType==CEntity::RT_MODEL || ((CEntity*)ef.eidAttach)->en_RenderType==CEntity::RT_EDITORMODEL ||
+          ((CEntity*)ef.eidAttach)->en_RenderType==CEntity::RT_SKAMODEL || ((CEntity*)ef.eidAttach)->en_RenderType==CEntity::RT_SKAEDITORMODEL ))
     {
       m_bBurningBrush=TRUE;
       FLOAT3D vPos=GetPlacement().pl_PositionVector;
@@ -246,9 +268,9 @@ procedures:
       FindSectorsAroundEntity();
       CBrushPolygon *pbpo=NULL;
       pbpo=GetNearestPolygon(vPos, plPlane, fDistanceToEdge);
-      FLOAT3D vBrushPos = ef.penAttach->GetPlacement().pl_PositionVector;
-      FLOATmatrix3D mBrushRotInv = !ef.penAttach->GetRotationMatrix();
-      if( pbpo!=NULL && pbpo->bpo_pbscSector->bsc_pbmBrushMip->bm_pbrBrush->br_penEntity==ef.penAttach)
+      FLOAT3D vBrushPos = ((CEntity*)ef.eidAttach)->GetPlacement().pl_PositionVector;
+      FLOATmatrix3D mBrushRotInv = !((CEntity*)ef.eidAttach)->GetRotationMatrix();
+      if( pbpo!=NULL && pbpo->bpo_pbscSector->bsc_pbmBrushMip->bm_pbrBrush->br_penEntity==ef.eidAttach)
       {
         plPlane = pbpo->bpo_pbplPlane->bpl_plAbsolute;
         m_vPlaneNormal=(FLOAT3D &)plPlane;
@@ -330,7 +352,7 @@ procedures:
           resume;
         }
         on (EFlame ef) : {
-          m_penOwner = ef.penOwner;
+          m_penOwner = ef.eidOwner;
           FLOAT fTimeLeft=m_tmStart+TM_APPLY_WHOLE_DAMAGE-_pTimer->CurrentTick();
           FLOAT fDamageLeft=(fTimeLeft/TM_APPLY_DAMAGE_QUANTUM)*m_fDamageStep;
           m_fDamageToApply=ClampUp(fDamageLeft+DAMAGE_AMMOUNT, 80.0f);
@@ -363,7 +385,7 @@ procedures:
     }
 
     // cease to exist
-    Destroy();
+    Destroy(FALSE);
     return;
   }
 };

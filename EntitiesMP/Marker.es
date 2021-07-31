@@ -17,8 +17,8 @@ properties:
 
 components:
 
-  1 model   MODEL_MARKER     "Models\\Editor\\Axis.mdl",
-  2 texture TEXTURE_MARKER   "Models\\Editor\\Vector.tex"
+  1 editor model   MODEL_MARKER     "Data\\Models\\Editor\\Axis.mdl",
+  2 editor texture TEXTURE_MARKER   "Data\\Models\\Editor\\Vector.tex"
 
 
 functions:

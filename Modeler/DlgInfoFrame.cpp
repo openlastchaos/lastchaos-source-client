@@ -116,7 +116,7 @@ void CDlgInfoFrame::SetSizes()
   char strResourceID[ 10];
   // create string containing string "#xxx" where xxx is resource (dialog) ID
   sprintf( strResourceID, "#%d", pPage->m_psp.pszTemplate);
-  HRSRC hrsrc = FindResource(NULL, CString(strResourceID), RT_DIALOG); 
+  HRSRC hrsrc = FindResource(NULL, strResourceID, RT_DIALOG); 
   HGLOBAL hglb = LoadResource(NULL, hrsrc); 
   pdlgTemplate = (DLGTEMPLATE *) LockResource(hglb);
   // get base units needed to calculate right width and height

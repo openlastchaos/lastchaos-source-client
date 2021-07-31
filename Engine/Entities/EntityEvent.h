@@ -26,6 +26,8 @@ public:
     CEntityEvent *peeCopy = new CEntityEvent(*this);
     return peeCopy;
   };
+  virtual SLONG GetSizeOf() {return sizeof(*this);};
+  virtual BOOL CheckIDs() {return TRUE;};
 };
 // a reference to a void event for use as default parameter
 ENGINE_API extern const CEntityEvent &_eeVoid;
